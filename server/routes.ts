@@ -5,6 +5,7 @@ import { promisify } from "node:util";
 import { Readable } from "node:stream";
 import fs from "node:fs";
 import pathModule from "node:path";
+import crypto from "node:crypto";
 import { log } from "./logger";
 
 const execFileAsync = promisify(execFile);
@@ -415,7 +416,7 @@ export async function registerRoutes(app: Express) {
 
     // Try local filesystem FIRST when HERMES_LOCAL_PATH is set
     if (HERMES_LOCAL_PATH) {
-      const localDir = pathModule.join(HERMES_LOCAL_PATH, path.replace(/^\/+/, ""));
+      const localDir = pathModule.join(HERMES_LOCAL_PATH, path.replace(/^\/files\//, ""));
       if (HERMES_DEBUG) log(`[hermes] trying local path (first): ${localDir}`);
       if (debugFlag) (debugInfo as any).localPath = localDir;
 
@@ -466,7 +467,10 @@ export async function registerRoutes(app: Express) {
             mtime = stat.mtime.toISOString();
             size = String(stat.size);
           } catch {}
-          items.push({ id: stableId, type, url: itemPath, thumb_url: itemPath, path: itemPath, filename, mtime, size });
+          const thumbUrl = type === "video"
+            ? `/api/media/thumb?path=${encodeURIComponent(itemPath)}`
+            : itemPath;
+          items.push({ id: stableId, type, url: itemPath, thumb_url: thumbUrl, path: itemPath, filename, mtime, size });
         }
 
         if (debugFlag) {
@@ -547,11 +551,14 @@ export async function registerRoutes(app: Express) {
                 const itemPath = relPath.includes("/") ? relPath : `${dirPath}${relPath}`;
                 const fbPath = `/${itemPath}`;
                 const stableId = Buffer.from(fbPath).toString("base64url");
+                const thumbUrl = type === "video" && HERMES_LOCAL_PATH
+                  ? `/api/media/thumb?path=${encodeURIComponent(`/files${fbPath}`)}`
+                  : fbPath;
                 items.push({
                   id: stableId,
                   type,
                   url: fbPath,
-                  thumb_url: fbPath,
+                  thumb_url: thumbUrl,
                   path: fbPath,
                   filename: name,
                   mtime: it.modified || null,
@@ -678,11 +685,14 @@ export async function registerRoutes(app: Express) {
 
         const stableId = Buffer.from(itemUrl).toString("base64url");
 
+        const thumbUrl = type === "video" && HERMES_LOCAL_PATH
+          ? `/api/media/thumb?path=${encodeURIComponent(itemUrl)}`
+          : itemUrl;
         items.push({
           id: stableId,
           type,
           url: itemUrl,
-          thumb_url: itemUrl,
+          thumb_url: thumbUrl,
           filename,
           mtime: null,
           size: null,
@@ -745,7 +755,7 @@ export async function registerRoutes(app: Express) {
 
     // Local-first: stream from filesystem when HERMES_LOCAL_PATH is set (real mp4 bytes, Range 206)
     if (HERMES_LOCAL_PATH) {
-      const localFile = pathModule.join(HERMES_LOCAL_PATH, fbPath.replace(/^\/+/, ""));
+      const localFile = pathModule.join(HERMES_LOCAL_PATH, fbPath.replace(/^\/files\//, ""));
       const resolvedLocal = pathModule.resolve(localFile);
       if (process.env.NODE_ENV !== "production") {
         const exists = fs.existsSync(resolvedLocal);
@@ -905,6 +915,81 @@ export async function registerRoutes(app: Express) {
     }
   });
 
+  // Video thumbnail extraction via ffmpeg with disk cache
+  const THUMB_CACHE_DIR = "/tmp/astra-thumbs";
+  const THUMB_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+  try { fs.mkdirSync(THUMB_CACHE_DIR, { recursive: true }); } catch {}
+
+  function pruneThumbCache() {
+    try {
+      const now = Date.now();
+      for (const f of fs.readdirSync(THUMB_CACHE_DIR)) {
+        const fp = pathModule.join(THUMB_CACHE_DIR, f);
+        try {
+          const st = fs.statSync(fp);
+          if (now - st.mtimeMs > THUMB_MAX_AGE_MS) fs.unlinkSync(fp);
+        } catch {}
+      }
+    } catch {}
+  }
+
+  function thumbCacheKey(filePath: string, mtime: number, size: number): string {
+    return crypto.createHash("sha256").update(`${filePath}\0${mtime}\0${size}`).digest("hex");
+  }
+
+  app.get("/api/media/thumb", async (req: Request, res: Response) => {
+    let rawPath = req.query.path as string | undefined;
+    if (!rawPath) return res.status(400).json({ message: "path query param required" });
+    try { rawPath = decodeURIComponent(rawPath); } catch {}
+
+    const fbPath = normalizeHermesPath(rawPath);
+    if (!fbPath) return res.status(400).json({ message: "Path must start with /files/ and cannot contain .." });
+    if (!HERMES_LOCAL_PATH) return res.status(500).json({ message: "HERMES_LOCAL_PATH not configured" });
+
+    const localFile = pathModule.join(HERMES_LOCAL_PATH, fbPath.replace(/^\/files\//, ""));
+    const resolved = pathModule.resolve(localFile);
+    const resolvedBase = pathModule.resolve(HERMES_LOCAL_PATH);
+    if (!resolved.startsWith(resolvedBase + pathModule.sep) && resolved !== resolvedBase) {
+      return res.status(403).json({ message: "Path escapes media root" });
+    }
+
+    let stat: fs.Stats;
+    try { stat = fs.statSync(resolved); } catch {
+      return res.status(404).json({ message: "File not found" });
+    }
+    if (!stat.isFile()) return res.status(400).json({ message: "Not a file" });
+
+    const key = thumbCacheKey(resolved, stat.mtimeMs, stat.size);
+    const cached = pathModule.join(THUMB_CACHE_DIR, `${key}.jpg`);
+
+    if (fs.existsSync(cached)) {
+      res.setHeader("Content-Type", "image/jpeg");
+      res.setHeader("Cache-Control", "public, max-age=86400");
+      return fs.createReadStream(cached).pipe(res);
+    }
+
+    try {
+      const { stdout } = await execFileAsync("ffmpeg", [
+        "-ss", "1", "-i", resolved,
+        "-frames:v", "1", "-q:v", "4",
+        "-f", "image2", "pipe:1",
+      ], { encoding: "buffer" as any, maxBuffer: 5 * 1024 * 1024 });
+
+      const buf = stdout as unknown as Buffer;
+      if (!buf || buf.length === 0) {
+        return res.status(500).json({ message: "ffmpeg produced no output" });
+      }
+      try { fs.writeFileSync(cached, buf); } catch {}
+      pruneThumbCache();
+
+      res.setHeader("Content-Type", "image/jpeg");
+      res.setHeader("Cache-Control", "public, max-age=86400");
+      res.send(buf);
+    } catch (e: any) {
+      return res.status(500).json({ message: `Thumbnail generation failed: ${e?.message?.slice(0, 200)}` });
+    }
+  });
+
   // Media health: hermes local path status (kept for backward compat)
   app.get("/api/media/health", (req: Request, res: Response) => {
     const pathParam = req.query.path as string | undefined;
@@ -936,7 +1021,7 @@ export async function registerRoutes(app: Express) {
       const fbPath = normalizeHermesPath(pathParam);
       result.normalizedPath = fbPath;
       if (fbPath && HERMES_LOCAL_PATH) {
-        const localFile = pathModule.join(HERMES_LOCAL_PATH, fbPath.replace(/^\/+/, ""));
+        const localFile = pathModule.join(HERMES_LOCAL_PATH, fbPath.replace(/^\/files\//, ""));
         const resolvedLocal = pathModule.resolve(localFile);
         const resolvedBase = pathModule.resolve(HERMES_LOCAL_PATH);
         result.resolvedLocalFile = resolvedLocal;
