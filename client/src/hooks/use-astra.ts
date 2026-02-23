@@ -117,6 +117,8 @@ export type MockMediaItem = {
   mtime: string;
   tags: string[];
   favorite: boolean;
+  filename?: string;
+  size?: number;
 };
 
 export function useMockMedia() {

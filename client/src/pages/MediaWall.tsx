@@ -11,7 +11,14 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
 type FilterType = "all" | "video" | "image";
-type SortType = "newest" | "oldest";
+type SortType = "newest" | "oldest" | "name-asc" | "name-desc" | "size-desc" | "size-asc" | "random";
+const SORT_CYCLE: SortType[] = ["newest", "oldest", "name-asc", "name-desc", "size-desc", "size-asc", "random"];
+const SORT_LABELS: Record<SortType, string> = {
+  "newest": "Newest", "oldest": "Oldest",
+  "name-asc": "Name A-Z", "name-desc": "Name Z-A",
+  "size-desc": "Largest", "size-asc": "Smallest",
+  "random": "Shuffle",
+};
 
 function useLocalStorage<T>(key: string, initial: T): [T, (v: T | ((prev: T) => T)) => void] {
   const [value, setValue] = useState<T>(() => {
@@ -382,6 +389,8 @@ export default function MediaWall() {
       mtime: item.mtime || new Date().toISOString(),
       tags: [],
       favorite: false,
+      filename: item.filename || item.id,
+      size: item.size ? Number(item.size) : undefined,
     }));
   }, [hermesData]);
 
@@ -406,6 +415,31 @@ export default function MediaWall() {
 
   const containerRef = useRef<HTMLDivElement>(null);
   const [visibleIds, setVisibleIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    const root = containerRef.current;
+    if (!root) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        setVisibleIds((prev) => {
+          const next = new Set(prev);
+          for (const entry of entries) {
+            const id = (entry.target as HTMLElement).dataset.mediaId;
+            if (!id) continue;
+            if (entry.isIntersecting) next.add(id);
+            else next.delete(id);
+          }
+          return next;
+        });
+      },
+      { root, threshold: 0.3 }
+    );
+    requestAnimationFrame(() => {
+      const tiles = root.querySelectorAll("[data-media-id]");
+      tiles.forEach((el) => observer.observe(el));
+    });
+    return () => observer.disconnect();
+  }, [items, filter, search, showFavorites, sort]);
 
   useEffect(() => {
     setPlayingIds(new Set());
@@ -480,9 +514,16 @@ export default function MediaWall() {
       );
     }
     result.sort((a, b) => {
-      const da = new Date(a.mtime || 0).getTime();
-      const db_val = new Date(b.mtime || 0).getTime();
-      return sort === "newest" ? db_val - da : da - db_val;
+      switch (sort) {
+        case "newest": return new Date(b.mtime || 0).getTime() - new Date(a.mtime || 0).getTime();
+        case "oldest": return new Date(a.mtime || 0).getTime() - new Date(b.mtime || 0).getTime();
+        case "name-asc": return (a.filename || a.id).localeCompare(b.filename || b.id);
+        case "name-desc": return (b.filename || b.id).localeCompare(a.filename || a.id);
+        case "size-desc": return (Number(b.size) || 0) - (Number(a.size) || 0);
+        case "size-asc": return (Number(a.size) || 0) - (Number(b.size) || 0);
+        case "random": return Math.random() - 0.5;
+        default: return 0;
+      }
     });
     return result;
   }, [items, filter, sort, search, showFavorites, favorites]);
@@ -581,11 +622,11 @@ export default function MediaWall() {
               data-testid="btn-sort"
               variant="outline"
               size="sm"
-              onClick={() => setSort(s => s === "newest" ? "oldest" : "newest")}
+              onClick={() => setSort(s => SORT_CYCLE[(SORT_CYCLE.indexOf(s) + 1) % SORT_CYCLE.length])}
               className="gap-1.5 bg-card border-white/10 text-xs text-muted-foreground"
             >
-              {sort === "newest" ? <SortDesc className="w-3.5 h-3.5" /> : <SortAsc className="w-3.5 h-3.5" />}
-              {sort === "newest" ? "Newest" : "Oldest"}
+              {sort.includes("desc") || sort === "newest" ? <SortDesc className="w-3.5 h-3.5" /> : <SortAsc className="w-3.5 h-3.5" />}
+              {SORT_LABELS[sort]}
             </Button>
 
             <Button
