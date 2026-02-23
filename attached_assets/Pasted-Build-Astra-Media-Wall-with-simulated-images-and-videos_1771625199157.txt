@@ -1,0 +1,72 @@
+Build Astra Media Wall with simulated images and videos (no real network yet),
+but architect it so we can swap to Hermes later by changing only the backend source.
+
+ARCHITECTURE
+- Frontend fetches media via a single function getMedia()
+- Backend route: GET /api/media/mock (used now)
+- Later we will replace it with /api/media/hermes (same schema, no UI changes)
+
+BACKEND (Mock Data)
+Create GET /api/media/mock returning JSON:
+{
+  "items": [
+    {
+      "id": "string",
+      "type": "video" | "image",
+      "url": "string",
+      "thumb_url": "string",
+      "mtime": "ISO-8601 timestamp",
+      "tags": ["string"],
+      "favorite": false
+    }
+  ]
+}
+
+- Generate 30–100 items
+- Use real playable sample videos (mp4/webm) and images
+- Spread timestamps over the last 30 days
+- Provide thumbnails/posters for videos
+
+FRONTEND – MEDIA WALL (Grok-inspired)
+- Dense, responsive grid
+- 16:9 tiles for video, square/auto for images
+- Hover autoplay for videos (muted, loop)
+- Click any item → fullscreen modal viewer
+- Lazy-load images and videos
+
+CONTROLS (Top Bar)
+- Search (filename + tags, client-side)
+- Filter: All | Videos | Images
+- Sort: Newest | Oldest
+- ⭐ Favorites toggle (persist in localStorage)
+- Global toggle: “∞ Loop All Videos” (Ambient Mode)
+
+AMBIENT LOOP MODE (Important)
+- OFF by default
+- When ON:
+  - All visible video tiles autoplay muted + loop
+  - Videos pause automatically when scrolled off-screen
+  - Limit simultaneous playback (e.g., max 6 videos)
+- When OFF:
+  - Videos play only on hover
+- Persist loop mode in localStorage
+
+DESIGN / THEME
+- Dark space gradient background
+- Primary: Astra Violet
+- Secondary: Teal
+- Accent: Gold (favorites, highlights)
+- Minimal glow on hover only
+- Clean, fast, no marketing sections
+
+DO NOT ADD (for MVP)
+- Folders
+- Permissions
+- Comments
+- Bulk actions
+- Playlists
+- Deletion
+
+GOAL
+Deliver a working Media Wall demo that feels alive and fast,
+and can later be wired to real Hermes media with minimal changes.

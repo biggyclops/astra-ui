@@ -1,0 +1,54 @@
+Add a Jobs panel (MVP shell) with a fake job lifecycle.
+
+ROUTES / NAV
+- Add a sidebar button/tab: “Jobs”
+- Route: /jobs
+
+DATA (mocked for now)
+- Create a simple in-memory jobs store or mock generator (no real backend integration required yet)
+- Job schema:
+  {
+    id: string,
+    type: "comfyui.image" | "comfyui.video" | "media.describe" | "system.task",
+    title: string,
+    status: "queued" | "running" | "done" | "failed",
+    node: "Kratos" | "Hades" | "Hermes",
+    createdAt: ISO string,
+    updatedAt: ISO string,
+    progress: number (0-100),
+    inputs: [{ id, type, url, thumb_url }],
+    outputs: [{ id, type, url, thumb_url }],
+    logs: string[]
+  }
+
+UI REQUIREMENTS
+- Jobs list view:
+  - Dense cards with status pill, title, node, time, progress bar if running
+  - Filter chips: All / Queued / Running / Done / Failed
+  - Sort: Newest first
+- Job detail drawer/modal (click a card):
+  - Summary: type, node, timestamps
+  - Inputs: show thumbnails (use same tile style as Media Wall)
+  - Outputs: show thumbnails; clicking opens in Media Wall viewer
+  - Logs: collapsible text area
+
+INTEGRATION WITH MEDIA WALL (important)
+- When user drags media from Media Wall and drops onto “Create Job” zone:
+  - Create a new job in status "queued"
+  - Pre-fill inputs with dropped media
+  - Open job detail view immediately
+
+FAKE LIFECYCLE (demo)
+- When a job is created:
+  - queued for ~1s
+  - running and progress increments to 100 over ~5–10s
+  - then status becomes done
+  - generate 1–3 fake outputs (image/video URLs) and add to outputs
+- Add a “Simulate Fail” option in the job detail (for demo) that sets status failed and appends an error log
+
+LORE + SAFETY
+- Jobs never run destructive actions
+- Jobs require explicit “Run” later; for now it’s a simulated lifecycle only
+- Keep styling consistent with Astra dark theme (violet/teal/gold accents, minimal glow)
+
+Keep changes minimal. Do not add authentication or real node discovery.
