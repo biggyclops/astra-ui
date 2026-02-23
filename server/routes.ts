@@ -349,7 +349,7 @@ export async function registerRoutes(app: Express) {
   let hermesJwtCache: { token: string; expires: number } | null = null;
   const IMAGE_EXT = new Set(["jpg", "jpeg", "png", "webp", "gif"]);
   const VIDEO_EXT = new Set(["mp4", "webm", "mov", "mkv"]);
-  const MEDIA_EXT = new Set([...IMAGE_EXT, ...VIDEO_EXT]);
+  const MEDIA_EXT = new Set([...Array.from(IMAGE_EXT), ...Array.from(VIDEO_EXT)]);
 
   const CT_MAP: Record<string, string> = {
     mp4: "video/mp4",
@@ -896,7 +896,7 @@ export async function registerRoutes(app: Express) {
 
       const body = fetchRes.body;
       if (body) {
-        Readable.fromWeb(body as import("node:stream").web.ReadableStream).pipe(res);
+        Readable.fromWeb(body as any).pipe(res);
       } else {
         res.end();
       }

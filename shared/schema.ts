@@ -7,7 +7,7 @@ export const messages = pgTable("messages", {
   role: text("role").notNull(), // 'user', 'assistant', 'system'
   content: text("content").notNull(),
   type: text("type").notNull().default('text'), // 'text', 'node_status', 'job', 'media_preview'
-  metadata: jsonb("metadata"), // stores specific card data based on type
+  metadata: jsonb("metadata").$type<Record<string, any> | null>(), // stores specific card data based on type
   createdAt: timestamp("created_at").defaultNow(),
 });
 

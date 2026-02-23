@@ -79,15 +79,16 @@ app.use((req, res, next) => {
     await setupVite(httpServer, app);
   }
 
-  // ALWAYS serve the app on the port specified in the environment variable PORT
-  // Other ports are firewalled. Default to 5000 if not specified.
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-  const port = parseInt(process.env.PORT || "5000", 10);
+  const argv = process.argv.slice(2);
+  const cliPort = argv.indexOf("--port") >= 0 ? argv[argv.indexOf("--port") + 1] : undefined;
+  const cliHost = argv.indexOf("--host") >= 0 ? argv[argv.indexOf("--host") + 1] : undefined;
+
+  const port = parseInt(cliPort || process.env.PORT || "5000", 10);
+  const host = cliHost || "0.0.0.0";
   httpServer.listen(
     {
       port,
-      host: "0.0.0.0",
+      host,
       reusePort: true,
     },
     () => {
