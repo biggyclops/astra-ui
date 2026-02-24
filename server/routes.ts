@@ -50,19 +50,116 @@ type NodeStatus = {
 const TAILSCALE_TIMEOUT_MS = 1600;
 const HTTP_TIMEOUT_MS = 1500;
 
-// If a node has NO checks configured, it will show "unknown"
-const NODE_TARGETS: Array<{
+type NodeTarget = {
   name: string;
-  // what to tailscale ping (MagicDNS name or tailnet IP)
+  type: string;
   ts?: string;
-  // optional HTTP health endpoint (if you have one)
+  ip?: string;
+  sshUser?: string;
   http?: string;
-}> = [
-  { name: "Kratos", ts: "kratos-z440" },
-  { name: "Hades", ts: "hades-z370-windows11" },
-  { name: "Hermes", ts: "hermes" },
-  { name: "Phobos", ts: "phobos" },
+  services?: Array<{ name: string; url: string }>;
+};
+
+const SSH_TIMEOUT_MS = 6000;
+
+const NODE_TARGETS: NodeTarget[] = [
+  {
+    name: "Mini-Beast", type: "Server",
+    services: [
+      { name: "Ollama", url: "http://localhost:11434/api/tags" },
+      { name: "Pi-hole", url: "http://localhost:80/admin/" },
+      { name: "Portainer", url: "http://localhost:9000/api/status" },
+      { name: "Open WebUI", url: "http://localhost:3003/" },
+      { name: "Uptime Kuma", url: "http://localhost:3001/" },
+    ],
+  },
+  { name: "Kratos", type: "Workstation", ts: "kratos-z440", ip: "100.78.38.80", sshUser: "comeau" },
+  { name: "Hades", type: "Workstation", ts: "hades-z370-windows11", ip: "100.94.2.5", sshUser: "hades" },
+  {
+    name: "Hermes", type: "NAS", ts: "hermes", ip: "100.120.145.15", sshUser: "comeau",
+    services: [{ name: "File Browser", url: "http://100.120.145.15:8080/" }],
+  },
+  { name: "Phobos", type: "Device", ts: "phobos", ip: "100.74.155.53", sshUser: "comeau" },
 ];
+
+let lastStatusSnapshot: { nodes: any[]; checkedAt: string } | null = null;
+const STATUS_CACHE_TTL_MS = 10_000;
+let statusCacheTime = 0;
+let statusInflight: Promise<{ nodes: any[]; checkedAt: string }> | null = null;
+
+async function probeServices(services: Array<{ name: string; url: string }>): Promise<Array<{ name: string; ok: boolean; ms: number }>> {
+  return Promise.all(services.map(async (svc) => {
+    const start = Date.now();
+    try {
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), HTTP_TIMEOUT_MS);
+      const r = await fetch(svc.url, { signal: ctrl.signal });
+      clearTimeout(t);
+      return { name: svc.name, ok: r.ok || r.status < 500, ms: Date.now() - start };
+    } catch {
+      return { name: svc.name, ok: false, ms: Date.now() - start };
+    }
+  }));
+}
+
+async function getLocalMetrics(): Promise<{ cpu: number; mem: number; disk: string; docker: number }> {
+  try {
+    const [cpuOut, memOut, diskOut, dockerOut] = await Promise.all([
+      execFileAsync("bash", ["-c",
+        "top -bn1 | awk '/^%Cpu/{print 100-$8}'"
+      ], { timeout: 3000 }).then(r => r.stdout.trim()).catch(() => "0"),
+      execFileAsync("bash", ["-c",
+        "free | awk '/Mem:/{printf \"%.0f\",$3/$2*100}'"
+      ], { timeout: 1000 }).then(r => r.stdout.trim()).catch(() => "0"),
+      execFileAsync("bash", ["-c",
+        "df -h / | awk 'NR==2{print $3\"/\"$2\" (\"$5\")\"}'"
+      ], { timeout: 1000 }).then(r => r.stdout.trim()).catch(() => "unknown"),
+      execFileAsync("bash", ["-c",
+        "docker ps -q 2>/dev/null | wc -l"
+      ], { timeout: 2000 }).then(r => r.stdout.trim()).catch(() => "0"),
+    ]);
+    return { cpu: parseInt(cpuOut) || 0, mem: parseInt(memOut) || 0, disk: diskOut, docker: parseInt(dockerOut) || 0 };
+  } catch {
+    return { cpu: 0, mem: 0, disk: "unknown", docker: 0 };
+  }
+}
+
+type RemoteMetrics = { cpu: number | null; mem: number | null; disk: string | null; docker: number | null };
+
+async function getRemoteMetrics(ip: string, user: string): Promise<RemoteMetrics> {
+  const none: RemoteMetrics = { cpu: null, mem: null, disk: null, docker: null };
+  try {
+    const cmd = [
+      "top -bn1 2>/dev/null | awk '/^%Cpu/{printf \"%.0f\",100-$8}'",
+      "free 2>/dev/null | awk '/Mem:/{printf \"%.0f\",$3/$2*100}'",
+      "df -h / 2>/dev/null | awk 'NR==2{print $3\"/\"$2\" (\"$5\")\"}'",
+      "docker ps -q 2>/dev/null | wc -l",
+    ].join(" && echo '---' && ");
+
+    const { stdout, stderr } = await execFileAsync("ssh", [
+      "-o", "ConnectTimeout=4",
+      "-o", "BatchMode=yes",
+      "-o", "StrictHostKeyChecking=accept-new",
+      "-o", "ControlPath=none",
+      `${user}@${ip}`,
+      cmd,
+    ], { timeout: SSH_TIMEOUT_MS });
+
+    if (stderr) log(`[ssh ${ip}] stderr: ${stderr.slice(0, 200)}`);
+
+    const parts = stdout.trim().split("---").map(s => s.trim());
+    return {
+      cpu: parts[0] ? parseInt(parts[0]) || null : null,
+      mem: parts[1] ? parseInt(parts[1]) || null : null,
+      disk: parts[2] || null,
+      docker: parts[3] != null ? parseInt(parts[3]) || 0 : null,
+    };
+  } catch (e: any) {
+    const msg = e?.stderr?.toString?.() || e?.message || "unknown";
+    log(`[ssh ${ip}] failed: ${msg.slice(0, 200)}`);
+    return none;
+  }
+}
 
 // -------------------------
 // Helpers
@@ -218,60 +315,10 @@ let messages: Message[] = [
   { id: 4, role: "assistant", content: "Here is the latest job status.", type: "job", metadata: { name: "Train Model V2", jobId: 1, status: "running" }, createdAt: boot },
 ];
 
-let jobs: Job[] = [
-  {
-    id: 1,
-    type: "comfyui.image",
-    title: "Nebula Render Pipeline",
-    status: "done",
-    node: "Kratos",
-    progress: 100,
-    inputs: [],
-    outputs: [
-      {
-        id: "out-1",
-        url: "https://images.unsplash.com/photo-1462331940025-496dfbfc7564?w=600",
-        type: "image",
-        thumb_url: "https://images.unsplash.com/photo-1462331940025-496dfbfc7564?w=200",
-      },
-    ],
-    logs: ["Job completed successfully."],
-    createdAt: boot,
-    updatedAt: boot,
-  },
-  {
-    id: 2,
-    type: "comfyui.video",
-    title: "Orbit Simulation v3",
-    status: "running",
-    node: "Hades",
-    progress: 45,
-    inputs: [],
-    outputs: [],
-    logs: ["Initializing...", "Processing frames..."],
-    createdAt: boot,
-    updatedAt: boot,
-  },
-  {
-    id: 3,
-    type: "media.describe",
-    title: "Deep Field Analysis",
-    status: "failed",
-    node: "Hermes",
-    progress: 33,
-    inputs: [],
-    outputs: [],
-    logs: ["Started analysis...", "ERROR: Node connection timeout"],
-    createdAt: boot,
-    updatedAt: boot,
-  },
-];
+let jobs: Job[] = [];
+let jobIdSeq = 0;
 
-let nodes: NodeRow[] = [
-  { id: 1, name: "Node Alpha", type: "Kratos", status: "online", metrics: { cpu: 45, memory: 60 }, createdAt: boot },
-  { id: 2, name: "Node Beta", type: "Hades", status: "degraded", metrics: { cpu: 85, memory: 90 }, createdAt: boot },
-  { id: 3, name: "Node Gamma", type: "Hermes", status: "offline", metrics: { cpu: 0, memory: 0 }, createdAt: boot },
-];
+let nodes: NodeRow[] = [];
 
 function bumpJob(id: number, patch: Partial<Job>) {
   const i = jobs.findIndex((j) => j.id === id);
@@ -284,51 +331,81 @@ function bumpJob(id: number, patch: Partial<Job>) {
 // Routes
 // -------------------------
 export async function registerRoutes(app: Express) {
-  // STATUS: now uses tailscale ping so OFFLINE is undeniable
-  app.get("/api/status", async (_req: Request, res: Response) => {
+  async function refreshStatus(): Promise<{ nodes: any[]; checkedAt: string }> {
     const checkedAt = nowIso();
+    const localMetrics = await getLocalMetrics();
 
-    const rich: NodeStatus[] = await Promise.all(
+    const nodesOut: any[] = await Promise.all(
       NODE_TARGETS.map(async (t) => {
         const checks: NodeCheck[] = [];
         if (t.ts) checks.push(await tailscalePing(t.ts));
         if (t.http) checks.push(await httpProbe(t.http));
 
-        const { state, reason } = computeState(checks);
+        const svcResults = t.services ? await probeServices(t.services) : [];
+        const { state, reason } = t.ts ? computeState(checks) : { state: "online" as NodeState, reason: undefined };
+        const svcUp = svcResults.filter(s => s.ok).length;
+        const svcTotal = svcResults.length;
 
-        // Map to the *UI’s existing shape* (name/status/details)
-        const status: ApiNodeStatus = {
-          name: t.name,
-          status: stateToUiStatus(state),
-          details: {
-            state,
-            reason,
-            checks,
-          },
-        };
+        const isLocal = !t.ts;
+        let metrics: RemoteMetrics = { cpu: null, mem: null, disk: null, docker: null };
+        if (isLocal) {
+          metrics = localMetrics;
+        } else if (state === "online" && t.ip && t.sshUser) {
+          metrics = await getRemoteMetrics(t.ip, t.sshUser);
+        }
 
         return {
           name: t.name,
-          state,
-          reason,
-          checkedAt,
+          type: t.type,
+          status: stateToUiStatus(state),
+          latencyMs: checks.find(c => c.kind === "tailscale" && c.ok)?.latencyMs ?? null,
+          services: svcResults,
+          servicesUp: svcUp,
+          servicesTotal: svcTotal,
+          cpu: metrics.cpu,
+          mem: metrics.mem,
+          disk: metrics.disk,
+          docker: metrics.docker,
           checks,
-          details: status.details,
+          reason,
         };
       })
     );
 
-    // Also return the simple shape your UI already logged earlier
-    const nodesSimple: ApiNodeStatus[] = rich.map((n) => ({
+    const result = { nodes: nodesOut, checkedAt };
+    lastStatusSnapshot = result;
+    statusCacheTime = Date.now();
+
+    nodes = nodesOut.map((n: any, i: number) => ({
+      id: i + 1,
       name: n.name,
-      status: stateToUiStatus(n.state),
-      details: n.details ?? {},
+      type: n.type,
+      status: n.status === "online" ? "online" : n.status === "unknown" ? "degraded" : "offline",
+      metrics: { cpu: n.cpu ?? 0, memory: n.mem ?? 0 },
+      createdAt: boot,
     }));
 
-    res.json({ nodes: nodesSimple, checkedAt });
+    return result;
+  }
+
+  function getOrRefreshStatus(): Promise<{ nodes: any[]; checkedAt: string }> {
+    if (lastStatusSnapshot && (Date.now() - statusCacheTime) < STATUS_CACHE_TTL_MS) {
+      return Promise.resolve(lastStatusSnapshot);
+    }
+    if (statusInflight) return statusInflight;
+    statusInflight = refreshStatus().finally(() => { statusInflight = null; });
+    return statusInflight;
+  }
+
+  app.get("/api/status", async (_req: Request, res: Response) => {
+    res.json(await getOrRefreshStatus());
   });
 
-  // Existing UI calls these:
+  app.post("/api/status/check", async (_req: Request, res: Response) => {
+    statusCacheTime = 0;
+    res.json(await getOrRefreshStatus());
+  });
+
   app.get("/api/nodes", (_req: Request, res: Response) => {
     res.json(nodes);
   });
@@ -339,6 +416,38 @@ export async function registerRoutes(app: Express) {
 
   app.get("/api/jobs", (_req: Request, res: Response) => {
     res.json(jobs);
+  });
+
+  app.post("/api/jobs", (req: Request, res: Response) => {
+    const { type, title, node, inputs } = req.body ?? {};
+    if (!type || !title || !node) {
+      return res.status(400).json({ message: "type, title, and node are required" });
+    }
+    const now = nowIso();
+    const job: Job = {
+      id: ++jobIdSeq,
+      type,
+      title,
+      status: "queued",
+      node,
+      progress: 0,
+      inputs: inputs ?? [],
+      outputs: [],
+      logs: [`[${now}] Job queued on ${node}.`],
+      createdAt: now,
+      updatedAt: now,
+    };
+    jobs = [job, ...jobs];
+    res.status(201).json(job);
+  });
+
+  app.delete("/api/jobs/:id", (req: Request, res: Response) => {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id)) return res.status(400).json({ message: "Invalid job id" });
+    const idx = jobs.findIndex((j) => j.id === id);
+    if (idx === -1) return res.status(404).json({ message: "Job not found" });
+    jobs.splice(idx, 1);
+    res.json({ ok: true });
   });
 
   // Hermes media source: fetch directory listing, parse HTML, return normalized JSON
@@ -1096,20 +1205,97 @@ export async function registerRoutes(app: Express) {
     res.json(updated);
   });
 
-  // Optional: add a quick message endpoint so you can talk in UI
   app.post("/api/messages", (req: Request, res: Response) => {
-    const { role, content } = req.body ?? {};
+    const { role, content, type, metadata } = req.body ?? {};
     if (!role || !content) return res.status(400).json({ message: "role and content required" });
 
+    const nextId = () => (messages[messages.length - 1]?.id ?? 0) + 1;
+
     const msg: Message = {
-      id: (messages[messages.length - 1]?.id ?? 0) + 1,
+      id: nextId(),
       role,
       content,
-      type: "text",
-      metadata: null,
+      type: type || "text",
+      metadata: metadata ?? null,
       createdAt: nowIso(),
     };
     messages = [...messages, msg];
     res.json(msg);
+
+    if (role === "user") {
+      const history = messages
+        .filter(m => m.role === "user" || m.role === "assistant")
+        .slice(-10)
+        .map(m => ({ role: m.role, content: m.content }));
+
+      const OLLAMA_URL = process.env.OLLAMA_URL || "http://localhost:11434";
+      const OLLAMA_MODEL = process.env.OLLAMA_MODEL || "qwen2.5:3b";
+
+      let statusContext = "";
+      if (lastStatusSnapshot) {
+        const s = lastStatusSnapshot;
+        const nodeLines = s.nodes.map((n: any) => {
+          let line = `  ${n.name} (${n.type}): ${n.status}`;
+          if (n.latencyMs != null) line += ` [${n.latencyMs}ms]`;
+          if (n.cpu != null) line += ` CPU:${n.cpu}% MEM:${n.mem}%`;
+          if (n.disk) line += ` Disk:${n.disk}`;
+          if (n.docker != null) line += ` Docker:${n.docker} containers`;
+          if (n.servicesTotal > 0) {
+            line += ` Services:${n.servicesUp}/${n.servicesTotal} up`;
+            const down = (n.services || []).filter((sv: any) => !sv.ok);
+            if (down.length > 0) line += ` (DOWN: ${down.map((d: any) => d.name).join(", ")})`;
+          }
+          return line;
+        });
+        statusContext = "\n\nCurrent system status (as of " + s.checkedAt + "):\n" + nodeLines.join("\n");
+      }
+
+      const payload = {
+        model: OLLAMA_MODEL,
+        stream: false,
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are Astra, an AI assistant for a home server called Mini-Beast (Ubuntu 24.04 NUC). " +
+              "The network has these nodes: Mini-Beast (local server), Kratos (workstation), Hades (workstation), Hermes (NAS), Phobos (device). " +
+              "Mini-Beast runs Docker containers (Portainer, Open WebUI, Uptime Kuma, Pi-hole, Syncthing, etc.), Ollama for LLM inference, and the Astra UI app. " +
+              "Hermes provides file storage via Samba and File Browser. " +
+              "Be concise and helpful. Use plain text, no markdown." +
+              statusContext,
+          },
+          ...history,
+        ],
+      };
+
+      fetch(`${OLLAMA_URL}/api/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      })
+        .then(r => r.json())
+        .then(data => {
+          const reply: Message = {
+            id: nextId(),
+            role: "assistant",
+            content: data.message?.content || "Sorry, I couldn't generate a response.",
+            type: "text",
+            metadata: null,
+            createdAt: nowIso(),
+          };
+          messages = [...messages, reply];
+        })
+        .catch(err => {
+          const reply: Message = {
+            id: nextId(),
+            role: "assistant",
+            content: `Error reaching AI backend: ${err.message}`,
+            type: "text",
+            metadata: null,
+            createdAt: nowIso(),
+          };
+          messages = [...messages, reply];
+        });
+    }
   });
 }

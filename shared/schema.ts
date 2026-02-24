@@ -28,7 +28,7 @@ export const jobs = pgTable("jobs", {
   type: text("type").$type<"comfyui.image" | "comfyui.video" | "media.describe" | "system.task">().notNull(),
   title: text("title").notNull(),
   status: text("status").$type<"queued" | "running" | "done" | "failed">().notNull(),
-  node: text("node").$type<"Kratos" | "Hades" | "Hermes">().notNull(),
+  node: text("node").$type<"Mini-Beast" | "Kratos" | "Hades" | "Hermes" | "Phobos">().notNull(),
   progress: integer("progress").notNull().default(0),
   inputs: jsonb("inputs").$type<{ id: string, type: string, url: string, thumb_url?: string }[]>().default([]),
   outputs: jsonb("outputs").$type<{ id: string, type: string, url: string, thumb_url?: string }[]>().default([]),

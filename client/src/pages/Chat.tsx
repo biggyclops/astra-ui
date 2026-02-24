@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 export default function Chat() {
-  const { data: messages, isLoading, live, setLive, refresh } = useMessages();
+  const { data: messages, isLoading, live, setLive, refresh } = useMessages(2000);
   const { mutate: sendMessage, isPending } = useSendMessage();
   const [inputValue, setInputValue] = useState("");
   const [attachments, setAttachments] = useState<any[]>([]);
@@ -68,75 +68,12 @@ export default function Chat() {
   const handleSend = () => {
     if (!inputValue.trim() && attachments.length === 0) return;
 
-    // 1. Send user message
     sendMessage({ 
       role: 'user', 
       content: inputValue || (attachments.length > 0 ? `Sent ${attachments.length} attachment(s)` : ""), 
       type: 'text',
       metadata: attachments.length > 0 ? { attachments } : undefined
     });
-
-    // 2. Simulate AI response processing logic (In a real app, backend handles this)
-    // This is just to make the UI feel alive immediately for the demo
-    if (inputValue.startsWith('/nodes')) {
-      setTimeout(() => {
-        sendMessage({
-          role: 'assistant',
-          content: 'Here is the current status of the computational clusters:',
-          type: 'node_status',
-          metadata: {
-            nodes: [
-              { name: 'Kratos-01', status: 'online', type: 'Kratos' },
-              { name: 'Hades-04', status: 'degraded', type: 'Hades' },
-              { name: 'Hermes-09', status: 'online', type: 'Hermes' }
-            ]
-          }
-        });
-      }, 800);
-    } else if (inputValue.startsWith('/jobs')) {
-      setTimeout(() => {
-        sendMessage({
-          role: 'assistant',
-          content: 'Job execution details fetched.',
-          type: 'job',
-          metadata: {
-            jobName: 'render_pipeline_v2',
-            status: 'running',
-            logs: [
-              'Initializing render core...',
-              'Loading assets from VRAM...',
-              'Shader compilation successful',
-              'Frame 1024/5000 rendering...'
-            ]
-          }
-        });
-      }, 800);
-    } else if (inputValue.startsWith('/media')) {
-      setTimeout(() => {
-        sendMessage({
-          role: 'assistant',
-          content: 'Found 4 media assets matching your query.',
-          type: 'media_preview',
-          metadata: {
-            items: [
-              { type: 'image', title: 'Nebula Render 01', url: 'https://images.unsplash.com/photo-1462331940025-496dfbfc7564?w=400&h=300&fit=crop' },
-              { type: 'image', title: 'Deep Field Scan', url: 'https://images.unsplash.com/photo-1444703686981-a3abbc4d4fe3?w=400&h=300&fit=crop' },
-              { type: 'video', title: 'Orbit Simulation', url: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=400&h=300&fit=crop' },
-              { type: 'image', title: 'Spectral Analysis', url: 'https://images.unsplash.com/photo-1534233650905-52b801a2ca25?w=400&h=300&fit=crop' },
-            ]
-          }
-        });
-      }, 800);
-    } else {
-      // Generic response
-      setTimeout(() => {
-        sendMessage({
-          role: 'assistant',
-          content: "I've processed that request. Systems are nominal.",
-          type: 'text'
-        });
-      }, 600);
-    }
 
     setInputValue("");
     setAttachments([]);

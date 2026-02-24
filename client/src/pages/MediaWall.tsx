@@ -140,7 +140,7 @@ function VideoTile({
           src={item.thumb_url}
           alt={item.id}
           loading="lazy"
-          className="absolute inset-0 w-full h-full object-cover"
+          className="absolute inset-0 w-full h-full object-contain bg-black"
         />
       )}
       <video
@@ -151,7 +151,7 @@ function VideoTile({
         playsInline
         preload="none"
         className={cn(
-          "absolute inset-0 w-full h-full object-cover transition-opacity duration-300",
+          "absolute inset-0 w-full h-full object-contain bg-black transition-opacity duration-300",
           isPlaying ? "opacity-100" : "opacity-0"
         )}
       />

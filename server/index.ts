@@ -93,6 +93,9 @@ app.use((req, res, next) => {
     },
     () => {
       log(`serving on port ${port}`);
+      fetch(`http://localhost:${port}/api/status`)
+        .then(() => log("initial node status check complete"))
+        .catch((e) => log(`initial status check failed: ${e.message}`));
     },
   );
 })();

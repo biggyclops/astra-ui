@@ -87,7 +87,7 @@ export const api = {
       input: z.object({
         type: z.enum(["comfyui.image", "comfyui.video", "media.describe", "system.task"]),
         title: z.string(),
-        node: z.enum(["Kratos", "Hades", "Hermes"]),
+        node: z.enum(["Mini-Beast", "Kratos", "Hades", "Hermes", "Phobos"]),
         inputs: z.array(jobInputItemSchema).default([]),
       }),
       responses: {
