@@ -2,20 +2,39 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@shared/routes";
 import { insertMessageSchema, type Message } from "@shared/schema";
 import type { z } from "zod";
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useEffect, useCallback, useRef, useState, useSyncExternalStore } from "react";
 
 const DEFAULT_POLL_INTERVAL = 10000;
 
-function usePageVisible() {
-  const [visible, setVisible] = useState(
-    typeof document !== "undefined" ? document.visibilityState === "visible" : true
-  );
-  useEffect(() => {
-    const handler = () => setVisible(document.visibilityState === "visible");
-    document.addEventListener("visibilitychange", handler);
-    return () => document.removeEventListener("visibilitychange", handler);
-  }, []);
-  return visible;
+let pageVisibleSnapshot = typeof document !== "undefined" ? document.visibilityState === "visible" : true;
+const pageVisibleListeners = new Set<() => void>();
+
+function notifyPageVisibleListeners() {
+  pageVisibleSnapshot = typeof document !== "undefined" ? document.visibilityState === "visible" : true;
+  pageVisibleListeners.forEach((listener) => listener());
+}
+
+function subscribePageVisible(listener: () => void) {
+  if (pageVisibleListeners.size === 0 && typeof document !== "undefined") {
+    document.addEventListener("visibilitychange", notifyPageVisibleListeners);
+  }
+
+  pageVisibleListeners.add(listener);
+
+  return () => {
+    pageVisibleListeners.delete(listener);
+    if (pageVisibleListeners.size === 0 && typeof document !== "undefined") {
+      document.removeEventListener("visibilitychange", notifyPageVisibleListeners);
+    }
+  };
+}
+
+function getPageVisibleSnapshot() {
+  return pageVisibleSnapshot;
+}
+
+export function usePageVisible() {
+  return useSyncExternalStore(subscribePageVisible, getPageVisibleSnapshot, getPageVisibleSnapshot);
 }
 
 export function useMessages(pollInterval = DEFAULT_POLL_INTERVAL) {
@@ -133,6 +152,7 @@ export function useMockMedia() {
 }
 
 export function useJobs() {
+  const pageVisible = usePageVisible();
   return useQuery({
     queryKey: [api.jobs.list.path],
     queryFn: async () => {
@@ -140,7 +160,8 @@ export function useJobs() {
       if (!res.ok) throw new Error("Failed to fetch jobs");
       return await res.json();
     },
-    refetchInterval: 2000,
+    refetchInterval: pageVisible ? 2000 : false,
+    refetchIntervalInBackground: false,
   });
 }
 
@@ -237,6 +258,7 @@ export type NodeStatusResponse = {
 };
 
 export function useNodeStatus() {
+  const pageVisible = usePageVisible();
   return useQuery<NodeStatusResponse>({
     queryKey: ["/api/status"],
     queryFn: async () => {
@@ -244,7 +266,8 @@ export function useNodeStatus() {
       if (!res.ok) throw new Error("Failed to fetch status");
       return await res.json();
     },
-    refetchInterval: 15000,
+    refetchInterval: pageVisible ? 15000 : false,
+    refetchIntervalInBackground: false,
   });
 }
 

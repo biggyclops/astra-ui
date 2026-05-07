@@ -416,9 +416,9 @@ export default function Chat() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2 text-xs text-cyan-100/55">
-            <button
+              <button
               data-testid="btn-live-toggle"
-              onClick={() => setLive((l) => !l)}
+              onClick={() => setLive((l: boolean) => !l)}
               className={cn(
                 "inline-flex items-center gap-2 rounded-full border px-3 py-1.5 transition-colors",
                 live ? "border-cyan-300/25 bg-cyan-300/10 text-cyan-100" : "border-white/10 bg-white/5 text-slate-300"
