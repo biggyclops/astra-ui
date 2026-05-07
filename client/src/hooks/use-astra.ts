@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api, buildUrl, type MessageResponse } from "@shared/routes";
+import { api } from "@shared/routes";
 import { insertMessageSchema, type Message } from "@shared/schema";
 import type { z } from "zod";
 import { useState, useEffect, useCallback, useRef } from "react";
@@ -176,7 +176,11 @@ export function useUpdateJob() {
         body: JSON.stringify(update),
       });
       if (!res.ok) throw new Error("Failed to update job");
-      return await res.json();
+      const updatedJob = await res.json();
+      if (update.status === "done") {
+        window.dispatchEvent(new Event("hermes-refresh"));
+      }
+      return updatedJob;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [api.jobs.list.path] });
@@ -197,8 +201,34 @@ export function useNodes() {
 
 export type NodeStatusItem = {
   name: string;
+  type: string;
   status: "online" | "offline" | "unknown";
-  details: Record<string, string>;
+  ip?: string | null;
+  sshUser?: string | null;
+  latencyMs?: number | null;
+  services?: Array<{ name: string; ok: boolean; ms: number }>;
+  servicesUp?: number;
+  servicesTotal?: number;
+  cpu?: number | null;
+  mem?: number | null;
+  disk?: string | null;
+  docker?: number | null;
+  gpuUtil?: number | null;
+  vramUsed?: number | null;
+  vramTotal?: number | null;
+  details?: Record<string, string>;
+  extraDrives?: Array<{
+    filesystem?: string | null;
+    label?: string | null;
+    model?: string | null;
+    mount?: string | null;
+    size?: string | null;
+    used?: string | null;
+    total?: string | null;
+    pct?: string | null;
+    mounted?: boolean;
+  }>;
+  reason?: string;
 };
 
 export type NodeStatusResponse = {

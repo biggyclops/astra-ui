@@ -1,0 +1,232 @@
+.astra-presence-root {
+  --astra-presence-intensity: 1;
+  --astra-presence-accent: 34 211 238;
+  --astra-presence-accent-soft: 125 211 252;
+  --astra-presence-secondary: 59 130 246;
+  contain: paint;
+}
+
+.astra-presence-root::before,
+.astra-presence-root::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.astra-presence-login {
+  background:
+    radial-gradient(circle at 50% 24%, rgb(var(--astra-presence-accent-soft) / calc(0.06 * var(--astra-presence-intensity))), transparent 28%),
+    linear-gradient(180deg, rgba(2, 6, 23, 0.08) 0%, rgba(2, 6, 23, 0.26) 42%, rgba(2, 6, 23, 0.82) 100%);
+}
+
+.astra-presence-dashboard {
+  background: transparent;
+}
+
+.astra-presence-image-wrap {
+  will-change: transform, opacity;
+}
+
+.astra-presence-image {
+  transform-origin: center;
+  will-change: transform, opacity, filter;
+  animation: astra-presence-breath var(--astra-presence-breath-duration, 10.5s) ease-in-out infinite;
+}
+
+.astra-presence-image--dashboard {
+  opacity: calc(0.56 * var(--astra-presence-intensity));
+  filter: saturate(0.88) contrast(1.01) brightness(0.76);
+}
+
+.astra-presence-image--login {
+  opacity: calc(0.92 * var(--astra-presence-intensity));
+  filter: saturate(0.92) contrast(1.04) brightness(0.86);
+}
+
+.astra-presence-haze {
+  opacity: calc(0.58 * var(--astra-presence-intensity));
+}
+
+.astra-presence-scan {
+  opacity: calc(0.06 * var(--astra-presence-intensity));
+  animation: astra-presence-scan var(--astra-presence-scan-duration, 12.5s) ease-in-out infinite;
+}
+
+.astra-presence-edge {
+  opacity: calc(0.12 * var(--astra-presence-intensity));
+  animation: astra-presence-edge var(--astra-presence-edge-duration, 12.8s) ease-in-out infinite;
+}
+
+.astra-presence-sweep {
+  animation: astra-presence-sweep var(--astra-presence-sweep-duration, 14s) ease-in-out infinite;
+}
+
+.astra-presence-wave {
+  filter: blur(0.2px);
+}
+
+.astra-presence-grid {
+  opacity: calc(0.08 * var(--astra-presence-intensity));
+  animation: astra-presence-grid var(--astra-presence-grid-duration, 12.2s) ease-in-out infinite;
+}
+
+.astra-presence-particle {
+  will-change: transform, opacity;
+  animation: astra-presence-particle var(--astra-presence-particle-duration, 6.4s) ease-in-out infinite;
+}
+
+.astra-presence--voice .astra-presence-image {
+  filter: saturate(0.96) contrast(1.05) brightness(0.9);
+}
+
+.astra-presence--gpu .astra-presence-image {
+  filter: saturate(0.94) contrast(1.05) brightness(0.86);
+}
+
+.astra-presence--security .astra-presence-image {
+  filter: saturate(0.88) contrast(1.08) brightness(0.8);
+}
+
+.astra-presence--robotics .astra-presence-image {
+  filter: saturate(0.9) contrast(1.03) brightness(0.84);
+}
+
+.astra-presence--gpu .astra-presence-edge {
+  background:
+    radial-gradient(circle at 50% 18%, rgb(251 146 60 / 0.08), transparent 28%),
+    radial-gradient(circle at 50% 84%, rgb(245 158 11 / 0.03), transparent 22%),
+    linear-gradient(180deg, rgba(2, 6, 23, 0.02) 0%, rgba(2, 6, 23, 0.06) 28%, rgba(2, 6, 23, 0.4) 100%);
+}
+
+.astra-presence--security .astra-presence-edge {
+  background:
+    radial-gradient(circle at 50% 18%, rgb(248 113 113 / 0.08), transparent 28%),
+    radial-gradient(circle at 50% 84%, rgb(190 18 60 / 0.03), transparent 22%),
+    linear-gradient(180deg, rgba(2, 6, 23, 0.02) 0%, rgba(2, 6, 23, 0.08) 28%, rgba(2, 6, 23, 0.42) 100%);
+}
+
+.astra-presence--robotics .astra-presence-grid {
+  opacity: calc(0.1 * var(--astra-presence-intensity));
+}
+
+.astra-presence-transfer {
+  animation: astra-presence-transfer var(--astra-presence-transfer-duration, 12.5s) ease-in-out infinite;
+}
+
+.astra-presence--transfer .astra-presence-edge {
+  background:
+    radial-gradient(circle at 18% 50%, rgb(103 232 249 / 0.06), transparent 24%),
+    radial-gradient(circle at 82% 50%, rgb(125 211 252 / 0.04), transparent 22%),
+    linear-gradient(180deg, rgba(2, 6, 23, 0.02) 0%, rgba(2, 6, 23, 0.06) 28%, rgba(2, 6, 23, 0.42) 100%);
+}
+
+.astra-presence--transfer .astra-presence-image {
+  filter: saturate(0.9) contrast(1.03) brightness(0.8);
+}
+
+@keyframes astra-presence-breath {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+
+  50% {
+    transform: translate3d(0, -2px, 0) scale(1.01);
+  }
+}
+
+@keyframes astra-presence-scan {
+  0%,
+  100% {
+    transform: translate3d(0, -1%, 0);
+    opacity: calc(0.12 * var(--astra-presence-intensity));
+  }
+
+  50% {
+    transform: translate3d(0, 1%, 0);
+    opacity: calc(0.14 * var(--astra-presence-intensity));
+  }
+}
+
+@keyframes astra-presence-edge {
+  0%,
+  100% {
+    opacity: calc(0.26 * var(--astra-presence-intensity));
+  }
+
+  50% {
+    opacity: calc(0.24 * var(--astra-presence-intensity));
+  }
+}
+
+@keyframes astra-presence-sweep {
+  0%,
+  76%,
+  100% {
+    opacity: 0;
+    transform: translate3d(-6%, 0, 0);
+  }
+
+  82% {
+    opacity: 0.05;
+    transform: translate3d(1%, 0, 0);
+  }
+
+  88% {
+    opacity: 0.01;
+    transform: translate3d(4%, 0, 0);
+  }
+}
+
+@keyframes astra-presence-grid {
+  0%,
+  100% {
+    opacity: calc(0.12 * var(--astra-presence-intensity));
+    transform: translate3d(0, 0, 0);
+  }
+
+  50% {
+    opacity: calc(0.12 * var(--astra-presence-intensity));
+    transform: translate3d(0, -1px, 0);
+  }
+}
+
+@keyframes astra-presence-particle {
+  0%,
+  100% {
+    opacity: 0.06;
+    transform: translate3d(0, 0, 0) scale(0.85);
+  }
+
+  50% {
+    opacity: 0.16;
+    transform: translate3d(0, -1px, 0) scale(1.12);
+  }
+}
+
+@keyframes astra-presence-transfer {
+  0%,
+  100% {
+    transform: translate3d(-1px, 0, 0);
+    opacity: calc(0.04 * var(--astra-presence-intensity));
+  }
+
+  50% {
+    transform: translate3d(1px, 0, 0);
+    opacity: calc(0.08 * var(--astra-presence-intensity));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .astra-presence-image,
+  .astra-presence-scan,
+  .astra-presence-edge,
+  .astra-presence-sweep,
+  .astra-presence-grid,
+  .astra-presence-particle,
+  .astra-presence-image-wrap {
+    animation: none !important;
+    transform: none !important;
+  }
+}
