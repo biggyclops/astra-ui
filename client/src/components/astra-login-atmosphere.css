@@ -1,0 +1,175 @@
+.astra-login-atmosphere {
+  contain: layout paint style;
+}
+
+.astra-login-atmosphere__backdrop {
+  background:
+    radial-gradient(circle at 84% 32%, rgba(34, 211, 238, 0.11) 0%, rgba(34, 211, 238, 0.05) 12%, transparent 28%),
+    radial-gradient(circle at 64% 68%, rgba(59, 130, 246, 0.05) 0%, transparent 24%),
+    linear-gradient(180deg, rgba(1, 5, 12, 0.88) 0%, rgba(2, 6, 18, 0.76) 52%, rgba(2, 6, 18, 0.92) 100%);
+  transform: translate3d(var(--astra-login-background-x, 0px), var(--astra-login-background-y, 0px), 0) scale(1.03);
+  will-change: transform;
+}
+
+.astra-login-atmosphere__fog {
+  background:
+    radial-gradient(ellipse at 24% 34%, rgba(125, 211, 252, 0.12) 0%, rgba(125, 211, 252, 0.05) 16%, transparent 42%),
+    radial-gradient(ellipse at 62% 48%, rgba(34, 211, 238, 0.1) 0%, rgba(34, 211, 238, 0.04) 18%, transparent 40%),
+    radial-gradient(ellipse at 78% 22%, rgba(56, 189, 248, 0.08) 0%, rgba(56, 189, 248, 0.03) 14%, transparent 34%);
+  filter: blur(22px);
+  opacity: var(--astra-login-fog-opacity, 0.18);
+  transform: translate3d(var(--astra-login-fog-x, 0px), var(--astra-login-fog-y, 0px), 0) scale(1.08);
+  mix-blend-mode: screen;
+  will-change: transform, opacity;
+}
+
+.astra-login-atmosphere__cursor-light {
+  background:
+    radial-gradient(circle at var(--astra-login-focus-x, 50%) var(--astra-login-focus-y, 42%), rgba(125, 211, 252, 0.18) 0%, rgba(125, 211, 252, 0.08) 10%, rgba(125, 211, 252, 0.03) 20%, transparent 40%),
+    radial-gradient(circle at var(--astra-login-focus-x, 50%) var(--astra-login-focus-y, 42%), rgba(34, 211, 238, 0.08) 0%, transparent 34%);
+  opacity: var(--astra-login-focus-opacity, 0.18);
+  transform: scale(var(--astra-login-focus-scale, 1));
+  filter: blur(10px);
+  mix-blend-mode: screen;
+  will-change: transform, opacity;
+}
+
+.astra-login-atmosphere__frame {
+  overflow: hidden;
+  will-change: transform;
+}
+
+.astra-login-atmosphere__portrait {
+  transform-origin: center;
+  will-change: transform;
+  filter: saturate(0.98) contrast(1.05) brightness(0.94);
+}
+
+.astra-login-atmosphere__image {
+  transform-origin: center;
+  will-change: transform, opacity, filter;
+  user-select: none;
+  -webkit-user-drag: none;
+  image-rendering: auto;
+}
+
+.astra-login-atmosphere__body-glow {
+  background:
+    radial-gradient(circle at 76% 34%, rgba(125, 211, 252, 0.14), transparent 20%),
+    radial-gradient(circle at 64% 62%, rgba(34, 211, 238, 0.08), transparent 30%),
+    radial-gradient(circle at 56% 34%, rgba(255, 255, 255, 0.02), transparent 24%);
+  mix-blend-mode: screen;
+  will-change: opacity;
+}
+
+.astra-login-atmosphere__head-drift {
+  clip-path: inset(0 0 43% 0);
+  mix-blend-mode: screen;
+  filter: saturate(1.05) brightness(1.05);
+  will-change: transform, opacity;
+}
+
+.astra-login-atmosphere__head-image {
+  opacity: 0.2;
+  filter: saturate(1.08) contrast(1.06) brightness(1.06);
+}
+
+.astra-login-atmosphere__eye-glow {
+  inset: 31.5% 33.5% auto 57.5%;
+  height: 12%;
+  border-radius: 999px;
+  background:
+    radial-gradient(ellipse at 48% 50%, rgba(34, 211, 238, 0.26) 0%, rgba(34, 211, 238, 0.12) 28%, rgba(34, 211, 238, 0) 70%),
+    radial-gradient(ellipse at center, rgba(125, 211, 252, 0.14), rgba(125, 211, 252, 0) 68%);
+  filter: blur(5px);
+  mix-blend-mode: screen;
+  will-change: transform, opacity;
+}
+
+.astra-login-atmosphere__hair-drift {
+  clip-path: inset(0 0 47% 0);
+  mix-blend-mode: screen;
+  filter: saturate(1.05) brightness(1.08);
+  will-change: transform, opacity;
+}
+
+.astra-login-atmosphere__hair-image {
+  opacity: 0.45;
+  filter: saturate(1.08) contrast(1.08) brightness(1.08);
+}
+
+.astra-login-atmosphere__blink {
+  left: 59.5%;
+  top: 31.5%;
+  width: 16.5%;
+  height: 10.5%;
+  border-radius: 999px;
+  background:
+    radial-gradient(ellipse at center, rgba(2, 6, 23, 0.96) 0%, rgba(2, 6, 23, 0.84) 38%, rgba(2, 6, 23, 0) 72%),
+    linear-gradient(180deg, rgba(2, 6, 23, 0.1) 0%, rgba(2, 6, 23, 0.82) 46%, rgba(2, 6, 23, 0.82) 54%, rgba(2, 6, 23, 0.1) 100%);
+  opacity: 0;
+  filter: blur(0.25px);
+  mix-blend-mode: multiply;
+  transform-origin: center;
+  will-change: transform, opacity;
+}
+
+.astra-login-atmosphere__eye-focus {
+  inset: 28.5% 24% auto 50%;
+  height: 22%;
+  background:
+    radial-gradient(circle at 46% 42%, rgba(125, 211, 252, 0.08) 0%, rgba(125, 211, 252, 0.03) 16%, transparent 36%),
+    radial-gradient(circle at 58% 34%, rgba(34, 211, 238, 0.04) 0%, transparent 42%);
+  mix-blend-mode: screen;
+  opacity: calc(0.4 * var(--astra-login-eye-glow, 0.22));
+  filter: blur(8px);
+}
+
+.astra-login-atmosphere__canvas {
+  pointer-events: none;
+  mix-blend-mode: screen;
+  opacity: 0.82;
+  will-change: transform, opacity;
+}
+
+.astra-login-atmosphere__scanlines {
+  background:
+    linear-gradient(180deg, rgba(125, 211, 252, 0.016) 0%, rgba(125, 211, 252, 0.008) 1px, transparent 2px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 0%, rgba(255, 255, 255, 0.008) 2%, transparent 8%);
+  background-size: 100% 6px, 100% 100%;
+  opacity: 0.12;
+  mix-blend-mode: screen;
+  animation: astra-login-scanlines 16s linear infinite;
+}
+
+.astra-login-atmosphere__vignette {
+  background:
+    radial-gradient(circle at 50% 44%, transparent 34%, rgba(1, 4, 10, 0.18) 61%, rgba(1, 4, 10, 0.72) 100%),
+    linear-gradient(180deg, rgba(1, 4, 10, 0.08) 0%, rgba(1, 4, 10, 0.45) 100%);
+}
+
+@keyframes astra-login-scanlines {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+
+  100% {
+    transform: translate3d(0, 6px, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .astra-login-atmosphere__canvas,
+  .astra-login-atmosphere__scanlines,
+  .astra-login-atmosphere__portrait,
+  .astra-login-atmosphere__hair-drift,
+  .astra-login-atmosphere__blink,
+  .astra-login-atmosphere__eye-glow,
+  .astra-login-atmosphere__body-glow,
+  .astra-login-atmosphere__fog,
+  .astra-login-atmosphere__cursor-light,
+  .astra-login-atmosphere__backdrop {
+    animation: none !important;
+    transform: none !important;
+  }
+}
