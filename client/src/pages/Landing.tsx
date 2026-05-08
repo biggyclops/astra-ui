@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { AstraLoginAtmosphere } from "@/components/AstraLoginAtmosphere";
 
 type LandingProps = {
   onSignIn: (username: string, password: string, remember: boolean) => Promise<void>;
@@ -16,6 +17,7 @@ export default function Landing({ onSignIn }: LandingProps) {
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [isPasswordFocused, setIsPasswordFocused] = useState(false);
 
   const canSubmit = useMemo(() => username.trim().length > 0 && password.length > 0, [username, password]);
 
@@ -43,29 +45,20 @@ export default function Landing({ onSignIn }: LandingProps) {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.35, ease: "easeOut" }}
     >
-      <motion.div
-        aria-hidden="true"
-        className="pointer-events-none fixed inset-0"
-        style={{
-          backgroundImage: "url(/assets/AstraLogin.png)",
-          backgroundRepeat: "no-repeat",
-          backgroundPosition: "center center",
-          backgroundSize: "contain",
-          opacity: 0.14,
-        }}
-        animate={{ x: [0, -3, 0], y: [0, -2, 0], scale: [1, 1.01, 1] }}
-        transition={{ duration: 48, repeat: Infinity, ease: "easeInOut" }}
+      <AstraLoginAtmosphere
+        typingLevel={password.length > 0 || isPasswordFocused ? 1 : 0}
+        awakened={isSubmitting}
+        className="z-0"
       />
-      <motion.div
+
+      <div
         aria-hidden="true"
-        className="pointer-events-none fixed inset-0"
+        className="pointer-events-none fixed inset-0 z-[1]"
         style={{
           background:
-            "radial-gradient(circle at 86% 32%, rgba(34,211,238,0.09) 0%, rgba(34,211,238,0.04) 16%, transparent 32%), radial-gradient(circle at 70% 58%, rgba(59,130,246,0.05) 0%, transparent 24%)",
-          opacity: 0.24,
+            "radial-gradient(circle at 86% 32%, rgba(34,211,238,0.08) 0%, rgba(34,211,238,0.04) 16%, transparent 32%), radial-gradient(circle at 70% 58%, rgba(59,130,246,0.05) 0%, transparent 24%)",
+          opacity: 0.22,
         }}
-        animate={{ opacity: [0.18, 0.28, 0.18] }}
-        transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
       />
 
       <form
@@ -110,6 +103,8 @@ export default function Landing({ onSignIn }: LandingProps) {
             value={password}
             autoComplete="current-password"
             onChange={(event) => setPassword(event.target.value)}
+            onFocus={() => setIsPasswordFocused(true)}
+            onBlur={() => setIsPasswordFocused(false)}
             placeholder="••••••••"
             className={cn(
               "h-11 border border-transparent bg-transparent pl-10 text-sm text-cyan-50 placeholder:text-cyan-100/26 shadow-none backdrop-blur-0 transition-all duration-200 ease-out",
