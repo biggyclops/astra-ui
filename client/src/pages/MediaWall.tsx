@@ -9,6 +9,9 @@ import {
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { DashboardPanel, DashboardShell } from "@/components/DashboardShell";
+import type { DashboardMetric } from "@/components/DashboardShell";
+import { useAstraPresenceSource } from "@/hooks/use-astra-presence";
 
 type FilterType = "all" | "video" | "image";
 type SortType = "newest" | "oldest" | "name-asc" | "name-desc" | "size-desc" | "size-asc" | "random";
@@ -535,15 +538,51 @@ export default function MediaWall() {
 
   const videoCount = filtered.filter(i => i.type === "video").length;
   const imageCount = filtered.filter(i => i.type === "image").length;
+  const alertLabels = [
+    ...(source === "hermes" && hermesError ? ["Hermes offline"] : []),
+    ...(source === "hermes" && hermesHealth && !hermesHealth.exists ? ["Hermes mount unavailable"] : []),
+  ];
+  const presenceSignals = useMemo(
+    () => ({
+      transferActive: source === "hermes",
+      roboticsActive: ambientMode,
+      securityAlert: Boolean(hermesError),
+    }),
+    [ambientMode, hermesError, source]
+  );
+  useAstraPresenceSource("mediawall", presenceSignals);
+  const mediaNarration = useMemo(() => {
+    if (source === "hermes") {
+      return hermesError
+        ? "Astra media is waiting on Hermes. The archive connection needs attention."
+        : `Astra is browsing Hermes with ${filtered.length} items visible and ambient mode ${ambientMode ? "enabled" : "disabled"}.`;
+    }
+    return `Astra media wall is browsing ${filtered.length} items from the local mock archive.`;
+  }, [ambientMode, filtered.length, hermesError, source]);
+  const mediaMetrics = useMemo<DashboardMetric[]>(
+    () => [
+      { label: "Items", value: filtered.length.toString(), detail: "filtered view", tone: "accent" as const, icon: FolderOpen },
+      { label: "Videos", value: videoCount.toString(), detail: "motion tiles", tone: videoCount > 0 ? "good" : "muted" as const, icon: Play },
+      { label: "Images", value: imageCount.toString(), detail: "still frames", tone: "accent" as const, icon: ImageIcon },
+      { label: "Source", value: source === "hermes" ? "Hermes" : "Mock", detail: source === "hermes" ? (hermesHealth?.mode === "local" ? "local mount" : "HTTP fallback") : "synthetic", tone: source === "hermes" ? "good" : "muted" as const, icon: HardDrive },
+      { label: "Loop", value: ambientMode ? "Ambient" : "Hover", detail: "playback mode", tone: ambientMode ? "good" : "muted" as const, icon: Repeat },
+      { label: "Alerts", value: alertLabels.length.toString(), detail: alertLabels.length > 0 ? alertLabels.join(" · ") : "none", tone: alertLabels.length > 0 ? "warn" : "good" as const, icon: AlertTriangle },
+    ],
+    [ambientMode, alertLabels, filtered.length, hermesHealth?.mode, imageCount, source, videoCount]
+  );
 
   return (
-    <div className="flex flex-col h-screen w-full bg-background">
-      <header className="shrink-0 border-b border-white/5 bg-background/80 backdrop-blur-md px-6 py-4">
+    <DashboardShell
+      eyebrow="ASTRA / MEDIA"
+      title="Media Wall"
+      subtitle="Browse mock media or stream the Hermes archive with a consistent cinematic shell."
+      narration={mediaNarration}
+      metrics={mediaMetrics}
+      alerts={alertLabels.map((label) => ({ label, tone: "warn" }))}
+    >
+      <DashboardPanel className="p-4">
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-4">
-            <h1 className="text-xl font-bold tracking-tight" data-testid="text-media-wall-title" style={{ fontFamily: "var(--font-display)" }}>
-              Media Wall
-            </h1>
             <div className="flex rounded-lg border border-white/10 bg-card" data-testid="source-selector">
               <Button
                 data-testid="source-mock"
@@ -552,7 +591,7 @@ export default function MediaWall() {
                 onClick={() => setSource("mock")}
                 className={cn(
                   "text-xs font-medium rounded-none gap-1.5",
-                  source === "mock" ? "bg-primary/20 text-primary" : "text-muted-foreground"
+                  source === "mock" ? "bg-cyan-300/15 text-cyan-50" : "text-muted-foreground"
                 )}
               >
                 <Database className="w-3 h-3" />
@@ -573,13 +612,13 @@ export default function MediaWall() {
               </Button>
             </div>
             {selectedIds.size > 0 && (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="flex items-center gap-2 px-3 py-1 bg-primary/20 text-primary border border-primary/30 rounded-full text-xs font-bold"
+                className="flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-xs font-bold text-cyan-50"
               >
                 {selectedIds.size} Selected
-                <button onClick={() => setSelectedIds(new Set())} className="hover:text-white transition-colors">
+                <button onClick={() => setSelectedIds(new Set())} className="transition-colors hover:text-white">
                   <X className="w-3 h-3" />
                 </button>
               </motion.div>
@@ -587,19 +626,19 @@ export default function MediaWall() {
           </div>
           <div className="flex items-center gap-3 flex-wrap">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none z-10" />
+              <Search className="pointer-events-none absolute left-3 top-1/2 z-10 w-4 h-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 data-testid="input-search"
                 type="text"
                 placeholder="Search files & tags..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-9 pr-4 py-2 bg-card border-white/10 text-sm w-56"
+                className="w-56 border-white/10 bg-card py-2 pl-9 pr-4 text-sm"
               />
             </div>
 
             <div className="flex rounded-lg border border-white/10 bg-card">
-              {(["all", "video", "image"] as FilterType[]).map(f => (
+              {(["all", "video", "image"] as FilterType[]).map((f) => (
                 <Button
                   key={f}
                   data-testid={`filter-${f}`}
@@ -607,10 +646,8 @@ export default function MediaWall() {
                   size="sm"
                   onClick={() => setFilter(f)}
                   className={cn(
-                    "text-xs font-medium capitalize rounded-none",
-                    filter === f
-                      ? "bg-primary/20 text-primary"
-                      : "text-muted-foreground"
+                    "rounded-none text-xs font-medium capitalize",
+                    filter === f ? "bg-cyan-300/15 text-cyan-50" : "text-muted-foreground"
                   )}
                 >
                   {f === "all" ? "All" : f === "video" ? "Videos" : "Images"}
@@ -623,7 +660,7 @@ export default function MediaWall() {
               variant="outline"
               size="sm"
               onClick={() => setSort(s => SORT_CYCLE[(SORT_CYCLE.indexOf(s) + 1) % SORT_CYCLE.length])}
-              className="gap-1.5 bg-card border-white/10 text-xs text-muted-foreground"
+              className="gap-1.5 border-white/10 bg-card text-xs text-muted-foreground"
             >
               {sort.includes("desc") || sort === "newest" ? <SortDesc className="w-3.5 h-3.5" /> : <SortAsc className="w-3.5 h-3.5" />}
               {SORT_LABELS[sort]}
@@ -637,8 +674,8 @@ export default function MediaWall() {
               className={cn(
                 "gap-1.5 text-xs",
                 showFavorites
-                  ? "bg-accent/20 text-accent border-accent/30"
-                  : "bg-card border-white/10 text-muted-foreground"
+                  ? "border-accent/30 bg-accent/20 text-accent"
+                  : "border-white/10 bg-card text-muted-foreground"
               )}
             >
               <Star className={cn("w-3.5 h-3.5", showFavorites && "fill-accent")} />
@@ -653,8 +690,8 @@ export default function MediaWall() {
               className={cn(
                 "gap-1.5 text-xs font-mono",
                 ambientMode
-                  ? "bg-secondary/20 text-secondary border-secondary/30"
-                  : "bg-card border-white/10 text-muted-foreground"
+                  ? "border-secondary/30 bg-secondary/20 text-secondary"
+                  : "border-white/10 bg-card text-muted-foreground"
               )}
             >
               <Repeat className={cn("w-3.5 h-3.5", ambientMode && "animate-spin")} style={ambientMode ? { animationDuration: "3s" } : {}} />
@@ -662,17 +699,17 @@ export default function MediaWall() {
             </Button>
           </div>
         </div>
-        <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground font-mono">
+        <div className="mt-3 flex flex-wrap items-center gap-4 font-mono text-xs text-muted-foreground">
           <span data-testid="text-total-count">{filtered.length} items</span>
           <span data-testid="text-video-count">{videoCount} videos</span>
           <span data-testid="text-image-count">{imageCount} images</span>
           {source === "hermes" && (
             <span
               className={cn(
-                "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium",
+                "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium",
                 (hermesHealth?.mode ?? hermesHealth?.lastProxyMode) === "local"
-                  ? "bg-green-500/20 text-green-600 dark:text-green-400"
-                  : "bg-amber-500/20 text-amber-600 dark:text-amber-400"
+                  ? "bg-green-500/20 text-green-400"
+                  : "bg-amber-500/20 text-amber-400"
               )}
               data-testid="hermes-mode-badge"
               title={hermesHealth?.mode === "local" ? "Streaming from local mount (X-Hermes-Source: local)" : "Using Hermes HTTP fallback (X-Hermes-Source: http)"}
@@ -689,8 +726,8 @@ export default function MediaWall() {
           )}
         </div>
         {source === "hermes" && (
-          <div className="flex items-center gap-2 mt-3" data-testid="hermes-path-bar">
-            <FolderOpen className="w-4 h-4 text-secondary shrink-0" />
+          <div className="mt-3 flex items-center gap-2" data-testid="hermes-path-bar">
+            <FolderOpen className="w-4 h-4 shrink-0 text-secondary" />
             <Input
               data-testid="input-hermes-path"
               type="text"
@@ -698,14 +735,14 @@ export default function MediaWall() {
               onChange={(e) => setHermesPathInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleLoadHermes()}
               placeholder="/files/path/to/folder/"
-              className="flex-1 bg-card border-white/10 text-sm font-mono text-secondary"
+              className="flex-1 border-white/10 bg-card text-sm font-mono text-secondary"
             />
             <Button
               data-testid="btn-load-hermes"
               size="sm"
               onClick={handleLoadHermes}
               disabled={hermesFetching}
-              className="gap-1.5 bg-secondary/20 text-secondary border border-secondary/30 hover:bg-secondary/30"
+              className="gap-1.5 border border-secondary/30 bg-secondary/20 text-secondary hover:bg-secondary/30"
             >
               {hermesFetching ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <HardDrive className="w-3.5 h-3.5" />}
               Load
@@ -713,12 +750,12 @@ export default function MediaWall() {
           </div>
         )}
         {source === "hermes" && hermesError && (
-          <div className="flex items-center gap-2 mt-2 px-3 py-2 bg-destructive/10 border border-destructive/20 rounded-lg" data-testid="hermes-error">
-            <AlertTriangle className="w-4 h-4 text-destructive shrink-0" />
+          <div className="mt-2 flex items-center gap-2 rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2" data-testid="hermes-error">
+            <AlertTriangle className="w-4 h-4 shrink-0 text-destructive" />
             <span className="text-xs text-destructive">{(hermesError as Error).message}</span>
           </div>
         )}
-      </header>
+      </DashboardPanel>
 
       <div ref={containerRef} className="flex-1 overflow-y-auto p-4">
         {isLoading && source !== "hermes" ? (
@@ -793,6 +830,6 @@ export default function MediaWall() {
           />
         )}
       </AnimatePresence>
-    </div>
+    </DashboardShell>
   );
 }

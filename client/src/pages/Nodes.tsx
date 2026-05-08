@@ -1,5 +1,5 @@
 import { useNodeStatus, useRunHealthCheck, usePageVisible } from "@/hooks/use-astra";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import {
   Cpu,
@@ -21,6 +21,8 @@ import {
   ChevronDown,
   Link2,
 } from "lucide-react";
+import { DashboardPanel, DashboardShell } from "@/components/DashboardShell";
+import type { DashboardMetric } from "@/components/DashboardShell";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -47,6 +49,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { toast } from "@/hooks/use-toast";
 import { readOpsToken } from "@/lib/ops-token";
+import { useAstraPresenceSource } from "@/hooks/use-astra-presence";
 
 const TYPE_ICONS: Record<string, typeof Server> = {
   Server: Server,
@@ -255,7 +258,7 @@ function buildSshHref(target: SshTarget) {
 
 export default function Nodes() {
   const pageVisible = usePageVisible();
-  const { data: statusData, isLoading } = useNodeStatus();
+  const { data: statusData, isLoading, error: nodeError } = useNodeStatus();
   const healthCheck = useRunHealthCheck();
   const [runningKey, setRunningKey] = useState<string | null>(null);
   const [runResult, setRunResult] = useState<RunResult | null>(null);
@@ -271,6 +274,52 @@ export default function Nodes() {
 
   const nodes = statusData?.nodes ?? [];
   const checkedAt = statusData?.checkedAt;
+  const totalNodes = nodes.length;
+  const onlineNodes = nodes.filter((node) => node.status === "online").length;
+  const offlineNodes = nodes.filter((node) => node.status === "offline").length;
+  const avgCpu = totalNodes > 0 ? Math.round(nodes.reduce((sum, node) => sum + (node.cpu ?? 0), 0) / totalNodes) : 0;
+  const avgMem = totalNodes > 0 ? Math.round(nodes.reduce((sum, node) => sum + (node.mem ?? 0), 0) / totalNodes) : 0;
+  const gpuNodes = nodes.filter((node) => node.gpuUtil != null);
+  const avgGpu = gpuNodes.length > 0 ? Math.round(gpuNodes.reduce((sum, node) => sum + (node.gpuUtil ?? 0), 0) / gpuNodes.length) : 0;
+  const servicesUp = nodes.reduce((sum, node) => sum + (node.servicesUp ?? 0), 0);
+  const servicesTotal = nodes.reduce((sum, node) => sum + (node.servicesTotal ?? 0), 0);
+  const alerts = [
+    ...(offlineNodes > 0 ? [`${offlineNodes} offline`] : []),
+    ...(servicesTotal > servicesUp ? [`${servicesTotal - servicesUp} services down`] : []),
+    ...(nodeError ? ["telemetry error"] : []),
+  ];
+  const presenceSignals = useMemo(
+    () => ({
+      gpuActive: nodes.some((node) => (node.gpuUtil ?? 0) >= 20 || (node.vramUsed != null && node.vramTotal != null)),
+      securityAlert: Boolean(nodeError) || nodes.some((node) => node.status === "offline" || Boolean(node.reason)),
+      roboticsActive: nodes.some((node) => /robot|arm|servo|mini-beast|phobos/i.test(`${node.name} ${node.type}`)),
+    }),
+    [nodeError, nodes]
+  );
+  useAstraPresenceSource("nodes", presenceSignals);
+  const nodeNarration = useMemo(() => {
+    if (isLoading && nodes.length === 0) {
+      return "Synchronizing node telemetry and service health.";
+    }
+    if (offlineNodes > 0) {
+      return `Astra is tracking ${onlineNodes}/${totalNodes} nodes online. ${offlineNodes} node${offlineNodes === 1 ? "" : "s"} need attention.`;
+    }
+    if (servicesTotal > 0 && servicesUp < servicesTotal) {
+      return `Astra sees ${onlineNodes}/${totalNodes} nodes online with ${servicesUp}/${servicesTotal} services healthy.`;
+    }
+    return `Astra is tracking ${onlineNodes}/${totalNodes} nodes online with average CPU ${avgCpu}% and RAM ${avgMem}%.`;
+  }, [avgCpu, avgMem, isLoading, nodes.length, offlineNodes, onlineNodes, servicesTotal, servicesUp, totalNodes]);
+  const nodeMetrics = useMemo<DashboardMetric[]>(
+    () => [
+      { label: "Nodes", value: totalNodes.toString(), detail: `${onlineNodes} online`, tone: offlineNodes > 0 ? "warn" : "good", icon: Server },
+      { label: "CPU", value: `${avgCpu}%`, detail: "cluster average", tone: avgCpu > 80 ? "warn" : "accent", icon: Cpu },
+      { label: "RAM", value: `${avgMem}%`, detail: "resident memory", tone: avgMem > 75 ? "warn" : "accent", icon: Activity },
+      { label: "GPU", value: `${avgGpu}%`, detail: "accelerator load", tone: avgGpu > 10 ? "accent" : "muted", icon: Box },
+      { label: "Services", value: servicesTotal > 0 ? `${servicesUp}/${servicesTotal}` : "n/a", detail: "service health", tone: servicesTotal > servicesUp ? "warn" : "good", icon: HardDrive },
+      { label: "Alerts", value: alerts.length.toString(), detail: alerts.length > 0 ? alerts.join(" · ") : "none", tone: alerts.length > 0 ? "warn" : "good", icon: Monitor },
+    ],
+    [alerts, avgCpu, avgGpu, avgMem, onlineNodes, offlineNodes, servicesTotal, servicesUp, totalNodes]
+  );
   const restartResultCopy = runResult?.cmd ? RESTART_SERVICE_COPY[runResult.cmd] : undefined;
   const isRestartResult = !!restartResultCopy;
   const isRestartSuccess = !!runResult?.ok && isRestartResult;
@@ -604,40 +653,31 @@ export default function Nodes() {
   };
 
   return (
-    <div className="min-h-screen bg-background p-8 pl-10 pt-20">
-      <header className="mb-10 flex items-end justify-between">
-        <div>
-          <h1 className="astra-logo text-3xl text-white mb-2">
-            System Status
-          </h1>
-          <p className="text-muted-foreground">
-            Real-time telemetry from distributed compute nodes.
-            {ago != null && (
-              <span className="ml-2 text-xs text-zinc-500">
-                Updated {ago < 5 ? "just now" : `${ago}s ago`}
-              </span>
-            )}
-          </p>
-        </div>
+    <DashboardShell
+      eyebrow="ASTRA / NODE CONTROL"
+      title="System Status"
+      subtitle={`Real-time telemetry from distributed compute nodes.${ago != null ? ` Updated ${ago < 5 ? "just now" : `${ago}s ago`}.` : ""}`}
+      narration={nodeNarration}
+      metrics={nodeMetrics}
+      alerts={alerts.map((label) => ({ label, tone: "warn" }))}
+      actions={(
         <button
           onClick={() => healthCheck.mutate()}
           disabled={healthCheck.isPending}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-sm text-zinc-300 hover:bg-white/10 hover:border-primary/40 transition-colors disabled:opacity-50"
+          className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-zinc-300 transition-colors hover:border-cyan-300/30 hover:bg-white/10 disabled:opacity-50"
         >
-          <RefreshCw
-            className={`w-4 h-4 ${healthCheck.isPending ? "animate-spin" : ""}`}
-          />
+          <RefreshCw className={`h-4 w-4 ${healthCheck.isPending ? "animate-spin" : ""}`} />
           {healthCheck.isPending ? "Checking..." : "Refresh"}
         </button>
-      </header>
-
+      )}
+    >
       {isLoading && nodes.length === 0 && (
-        <div className="text-center text-muted-foreground py-20">
+        <div className="py-20 text-center text-muted-foreground">
           Loading node status...
         </div>
       )}
 
-      <section className="mb-6 rounded-2xl border border-white/5 bg-card p-4">
+      <DashboardPanel className="p-4">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="astra-ui-label text-sm text-zinc-500">
             Recent Actions
@@ -669,7 +709,7 @@ export default function Nodes() {
             ))}
           </div>
         )}
-      </section>
+      </DashboardPanel>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {nodes.map((node: any, idx: number) => {
@@ -697,9 +737,9 @@ export default function Nodes() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: idx * 0.08 }}
-              className="bg-card border border-white/5 rounded-2xl p-6 relative overflow-hidden group hover:border-primary/50 transition-colors"
+              className="astra-dashboard-panel group relative overflow-hidden rounded-[1.35rem] p-6 transition-colors hover:border-cyan-300/25"
             >
-              <div className="absolute -right-10 -top-10 w-32 h-32 bg-primary/5 rounded-full blur-2xl group-hover:bg-primary/10 transition-colors" />
+              <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-cyan-300/6 blur-2xl transition-colors group-hover:bg-cyan-300/10" />
 
               {healthBannerCopy && (
                 <div className={`relative mb-4 flex items-center justify-between rounded-lg border px-3 py-2 text-xs font-semibold ${healthBannerCopy.className}`}>
@@ -1116,6 +1156,6 @@ export default function Nodes() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </DashboardShell>
   );
 }
