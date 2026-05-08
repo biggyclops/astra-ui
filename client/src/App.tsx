@@ -1,5 +1,7 @@
 import { Switch, Route } from "wouter";
 import { lazy, Suspense, useCallback, useEffect, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { LoaderCircle } from "lucide-react";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -19,14 +21,36 @@ const CyberBackdrop = lazy(() => import("@/components/CyberBackdrop").then((modu
 
 function ShellLoading({ label }: { label: string }) {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#030816] text-cyan-100">
-      <p className="astra-ui-label text-xs text-cyan-100/70">{label}</p>
-    </div>
+    <motion.div
+      className="flex min-h-screen items-center justify-center bg-black text-cyan-50"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.25, ease: "easeOut" }}
+    >
+      <div className="flex items-center gap-3 rounded-full border border-cyan-300/12 bg-cyan-300/5 px-5 py-3 backdrop-blur-sm">
+        <LoaderCircle className="h-4 w-4 animate-spin text-cyan-200/80" />
+        <p className="astra-ui-label text-xs text-cyan-100/70">{label}</p>
+      </div>
+    </motion.div>
   );
 }
 
 function Router() {
   const [isAuthed, setIsAuthed] = useState<boolean | null>(null);
+  const [isBootingDashboard, setIsBootingDashboard] = useState(false);
+
+  useEffect(() => {
+    if (!isAuthed) {
+      setIsBootingDashboard(false);
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setIsBootingDashboard(false);
+    }, 900);
+    setIsBootingDashboard(true);
+    return () => window.clearTimeout(timer);
+  }, [isAuthed]);
 
   useEffect(() => {
     let cancelled = false;
@@ -55,6 +79,7 @@ function Router() {
     if (!response.ok || !(data as { authenticated?: boolean }).authenticated) {
       throw new Error((data as { message?: string }).message || "Login failed");
     }
+    setIsBootingDashboard(true);
     setIsAuthed(true);
   }, []);
 
@@ -95,6 +120,30 @@ function Router() {
             <Route component={NotFound} />
           </Switch>
         </main>
+
+        <AnimatePresence>
+          {isBootingDashboard ? (
+            <motion.div
+              key="astra-core-startup"
+              className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center bg-black/65 backdrop-blur-[2px]"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.28, ease: "easeOut" }}
+            >
+              <motion.div
+                className="flex items-center gap-3 rounded-full border border-cyan-300/10 bg-black/40 px-5 py-3 text-cyan-50 shadow-[0_0_40px_rgba(34,211,238,0.12)]"
+                initial={{ scale: 0.98, y: 4 }}
+                animate={{ scale: 1, y: 0 }}
+                exit={{ scale: 0.98, y: 4 }}
+                transition={{ duration: 0.28, ease: "easeOut" }}
+              >
+                <LoaderCircle className="h-4 w-4 animate-spin text-cyan-200/80" />
+                <p className="astra-ui-label text-xs text-cyan-100/80">INITIALIZING ASTRA CORE</p>
+              </motion.div>
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
       </div>
     </Suspense>
   );
