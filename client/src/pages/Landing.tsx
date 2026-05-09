@@ -40,7 +40,7 @@ export default function Landing({ onSignIn }: LandingProps) {
 
   return (
     <motion.main
-      className="relative min-h-screen overflow-hidden bg-transparent text-white"
+      className="relative isolate min-h-screen overflow-hidden bg-transparent text-white"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.35, ease: "easeOut" }}
@@ -66,7 +66,7 @@ export default function Landing({ onSignIn }: LandingProps) {
           event.preventDefault();
           void submitLogin();
         }}
-        className="absolute z-10 flex flex-col gap-2"
+        className="absolute z-20 flex flex-col gap-2 pointer-events-auto"
         style={{
           left: "6%",
           top: "34%",
@@ -86,7 +86,7 @@ export default function Landing({ onSignIn }: LandingProps) {
             onChange={(event) => setUsername(event.target.value)}
             placeholder="operator@astra.local"
             className={cn(
-              "h-11 border border-transparent bg-transparent pl-10 text-sm text-cyan-50 placeholder:text-cyan-100/26 shadow-none backdrop-blur-0 transition-all duration-200 ease-out",
+              "pointer-events-auto h-11 border border-transparent bg-transparent pl-10 text-sm text-cyan-50 placeholder:text-cyan-100/26 shadow-none backdrop-blur-0 transition-all duration-200 ease-out",
               "hover:border-cyan-200/10 hover:bg-white/[0.01] focus-visible:border-cyan-200/20 focus-visible:ring-2 focus-visible:ring-cyan-300/20 focus-visible:shadow-[0_0_0_1px_rgba(34,211,238,0.14)]"
             )}
           />
@@ -107,7 +107,7 @@ export default function Landing({ onSignIn }: LandingProps) {
             onBlur={() => setIsPasswordFocused(false)}
             placeholder="••••••••"
             className={cn(
-              "h-11 border border-transparent bg-transparent pl-10 text-sm text-cyan-50 placeholder:text-cyan-100/26 shadow-none backdrop-blur-0 transition-all duration-200 ease-out",
+              "pointer-events-auto h-11 border border-transparent bg-transparent pl-10 text-sm text-cyan-50 placeholder:text-cyan-100/26 shadow-none backdrop-blur-0 transition-all duration-200 ease-out",
               "hover:border-cyan-200/10 hover:bg-white/[0.01] focus-visible:border-cyan-200/20 focus-visible:ring-2 focus-visible:ring-cyan-300/20 focus-visible:shadow-[0_0_0_1px_rgba(34,211,238,0.14)]"
             )}
           />
@@ -119,7 +119,7 @@ export default function Landing({ onSignIn }: LandingProps) {
           type="submit"
           disabled={isSubmitting || !canSubmit}
           className={cn(
-            "group mt-2 h-11 w-full rounded-none border border-transparent bg-transparent px-0 text-cyan-50 shadow-none",
+            "pointer-events-auto group mt-2 h-11 w-full rounded-none border border-transparent bg-transparent px-0 text-cyan-50 shadow-none",
             "transition-all duration-200 ease-out hover:bg-white/[0.01] hover:text-white focus-visible:ring-2 focus-visible:ring-cyan-300/20",
             isSubmitting ? "text-cyan-100/85" : ""
           )}

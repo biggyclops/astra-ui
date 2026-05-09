@@ -300,11 +300,11 @@ export function AstraLoginAtmosphere({ typingLevel = 0, awakened = false, classN
 
   return (
     <div ref={rootRef} className={cn("astra-login-atmosphere pointer-events-none fixed inset-0 overflow-hidden", className)} aria-hidden="true">
-      <div className="astra-login-atmosphere__backdrop absolute inset-0" />
-      <div ref={fogRef} className="astra-login-atmosphere__fog absolute inset-0" />
-      <div ref={cursorLightRef} className="astra-login-atmosphere__cursor-light absolute inset-0" />
+      <div className="astra-login-atmosphere__backdrop absolute inset-0 pointer-events-none" />
+      <div ref={fogRef} className="astra-login-atmosphere__fog absolute inset-0 pointer-events-none" />
+      <div ref={cursorLightRef} className="astra-login-atmosphere__cursor-light absolute inset-0 pointer-events-none" />
       <div
-        className="astra-login-atmosphere__frame absolute"
+        className="astra-login-atmosphere__frame absolute pointer-events-none"
         style={{
           left: "var(--astra-login-frame-left, 0px)",
           top: "var(--astra-login-frame-top, 0px)",
@@ -313,7 +313,7 @@ export function AstraLoginAtmosphere({ typingLevel = 0, awakened = false, classN
         }}
       >
         <div
-          className="astra-login-atmosphere__portrait absolute inset-0"
+          className="astra-login-atmosphere__portrait absolute inset-0 pointer-events-none"
           style={{
             transform:
               "translate3d(var(--astra-login-portrait-x, 0px), var(--astra-login-portrait-y, 0px), 0) rotate(var(--astra-login-portrait-rotate, 0deg)) scale(var(--astra-login-portrait-scale, 1))",
@@ -322,12 +322,12 @@ export function AstraLoginAtmosphere({ typingLevel = 0, awakened = false, classN
           <img
             src={ASTRA_LOGIN_IMAGE}
             alt=""
-            className="astra-login-atmosphere__image absolute inset-0 h-full w-full object-cover"
+            className="astra-login-atmosphere__image absolute inset-0 h-full w-full object-cover pointer-events-none"
             draggable={false}
           />
 
           <div
-            className="astra-login-atmosphere__head-drift absolute inset-0"
+            className="astra-login-atmosphere__head-drift absolute inset-0 pointer-events-none"
             style={{
               transform:
                 "translate3d(var(--astra-login-head-x, 0px), var(--astra-login-head-y, 0px), 0) rotate(var(--astra-login-head-rotate, 0deg))",
@@ -336,13 +336,13 @@ export function AstraLoginAtmosphere({ typingLevel = 0, awakened = false, classN
             <img
               src={ASTRA_LOGIN_IMAGE}
               alt=""
-              className="astra-login-atmosphere__image astra-login-atmosphere__head-image absolute inset-0 h-full w-full object-cover"
+              className="astra-login-atmosphere__image astra-login-atmosphere__head-image absolute inset-0 h-full w-full object-cover pointer-events-none"
               draggable={false}
             />
           </div>
 
           <div
-            className="astra-login-atmosphere__body-glow absolute inset-0"
+            className="astra-login-atmosphere__body-glow absolute inset-0 pointer-events-none"
             style={{
               opacity: "var(--astra-login-ambient, 0.28)",
             }}
@@ -350,7 +350,7 @@ export function AstraLoginAtmosphere({ typingLevel = 0, awakened = false, classN
 
           <div
             ref={eyeGlowRef}
-            className="astra-login-atmosphere__eye-glow absolute"
+            className="astra-login-atmosphere__eye-glow absolute pointer-events-none"
             style={{
               opacity: "var(--astra-login-eye-opacity, 0.22)",
               transform:
@@ -360,7 +360,7 @@ export function AstraLoginAtmosphere({ typingLevel = 0, awakened = false, classN
 
           <div
             ref={hairDriftRef}
-            className="astra-login-atmosphere__hair-drift absolute inset-0"
+            className="astra-login-atmosphere__hair-drift absolute inset-0 pointer-events-none"
             style={{
               opacity: "var(--astra-login-hair-opacity, 0.12)",
               transform:
@@ -370,28 +370,28 @@ export function AstraLoginAtmosphere({ typingLevel = 0, awakened = false, classN
             <img
               src={ASTRA_LOGIN_IMAGE}
               alt=""
-              className="astra-login-atmosphere__image astra-login-atmosphere__hair-image absolute inset-0 h-full w-full object-cover"
+              className="astra-login-atmosphere__image astra-login-atmosphere__hair-image absolute inset-0 h-full w-full object-cover pointer-events-none"
               draggable={false}
             />
           </div>
 
           <div
             ref={blinkRef}
-            className="astra-login-atmosphere__blink absolute"
+            className="astra-login-atmosphere__blink absolute pointer-events-none"
             style={{
               transform:
                 "translate3d(calc(var(--astra-login-parallax-x, 0px) * 0.02), calc(var(--astra-login-parallax-y, 0px) * 0.01), 0) scaleY(calc(0.15 + var(--astra-login-blink, 0) * 1.08))",
             }}
           />
 
-          <div className="astra-login-atmosphere__eye-focus absolute" />
+          <div className="astra-login-atmosphere__eye-focus absolute pointer-events-none" />
         </div>
 
-        <canvas ref={canvasRef} className="astra-login-atmosphere__canvas absolute inset-0" />
+        <canvas ref={canvasRef} className="astra-login-atmosphere__canvas absolute inset-0 pointer-events-none" />
       </div>
 
-      <div className="astra-login-atmosphere__scanlines absolute inset-0" />
-      <div className="astra-login-atmosphere__vignette absolute inset-0" />
+      <div className="astra-login-atmosphere__scanlines absolute inset-0 pointer-events-none" />
+      <div className="astra-login-atmosphere__vignette absolute inset-0 pointer-events-none" />
     </div>
   );
 }
