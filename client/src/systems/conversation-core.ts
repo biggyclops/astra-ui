@@ -3,9 +3,9 @@ import type { ConversationViewMessage } from "@/types/astra";
 
 export const conversationCore = {
   title: "Oracle chamber",
-  tickMs: 24,
-  charsPerTick: 2,
-  holdMs: 1100,
+  tickMs: 30,
+  charsPerTick: 1,
+  holdMs: 1400,
   phaseLabel(index: number, loop: number) {
     const phase = conversationScript[index]?.roleLabel ?? "oracle";
     return `phase ${loop + 1} · ${phase}`;

@@ -11,7 +11,7 @@ export function AstraShell() {
       <AstraAtmosphere />
       <AstraPresenceLayer />
 
-      <div className="relative z-10 mx-auto grid min-h-screen w-full max-w-[1800px] gap-4 p-4 lg:grid-cols-[280px_minmax(0,1fr)_340px] lg:p-6 xl:gap-6 xl:p-8">
+      <div className="relative z-10 mx-auto grid min-h-screen w-full max-w-[1720px] gap-5 p-4 md:p-5 lg:grid-cols-[250px_minmax(0,1.28fr)_300px] lg:gap-6 lg:p-6 xl:gap-7 xl:p-8">
         <motion.aside
           className="astra-panel astra-panel-deep min-h-[220px] overflow-hidden lg:min-h-0"
           initial={{ opacity: 0, x: -16 }}
@@ -23,7 +23,7 @@ export function AstraShell() {
 
         <motion.main
           className="astra-panel astra-panel-main min-h-[calc(100vh-2rem)] overflow-hidden lg:min-h-0"
-          initial={{ opacity: 0, y: 14 }}
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: "easeOut", delay: 0.05 }}
         >
@@ -32,7 +32,7 @@ export function AstraShell() {
 
         <motion.aside
           className="astra-panel astra-panel-deep min-h-[220px] overflow-hidden lg:min-h-0"
-          initial={{ opacity: 0, x: 18 }}
+          initial={{ opacity: 0, x: 16 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.7, ease: "easeOut", delay: 0.12 }}
         >
