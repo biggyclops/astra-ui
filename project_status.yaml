@@ -1,0 +1,36 @@
+project: Astra on Talos
+status: shell prototype complete
+branch: feature/astra-cinematic-shell
+scope:
+  - frontend shell architecture
+  - cinematic first visual prototype
+  - placeholder systems
+  - design tokens and utilities
+  - documentation and handoff artifacts
+created:
+  - client/src/app/AstraApp.tsx
+  - client/src/layouts/AstraShell.tsx
+  - client/src/components/AstraAtmosphere.tsx
+  - client/src/components/AstraSidebar.tsx
+  - client/src/components/AstraConversationPanel.tsx
+  - client/src/components/AstraContextPanel.tsx
+  - client/src/components/AstraPresenceLayer.tsx
+  - client/src/config/astra.ts
+  - client/src/hooks/useAstraConversationStream.ts
+  - client/src/hooks/useAstraPresence.ts
+  - client/src/services/streaming.ts
+  - client/src/stores/astra-shell-store.ts
+  - client/src/systems/atmosphere-engine.ts
+  - client/src/systems/conversation-core.ts
+  - client/src/systems/context-engine.ts
+  - client/src/systems/telemetry-layer.ts
+  - client/src/systems/presence-layer.ts
+  - client/src/types/astra.ts
+  - client/src/styles/astra.css
+  - ASTRA_MASTER.md
+  - frontend-architecture.md
+  - handoff/initial-handoff-log.md
+next:
+  - verify typecheck and production build
+  - refine shell details if visual QA reveals issues
+  - commit and push feature branch

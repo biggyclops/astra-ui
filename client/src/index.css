@@ -1,83 +1,9 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Exo+2:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@400;500;600;700;800;900&display=swap");
+@import "./styles/astra.css";
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-:root {
-  /* Astra Theme - Dark Space Gradient */
-  --background: 240 10% 4%;       /* Very dark almost black */
-  --foreground: 210 40% 98%;      /* Crisp white text */
-  
-  --card: 240 10% 6%;             /* Slightly lighter than bg */
-  --card-foreground: 210 40% 98%;
-  
-  --popover: 240 10% 6%;
-  --popover-foreground: 210 40% 98%;
-  
-  --primary: 265 89% 66%;         /* Electric Violet */
-  --primary-foreground: 210 40% 98%;
-  
-  --secondary: 175 80% 45%;       /* Teal */
-  --secondary-foreground: 240 10% 4%;
-  
-  --muted: 240 10% 12%;           /* Dark gray for muted areas */
-  --muted-foreground: 240 5% 65%; /* Subdued text */
-  
-  --accent: 45 93% 47%;           /* Gold */
-  --accent-foreground: 240 10% 4%;
-  
-  --destructive: 0 84% 60%;
-  --destructive-foreground: 210 40% 98%;
-
-  --border: 240 10% 12%;
-  --input: 240 10% 12%;
-  --ring: 265 89% 66%;
-
-  --radius: 0.75rem;
-  
-  --font-sans: 'Inter', sans-serif;
-  --font-display: 'Space Grotesk', sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
-}
-
-@layer base {
-  * {
-    @apply border-border;
-  }
-  body {
-    @apply bg-background text-foreground antialiased font-sans selection:bg-primary/30 selection:text-primary-foreground;
-    background-image: 
-      radial-gradient(circle at 15% 50%, rgba(139, 92, 246, 0.08), transparent 25%), 
-      radial-gradient(circle at 85% 30%, rgba(45, 212, 191, 0.08), transparent 25%);
-    background-attachment: fixed;
-  }
-  
-  h1, h2, h3, h4, h5, h6 {
-    @apply tracking-tight;
-    font-family: var(--font-display);
-  }
-}
-
-@layer utilities {
-  .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary via-purple-400 to-secondary;
-  }
-  
-  .glass-panel {
-    @apply bg-card/60 backdrop-blur-xl border border-white/5 shadow-xl;
-  }
-
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
-  }
-  
-  .scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-}
-
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;

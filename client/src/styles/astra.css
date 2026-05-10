@@ -1,0 +1,170 @@
+:root {
+  --background: 223 54% 4%;
+  --foreground: 210 40% 98%;
+  --card: 223 54% 6%;
+  --card-foreground: 210 40% 98%;
+  --popover: 223 54% 6%;
+  --popover-foreground: 210 40% 98%;
+  --primary: 188 100% 57%;
+  --primary-foreground: 210 40% 98%;
+  --secondary: 356 68% 59%;
+  --secondary-foreground: 210 40% 98%;
+  --muted: 223 35% 11%;
+  --muted-foreground: 215 15% 66%;
+  --accent: 188 100% 57%;
+  --accent-foreground: 223 54% 4%;
+  --destructive: 356 68% 59%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 223 35% 14%;
+  --input: 223 35% 14%;
+  --ring: 188 100% 57%;
+  --radius: 1rem;
+  --font-sans: "Exo 2", "Inter", system-ui, sans-serif;
+  --font-display: "Orbitron", "Exo 2", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    background: hsl(var(--background));
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased font-sans selection:bg-cyan-300/25 selection:text-cyan-50;
+    background-image:
+      radial-gradient(circle at top, rgba(28, 95, 128, 0.14), transparent 35%),
+      radial-gradient(circle at 78% 18%, rgba(144, 37, 42, 0.12), transparent 24%),
+      linear-gradient(180deg, rgba(3, 6, 15, 1) 0%, rgba(4, 8, 18, 1) 54%, rgba(1, 2, 7, 1) 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-display);
+    letter-spacing: 0.02em;
+  }
+
+  #root {
+    min-height: 100vh;
+  }
+}
+
+@layer utilities {
+  .astra-panel {
+    border-radius: 1.5rem;
+    border: 1px solid rgba(148, 163, 184, 0.09);
+    background: rgba(6, 10, 22, 0.6);
+    backdrop-filter: blur(24px);
+    box-shadow: 0 0 48px rgba(0, 0, 0, 0.3);
+    border-color: rgba(148, 163, 184, 0.09);
+  }
+
+  .astra-panel-main {
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02)),
+      rgba(5, 9, 20, 0.8);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03), 0 0 68px rgba(0, 0, 0, 0.24);
+  }
+
+  .astra-panel-deep {
+    background:
+      linear-gradient(180deg, rgba(7, 12, 24, 0.88), rgba(4, 8, 16, 0.92)),
+      rgba(4, 8, 18, 0.84);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03), 0 0 42px rgba(16, 185, 129, 0.05);
+  }
+
+  .astra-panel-surface {
+    background: rgba(255, 255, 255, 0.025);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  }
+
+  .astra-panel-slab {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    border-radius: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: rgba(255, 255, 255, 0.025);
+    padding: 0.625rem 0.75rem;
+  }
+
+  .astra-title {
+    text-transform: uppercase;
+    letter-spacing: 0.26em;
+    color: rgb(236 254 255);
+    text-shadow: 0 0 16px rgba(34, 211, 238, 0.14);
+  }
+
+  .astra-kicker {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.42em;
+    color: rgba(207, 250, 254, 0.55);
+  }
+
+  .astra-copy {
+    font-family: var(--font-sans);
+  }
+
+  .astra-body {
+    font-family: var(--font-sans);
+  }
+
+  .astra-micro {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.28em;
+  }
+
+  .astra-nav-item {
+    transition:
+      transform 180ms ease,
+      border-color 180ms ease,
+      background-color 180ms ease,
+      box-shadow 180ms ease;
+  }
+
+  .astra-message-card {
+    transition:
+      transform 220ms ease,
+      border-color 220ms ease,
+      background-color 220ms ease,
+      box-shadow 220ms ease;
+  }
+
+  .astra-glyph {
+    text-shadow: 0 0 14px rgba(125, 211, 252, 0.18);
+  }
+
+  .astra-input-bar {
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  }
+}
+
+@keyframes astra-breathe {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+
+  50% {
+    transform: translate3d(0, -4px, 0) scale(1.02);
+  }
+}
+
+.astra-orb {
+  animation: astra-breathe 10s ease-in-out infinite;
+  box-shadow:
+    inset 0 0 24px rgba(34, 211, 238, 0.14),
+    0 0 30px rgba(34, 211, 238, 0.08);
+}
