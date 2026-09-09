@@ -4,3 +4,13 @@ dist
 server/public
 vite.config.ts.*
 *.tar.gz
+
+# Local configuration / secrets
+.env
+.env.local
+.env.*.local
+
+# Replit-generated local metadata / prompt assets
+.replit
+replit.md
+attached_assets/
