@@ -4,6 +4,26 @@
 
 It brings node health, remote-system metrics, service checks, media access, jobs, and operator controls into one interface. The project is built around modular APIs so new compute nodes, storage systems, AI services, and physical devices can be added without redesigning the frontend.
 
+## Live interface
+
+### Node mesh and telemetry
+
+![Astra node dashboard showing distributed systems, service health, machine telemetry, and robotics node status](docs/screenshots/nodes-dashboard.webp)
+
+The Nodes view brings compute hosts, storage, services, and edge devices into one operator surface. It exposes reachability, service state, CPU/memory/storage information, Docker status, and device-specific telemetry so failures can be isolated quickly.
+
+### Operator chat and voice controls
+
+![Astra operator chat and voice control panel](docs/screenshots/chat-voice-panel.webp)
+
+The operator console provides a single interaction surface for assistant commands, system actions, voice input, text-to-speech controls, and shortcuts into node, media, and job workflows.
+
+### Secure operator entry
+
+![Astra secure login interface](docs/screenshots/login-screen.webp)
+
+The broader Astra experience includes a dedicated operator login surface designed to keep the command environment visually consistent from entry through system control.
+
 ## What it demonstrates
 
 - Distributed system monitoring
@@ -52,8 +72,6 @@ Astra includes five primary operator surfaces:
 - **Jobs** — creates and tracks development/prototype workloads
 - **Nodes** — displays node reachability, service health, and machine metrics
 - **Settings** — configures system and interface behavior
-
-> Repository screenshots will be added from a live Astra deployment rather than using fabricated mockups. The application source in `client/src/pages/` contains the current UI implementation.
 
 ## Live vs. prototype functionality
 
