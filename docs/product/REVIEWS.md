@@ -2,12 +2,12 @@
 
 | Field | Value |
 |---|---|
-| **Version** | 1.0.0 |
+| **Version** | 1.0.1 |
 | **Status** | Approved — Product Owner |
 | **Owner** | Product |
 | **Last Reviewed** | 2026-09-16 |
 
-**See also:** [PRODUCT.md](../PRODUCT.md) · [STORIES.md](./STORIES.md) · [ROADMAP.md](../ROADMAP.md)
+**See also:** [PRODUCT.md](../PRODUCT.md) · [STORIES.md](./STORIES.md) · [DECISIONS.md](./DECISIONS.md) · [TEMPLATE.md](./TEMPLATE.md) · [ROADMAP.md](../ROADMAP.md)
 
 Product reviews **what** and **why**. They do not approve architecture, UI redesign, merge, or deploy.
 
@@ -314,3 +314,52 @@ If the page remains visible: it is labeled prototype/local, and no copy claims f
 🔴 **REJECT** as a production feature.
 
 🟡 **APPROVE WITH CHANGES** as a labeled prototype only (ASTRA-S3).
+
+---
+
+# ASTRA-R9 — Ship Autonomy Phase 1 with visible stubs
+
+**Request:** Treat PRs #2 / #3 as product-complete and merge Track A while Pause/Resume, command composer, chips, capability cards, Approve/Not Now, or Auto still look operable (D-003 open). QA technical READY does not close this.
+
+## Summary
+
+Snapshot honesty without control honesty is still theater. Visible stubs that do nothing violate the north star. Jason’s release gate already requires D-003 resolved — not ship-as-is. Product agrees and will not call Track A done until S2 lands.
+
+## User Value
+
+Negative. Shipping stubs spends operator trust for a demo that is not real control.
+
+## Scope
+
+**Rejected entire ship-as-is path.** Keep #2/#3. Require #4 (or equivalent S2) in the same proposed merge set. Do not re-enable stubs for screenshots or walkthroughs.
+
+## Acceptance Criteria
+
+N/A — not shipping this variant.
+
+Track A acceptance remains S1 + S2 (see ASTRA-R1, ASTRA-R2, ASTRA-PD-001).
+
+## Risks
+
+- QA READY on snapshot is misread as Product-complete.
+- Demo pressure reopens Auto or live Pause/Resume.
+- Phase 2 shell is unparked to “make stubs look finished.”
+
+## Recommendation
+
+🔴 **REJECT**
+
+Fix D-003 (ASTRA-S2 / PR #4). Do not accept stubs. Product does not approve merge.
+
+---
+
+Product Decision  
+Decision ID: ASTRA-PD-001  
+Product Version: 1.0.1  
+Priority: Critical  
+Status: Active — ship-as-is rejected  
+Owner: Product Owner  
+Next Responsible Role: Programmer (PR #4) → Design → QA → EM  
+Dependencies: ASTRA-S1, ASTRA-S2, PRs #2 #3 #4  
+Target Sprint: Sprint 0 Track A  
+One-line rationale: A control plane that lies is worse than an incomplete one.

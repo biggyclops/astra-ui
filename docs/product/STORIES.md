@@ -2,16 +2,25 @@
 
 | Field | Value |
 |---|---|
-| **Version** | 1.0.0 |
+| **Version** | 1.0.1 |
 | **Status** | Approved for Engineering — Sprint 0 Track A + immediate honesty |
 | **Owner** | Product |
 | **Last Reviewed** | 2026-09-16 |
 
-**See also:** [PRODUCT.md](../PRODUCT.md) · [REVIEWS.md](./REVIEWS.md) · [ROADMAP.md](../ROADMAP.md)
+**See also:** [PRODUCT.md](../PRODUCT.md) · [REVIEWS.md](./REVIEWS.md) · [DECISIONS.md](./DECISIONS.md) · [ROADMAP.md](../ROADMAP.md)
 
 These stories are **what/why + acceptance**. They are not architecture, visual redesign, merge approval, or a release sign-off.
 
 Programmer implements. Design reviews UI consistency. QA gates. EM sequences. CTO owns contracts. Product does not expand a story mid-flight.
+
+**Product lock:** [ASTRA-PD-001](./DECISIONS.md) — Track A = S1 + S2. Do not merge ship-as-is. Product does not approve merge.
+
+| Order | ID | Priority | Vehicle | Engineering action |
+|---|---|---|---|---|
+| 1 | ASTRA-S1 | P0 | PRs #2 / #3 | Keep in merge set. Do not expand. |
+| 2 | ASTRA-S2 | P0 | PR #4 | Required for Track A. Do not re-enable stubs. |
+| 3 | ASTRA-S3 | P1 | not started | Label Jobs/Chat only after S2 is in the proposed merge set. |
+| — | S4–S11 | parked / rejected | — | Do not staff. |
 
 ---
 
@@ -65,25 +74,29 @@ Programmer implements. Design reviews UI consistency. QA gates. EM sequences. CT
 
 **Story:** As the operator, I can tell that Jobs and Chat are prototypes, so I do not trust them as a fleet scheduler or production assistant.
 
-**Priority:** P1 — do not start until S1+S2 are in review, not blocked on them for *design*, but **do not merge Track A extras before S2**.  
+**Priority:** P1 — start only after S2 is in the proposed merge set. Do not merge Track A extras before S2.  
 **Review:** ASTRA-R8 🟡 (Jobs as prototype only)
 
 **Scope in**
-- Honest labeling on Jobs and Chat surfaces (copy + disabled or clearly local-only behaviors where they imply live dispatch/intelligence they do not have)
-- No new job types, no new assistant backend
+- Honest labeling on `/jobs` and Chat (`/`)
+- Local-only / prototype copy where the UI implies live GPU, Comfy, robot dispatch, or production assistant intelligence
+- Keep existing local prototype behavior
 
 **Scope out**
-- Building a real scheduler
+- Building a real scheduler or worker contract
 - Building a real LLM/tool path
-- Visual redesign
+- New job types, new nodes in the job picker, new assistant backends
+- Visual redesign, chrome changes, Phase 2 shell
 
 **Acceptance criteria**
-1. Jobs page states it is a **prototype / local** workflow, not a distributed scheduler.
-2. Chat does not claim live Autonomy command or production assistant guarantees it does not have.
-3. No new enabled control is added that lacks a real API.
-4. Existing Media and Nodes behavior is unchanged.
+1. `/jobs` states it is a **prototype / local** workflow, not a distributed fleet scheduler.
+2. Job create copy does not claim live Comfy/GPU/robot dispatch.
+3. Chat (`/`) does not claim live Autonomy command or production assistant guarantees it does not have.
+4. No new enabled control is added that lacks a real, intended API.
+5. Existing Media and Nodes behavior is unchanged.
+6. Desktop chrome stays Core mark + ASTRA wordmark.
 
-**Done when:** QA can see the labels without a hidden wiki. Keep the change small.
+**Done when:** QA can see the labels on the pages without a hidden wiki. Keep the change small.
 
 ---
 

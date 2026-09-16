@@ -61,6 +61,7 @@ Root [`../AGENTS.md`](../AGENTS.md) is a minimal bootstrap that points only at B
 | Product | Product | [`PRODUCT.md`](./PRODUCT.md) |
 | Product reviews | Product | [`product/REVIEWS.md`](./product/REVIEWS.md) |
 | Product stories | Product | [`product/STORIES.md`](./product/STORIES.md) |
+| Product decisions | Product | [`product/DECISIONS.md`](./product/DECISIONS.md) |
 | Architecture (platform) | CTO | [`ARCHITECTURE.md`](./ARCHITECTURE.md) |
 | Frontend architecture | UI + Eng | [`frontend-architecture.md`](./frontend-architecture.md) |
 | Roadmap | EM | [`ROADMAP.md`](./ROADMAP.md) |

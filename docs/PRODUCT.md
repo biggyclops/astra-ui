@@ -2,14 +2,14 @@
 
 | Field | Value |
 |---|---|
-| **Version** | 1.0.0 |
+| **Version** | 1.0.1 |
 | **Status** | Approved — Product Owner canon |
 | **Owner** | Product (Astra Product Owner / Jason) |
 | **Maintained by** | Documentation Manager |
 | **Last Reviewed** | 2026-09-16 |
 | **Approved By** | Astra Product Owner |
 
-**See also:** [ASTRA_MASTER.md](./ASTRA_MASTER.md) · [DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md) · [ROADMAP.md](./ROADMAP.md) · [product/REVIEWS.md](./product/REVIEWS.md) · [product/STORIES.md](./product/STORIES.md) · [DOCUMENTATION_ARCHITECTURE.md](./DOCUMENTATION_ARCHITECTURE.md)
+**See also:** [ASTRA_MASTER.md](./ASTRA_MASTER.md) · [DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md) · [ROADMAP.md](./ROADMAP.md) · [product/REVIEWS.md](./product/REVIEWS.md) · [product/STORIES.md](./product/STORIES.md) · [product/DECISIONS.md](./product/DECISIONS.md) · [DOCUMENTATION_ARCHITECTURE.md](./DOCUMENTATION_ARCHITECTURE.md)
 
 ## Purpose
 
@@ -100,7 +100,21 @@ Highest first. EM may sequence delivery; Product will not accept work above a hi
 4. `GET /api/autonomy/snapshot` is the only Autonomy API used by the page.
 5. Design + QA sign-off. Product does not approve merge or deploy.
 
-**Out of this milestone:** Phase 2 shell merge, Phone HUD pass, Shared Drive, Autonomy Auto, robotics control, production jobs.
+**Vehicles:** ASTRA-S1 → PRs #2 / #3 (snapshot). ASTRA-S2 → PR #4 (D-003 disable + Preview/Local). Track A is **not** product-complete on #2+#3 alone.
+
+**Out of this milestone:** Phase 2 shell merge, Phone HUD pass, Shared Drive, Autonomy Auto, robotics control, production jobs, ship-as-is with visible stubs.
+
+Signed decision: [ASTRA-PD-001](./product/DECISIONS.md).
+
+### Sprint NOW (Product)
+
+| Order | ID | What | Why now |
+|---|---|---|---|
+| 1 | ASTRA-S1 | Read-only Autonomy snapshot | Live instrument; already in #2/#3 |
+| 2 | ASTRA-S2 | D-003 honesty | Ship-blocker; already in #4 |
+| 3 | ASTRA-S3 | Jobs/Chat prototype labels | P1 after S2 is in the proposed merge set |
+
+Do not staff S4–S11. Do not start new surfaces. Default for unreviewed ideas: **reject until reviewed**.
 
 ## 8. Change control
 
@@ -109,7 +123,7 @@ Highest first. EM may sequence delivery; Product will not accept work above a hi
 - Bump **Version** on material guidance changes.
 - EM owns ROADMAP sequencing and `project_status.yaml`.
 - CTO owns architecture. Design owns visual identity. QA owns release readiness. Product does not override those roles.
-- New feature work needs a Product review in `docs/product/REVIEWS.md` before Engineering expands scope.
+- New feature work needs a Product review in `docs/product/REVIEWS.md` before Engineering expands scope. Record signed locks in `docs/product/DECISIONS.md`.
 
 ## Verdict log (in-flight)
 
@@ -117,6 +131,7 @@ Highest first. EM may sequence delivery; Product will not accept work above a hi
 |---|---|---|
 | Autonomy Phase 1 read-only snapshot | 🟡 APPROVE WITH CHANGES | Keep GET-only. D-003 must land before Product considers the story complete. |
 | D-003 disable + Preview/Local | 🟢 APPROVE | Honesty over theater. Preferred over removal for now; Design may polish later. |
+| Ship Autonomy P1 with visible stubs | 🔴 REJECT | Ship-as-is is not a Product option. Track A is incomplete until D-003 (ASTRA-S2 / PR #4). |
 | Phase 2 cinematic shell | 🟡 APPROVE WITH CHANGES | Park until Track A. Atmosphere only. No new surface. |
 | Shared Drive UI (Chronos stash) | 🔴 REJECT | Out of north star. Media already covers operator storage. Park indefinitely. |
 | Autonomy Auto / mutating commands | 🔴 REJECT | Not this phase. Requires a new Product + CTO approval later. |
