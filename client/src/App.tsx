@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import { Sidebar } from "@/components/Sidebar";
+import "./styles/cinematic-shell.css";
 
 // Pages
 import Chat from "@/pages/Chat";
