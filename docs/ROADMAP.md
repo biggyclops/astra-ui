@@ -2,14 +2,14 @@
 
 | Field | Value |
 |---|---|
-| **Version** | 1.0.0 |
+| **Version** | 1.0.1 |
 | **Status** | Active — Sprint 0 Track A |
 | **Owner** | Astra EM |
 | **Maintained by** | Documentation Manager |
 | **Last Reviewed** | 2026-09-16 |
 | **Approved By** | Jason (Sprint 0 Track A via CoS) |
 
-**See also:** [project_status.yaml](./project_status.yaml) · [PRODUCT.md](./PRODUCT.md) · [ASTRA_MASTER.md](./ASTRA_MASTER.md) · [releases/](./releases/)
+**See also:** [project_status.yaml](./project_status.yaml) · [PRODUCT.md](./PRODUCT.md) · [ASTRA_MASTER.md](./ASTRA_MASTER.md) · [docs/qa/SPRINT0_TRACK_A_GATE.md](./qa/SPRINT0_TRACK_A_GATE.md) · [releases/](./releases/)
 
 ## Purpose
 
@@ -24,13 +24,13 @@ Narrate phases and milestones so humans and agents share one view of where Astra
 - No Autonomy auto.
 - No deferred infra P0.
 - Dirty unrelated `server/routes.ts` is **quarantined** — not in DoD, not in merge scope.
-- Programmer opens PRs only; **no merge without Design + QA**.
+- Programmer opens PRs only; **no merge without Design + QA** (QA gate: `docs/qa/SPRINT0_TRACK_A_GATE.md` — currently **NOT READY** until live).
 
 ### Now
-1. **Autonomy honesty** — Design + QA on `feature/autonomy-ui` @ `8e0a8a2` (hero orb + Phase 1 read-only snapshot). Pass or ticket list before any merge.
-2. **Canon status** — this ROADMAP 1.0 + `project_status.yaml` with owners and Track A milestones (Docs syncs Mini-Beast/GitHub).
-3. **Phase 2 posture** — keep `feature/phase2-shell` as **pending_restart_qa** until Astra Systems reports restart facts; then EM sets **restart QA** or **park** explicitly in status.
-4. **Phone (secondary)** — AstraPhone v0.1.14 smoke only (wake path); full HUD/Settings consistency is Next unless Design finishes early.
+1. **Autonomy honesty** — Design + QA on `feature/autonomy-ui` (GitHub `52c96eb`; Mini-Beast tip `8e0a8a2` unpushed). Hero orb + Phase 1 read-only snapshot. Pass or ticket list before any merge.
+2. **Canon status** — ROADMAP + `project_status.yaml` with owners and Track A milestones (Docs syncs Mini-Beast/GitHub). Draft PR #1 canon→main stays unmerged until EM/Jason say so.
+3. **Phase 2 posture** — `feature/phase2-shell` is Mini-Beast-only; related remote `feature/astra-cinematic-shell` @ `6f7307b`. Status **pending_restart_qa** until Astra Systems reports restart facts; then EM sets **restart_qa** or **parked**.
+4. **Phone (secondary)** — AstraPhone **v0.1.26 (28)** smoke only (wake path); full HUD/Settings consistency is Next unless Design finishes early.
 
 ### Next
 1. Phase 2 cinematic shell visual QA **only if** Jason/Systems greenlight restart; otherwise remain parked in status.
@@ -49,16 +49,17 @@ Narrate phases and milestones so humans and agents share one view of where Astra
 
 | Track | Branch / note | Sprint 0 role |
 |---|---|---|
-| Autonomy UI Phase 1 | `feature/autonomy-ui` @ `8e0a8a2` | **Primary — honesty QA** |
-| Phase 2 cinematic shell | `feature/phase2-shell` | Capacity after Autonomy; pending restart facts |
-| Docs canon | `docs/canon-v1` | Live — EM substance, Docs sync |
-| AstraPhone | main v0.1.14 (15) | Secondary smoke only |
+| Autonomy UI Phase 1 | `feature/autonomy-ui` — GH `52c96eb` / MB `8e0a8a2` | **Primary — honesty QA** |
+| Cinematic shell (remote) | `feature/astra-cinematic-shell` @ `6f7307b` | Capacity after Autonomy |
+| Phase 2 local | `feature/phase2-shell` (Mini-Beast only) | pending restart facts |
+| Docs canon | `docs/canon-v1` (draft PR #1 → main) | Live — do not merge yet |
+| AstraPhone | main **v0.1.26 (28)** | Secondary smoke only |
 | Dirty `server/routes.ts` | local / unrelated | **Quarantined — out of DoD** |
 
 ## Definition of Done — Sprint 0 Track A
 
 - [ ] Autonomy Phase 1 Design pass (or ticket list) recorded in handoffs/
-- [ ] Autonomy Phase 1 QA acceptance recorded; release-ready call made
+- [ ] Autonomy Phase 1 QA acceptance recorded; release-ready call made (`SPRINT0_TRACK_A_GATE.md` → READY)
 - [ ] No merge of Autonomy/Phase 2 without Design + QA sign-off
 - [ ] `routes.ts` quarantine respected (not in PR DoD)
 - [ ] Phase 2 status is explicit: `pending_restart_qa`, `restart_qa`, or `parked`
