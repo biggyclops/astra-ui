@@ -4,7 +4,7 @@
 # Approved: Jason via CoS 2026-09-16 — Autonomy honesty first
 
 meta:
-  version: "1.0.2"
+  version: "1.0.3"
   sprint: "Sprint 0 Track A"
   track_focus: "Autonomy honesty first"
   updated: "2026-09-16"
@@ -17,6 +17,8 @@ meta:
   docs_branch: "docs/canon-v1"
   docs_pr: "https://github.com/biggyclops/astra-ui/pull/1"
   docs_pr_merge: "blocked — EM/Jason only"
+  eng_pr: "https://github.com/biggyclops/astra-ui/pull/2"
+  eng_pr_merge: "blocked — Design + QA sign-off required"
 
 visual_identity:
   policy: "Jason-approved Astra Visual Identity Policy"
@@ -38,16 +40,22 @@ live_serving:
   repo: "/home/comea/astra-ui/astra-ui"
   checkout: "feature/phase2-shell @ db93051 (includes autonomy 8e0a8a2)"
   dirty_tree: "~190 files"
+  probe_from: "Chronos / Tailscale / LAN — Grok Bot box cannot reach 100.x"
   vite_5173:
     status: up
     http: 200
+    urls:
+      - "http://100.81.216.117:5173/autonomy"
+      - "http://192.168.0.51:5173/autonomy"
     serves: "dirty phase2-shell source (not cinematic 6f7307b)"
   nginx_5000:
     upstream: "127.0.0.1:6001"
+    urls:
+      - "http://100.81.216.117:5000/autonomy"
   production_6001:
     unit: astra-ui.service
     status: active_stale_vs_dist
-    note: "dist newer than process; bounce loads current phase2 dist, not cinematic"
+    note: "dist newer than process; optional bounce loads current phase2 dist, not cinematic"
   autonomy_snapshot_unauth: 401
   cinematic_6f7307b_serving: false
   reported_by: Astra Systems
@@ -58,12 +66,14 @@ milestones:
     title: "Autonomy UI Phase 1 honesty (Design + QA)"
     priority: P0
     status: in_progress
+    eng_status: "pushed + PR open — awaiting Design + QA"
     live_target: "http://100.81.216.117:5173/autonomy (session auth for snapshot)"
     branch: feature/autonomy-ui
-    github_tip: "52c96eb"
+    github_tip: "8e0a8a2"
     minibeast_tip: "8e0a8a2"
+    pr: "https://github.com/biggyclops/astra-ui/pull/2"
     serving_checkout: "feature/phase2-shell @ db93051"
-    github_vs_local: "Mini-Beast ahead of GitHub autonomy tip; currently checked out via phase2-shell lineage"
+    github_vs_local: "Autonomy tip pushed to origin/feature/autonomy-ui @ 8e0a8a2; live still via phase2-shell checkout"
     summary: "Hero orb + Phase 1 read-only snapshot — prove design-true; no auto"
     owners:
       primary: Astra Design
@@ -71,13 +81,12 @@ milestones:
       qa: Astra QA
       em: Astra EM
     qa_gate: "docs/qa/SPRINT0_TRACK_A_GATE.md"
-    qa_verdict: "NOT READY — live :5173 available per Systems; awaiting QA pass"
+    qa_verdict: "NOT READY — live desktop available from Tailscale/LAN; awaiting live pass"
     dod:
       - "Design consistency pass vs DESIGN_SYSTEM.md (pass or ticket list)"
-      - "QA acceptance on read-only Autonomy surface (live desktop)"
-      - "No merge without Design + QA"
-      - "Push or explicitly document unpushed Mini-Beast tip before merge review"
-      - "routes.ts not in scope"
+      - "QA acceptance on read-only Autonomy surface (live desktop from Chronos/Tailscale)"
+      - "No merge of PR #2 without Design + QA"
+      - "routes.ts quarantine respected"
 
   - id: canon-status
     title: "ROADMAP 1.0 + project_status owners"
@@ -88,7 +97,7 @@ milestones:
       sync: Astra Docs
     dod:
       - "ROADMAP Now/Next/Later filled and Jason-approved Track A"
-      - "Docs sync Mini-Beast astra-ui/docs to match docs/canon-v1"
+      - "Docs sync Mini-Beast astra-ui/docs to match docs/canon-v1 tip"
 
   - id: phase2-posture
     title: "Phase 2 / cinematic shell — explicit posture"
@@ -141,11 +150,12 @@ quarantine:
 ui_in_flight:
   - id: autonomy-ui
     branch: feature/autonomy-ui
-    github_tip: "52c96eb"
+    github_tip: "8e0a8a2"
     minibeast_tip: "8e0a8a2"
-    serving_via: "feature/phase2-shell @ db93051 on :5173"
+    pr: "https://github.com/biggyclops/astra-ui/pull/2"
+    serving_via: "feature/phase2-shell @ db93051 on :5173/:5000"
     milestone: autonomy-honesty
-    summary: "Autonomy hero orb + Phase 1 read-only snapshot"
+    summary: "Autonomy Phase 1 pushed; PR open for Design+QA"
   - id: astra-cinematic-shell
     branch: feature/astra-cinematic-shell
     github_tip: "6f7307b"
@@ -159,7 +169,7 @@ ui_in_flight:
 
 design_backlog:
   - id: autonomy-design-pass
-    item: "Autonomy Phase 1 vs Design System on live :5173 (Track A P0)"
+    item: "Autonomy Phase 1 vs Design System on live :5173 + review PR #2"
     status: queued_live_available
   - id: phase2-visual-qa
     item: "Visual QA cinematic @ 6f7307b after checkout+build+restart"
@@ -169,13 +179,13 @@ design_backlog:
     status: deferred_secondary
 
 blockers:
-  - id: autonomy-unpushed-tip
-    summary: "Autonomy tip documentation / push before merge review"
-    owner: Programmer
-    blocks: autonomy-honesty
   - id: qa-live-gate
-    summary: "SPRINT0_TRACK_A_GATE.md NOT READY until live pass on :5173 completes"
+    summary: "SPRINT0_TRACK_A_GATE.md NOT READY until live pass from Chronos/Tailscale completes"
     owner: Astra QA
+    blocks: autonomy-honesty
+  - id: design-signoff
+    summary: "PR #2 needs Design consistency sign-off before merge"
+    owner: Astra Design
     blocks: autonomy-honesty
   - id: cinematic-not-serving
     summary: "6f7307b not in HEAD; cinematic QA needs checkout+build+restart — not a blind bounce"
@@ -187,5 +197,5 @@ handoff_required:
   - "docs/handoffs/ entry when Phase 2 posture becomes restart_qa or parked"
 
 docs_standing_by:
-  - "Sync Mini-Beast checkout to docs/canon-v1 tip (include 1.0.2)"
+  - "Sync Mini-Beast checkout to docs/canon-v1 tip (include 1.0.3)"
   - "docs/canon-v1 → main PR #1 only when EM/Jason say so"
