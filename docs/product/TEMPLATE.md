@@ -4,6 +4,17 @@ Copy into [`REVIEWS.md`](./REVIEWS.md). Product reviews **what** and **why**. Th
 
 Every review must include the sections below and end with a Product Decision block. Choose exactly one recommendation.
 
+**Handoff rule:** name exactly one Next Responsible Role. Do not describe the engineering pipeline. Do not assign multiple departments. Chief of Staff coordinates any subsequent reviews.
+
+Allowed next roles (choose one):
+
+- Design Lead
+- Programmer
+- CTO
+- Documentation Manager
+- Engineering Manager
+- Chief of Staff
+
 ---
 
 # ASTRA-R# — short title
@@ -23,12 +34,13 @@ Who benefits and what trust or capability they gain. If value is low or harmful,
 **In**
 - …
 
-**Out**
-- …
-
 ## Acceptance Criteria
 
 - …
+
+## Non-Goals
+
+What is explicitly out of scope for this work.
 
 ## Risks
 
@@ -52,7 +64,7 @@ Product Version: (from [`PRODUCT.md`](../PRODUCT.md))
 Priority: Critical | High | Medium | Low  
 Status:  
 Owner: Product Owner  
-Next Responsible Role:  
+Next Responsible Role: (one role only)  
 Dependencies:  
 Target Sprint:  
 One-line rationale:

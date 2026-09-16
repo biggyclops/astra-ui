@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| **Version** | 1.0.1 |
+| **Version** | 1.0.2 |
 | **Status** | Approved for Engineering — Sprint 0 Track A + immediate honesty |
 | **Owner** | Product |
 | **Last Reviewed** | 2026-09-16 |
@@ -11,15 +11,16 @@
 
 These stories are **what/why + acceptance**. They are not architecture, visual redesign, merge approval, or a release sign-off.
 
-Programmer implements. Design reviews UI consistency. QA gates. EM sequences. CTO owns contracts. Product does not expand a story mid-flight.
+Acceptance criteria are the contract for whoever picks up the story. Product does not expand a story mid-flight.
 
-**Product lock:** [ASTRA-PD-001](./DECISIONS.md) — Track A = S1 + S2. Do not merge ship-as-is. Product does not approve merge.
+**Product lock:** [ASTRA-PD-001](./DECISIONS.md) — Track A = S1 + S2. Do not merge ship-as-is. Product does not approve merge.  
+**Handoff:** [ASTRA-PD-002](./DECISIONS.md) — next owner is Chief of Staff. Product does not sequence later reviews.
 
-| Order | ID | Priority | Vehicle | Engineering action |
+| Order | ID | Priority | Vehicle | Product note |
 |---|---|---|---|---|
 | 1 | ASTRA-S1 | P0 | PRs #2 / #3 | Keep in merge set. Do not expand. |
 | 2 | ASTRA-S2 | P0 | PR #4 | Required for Track A. Do not re-enable stubs. |
-| 3 | ASTRA-S3 | P1 | not started | Label Jobs/Chat only after S2 is in the proposed merge set. |
+| 3 | ASTRA-S3 | P1 | parked | Do not staff while live Autonomy still shows operable stubs. |
 | — | S4–S11 | parked / rejected | — | Do not staff. |
 
 ---
@@ -43,7 +44,7 @@ Programmer implements. Design reviews UI consistency. QA gates. EM sequences. CT
 5. Desktop chrome stays Core mark + ASTRA wordmark (no Phone nav clone).
 6. Unrelated `server/routes.ts` edits stay quarantined.
 
-**Done when:** QA can repeat the signed-in/unauth checks on the live or agreed environment. Product does not merge.
+**Done when:** signed-in and unauthenticated snapshot checks can be repeated on the live or agreed environment. Product does not merge.
 
 ---
 
@@ -66,7 +67,7 @@ Programmer implements. Design reviews UI consistency. QA gates. EM sequences. CT
 
 **Out of scope:** Removing the layout; renaming `AstraPhoneOrb` (D-002 — Design soft); Mini-Beast deploy.
 
-**Done when:** Design confirms D-003 closed or files only polish (not re-enable). QA re-passes the honesty checklist.
+**Done when:** listed controls are not operable, are labeled Preview/Local (or equivalent), and clicking them does not invent live control. Product does not merge.
 
 ---
 
@@ -74,7 +75,7 @@ Programmer implements. Design reviews UI consistency. QA gates. EM sequences. CT
 
 **Story:** As the operator, I can tell that Jobs and Chat are prototypes, so I do not trust them as a fleet scheduler or production assistant.
 
-**Priority:** P1 — start only after S2 is in the proposed merge set. Do not merge Track A extras before S2.  
+**Priority:** P1 — parked until live `/autonomy` no longer shows operable stubs. Do not staff while Track A honesty is open.  
 **Review:** ASTRA-R8 🟡 (Jobs as prototype only)
 
 **Scope in**
@@ -96,7 +97,7 @@ Programmer implements. Design reviews UI consistency. QA gates. EM sequences. CT
 5. Existing Media and Nodes behavior is unchanged.
 6. Desktop chrome stays Core mark + ASTRA wordmark.
 
-**Done when:** QA can see the labels on the pages without a hidden wiki. Keep the change small.
+**Done when:** the prototype labels are visible on `/jobs` and Chat without a hidden wiki. Keep the change small.
 
 ---
 
@@ -108,7 +109,7 @@ Programmer implements. Design reviews UI consistency. QA gates. EM sequences. CT
 
 **Priority:** P2  
 **Review:** ASTRA-R3 🟡  
-**Engineering action:** No merge, no restart, no new shell scope until EM unparks after S1+S2.
+**Product note:** Parked. No new shell scope until Track A honesty is live.
 
 **Acceptance criteria**
 1. `feature/phase2-shell` / `feature/astra-cinematic-shell` stay unmerged.
@@ -155,12 +156,8 @@ Programmer implements. Design reviews UI consistency. QA gates. EM sequences. CT
 
 ---
 
-## Handoff to Engineering
+## Handoff
 
-When picking up a Now story, Programmer should:
+Stories are the Product contract: what, why, and acceptance. The active signed decision names exactly one next responsible role. Product does not sequence Design, QA, CTO, or EM after that handoff.
 
-1. Treat acceptance criteria as the contract.
-2. Keep diffs inside the listed scope.
-3. Open a PR; do not merge; do not deploy.
-4. Ping Design for UI consistency and QA for the gate — not Product for architecture or pixels.
-5. If a request is not on this list, stop and ask Product. Default is **reject until reviewed**.
+If a request is not on this list, stop. Default is **reject until reviewed**.

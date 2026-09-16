@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| **Version** | 1.0.1 |
+| **Version** | 1.0.2 |
 | **Status** | Active — Product Owner signed decisions |
 | **Owner** | Product Owner |
 | **Last Reviewed** | 2026-09-16 |
@@ -74,10 +74,72 @@ Product Version: 1.0.1
 Priority: Critical  
 Status: Active — Track A incomplete until S2 is in the proposed merge set  
 Owner: Product Owner  
-Next Responsible Role: Programmer (S2 already in PR #4) → Design (close D-003 or polish-only) → QA (honesty re-gate) → EM (release recommendation only)  
-Dependencies: PR #2, PR #3, PR #4; Design D-003; QA honesty checklist; Jason release gate; CTO architecture clear (Jason-owned, not Product)  
+Next Responsible Role: Chief of Staff  
+Dependencies: PR #2, PR #3, PR #4  
 Target Sprint: Sprint 0 Track A  
 One-line rationale: Honesty before atmosphere — snapshot is real, stubs must not look like control, and Product will not call Track A done until both are true.
+
+Handoff note (1.0.2): ASTRA-PD-001 remains the scope lock. The single next role and operating rule are signed in **ASTRA-PD-002**. Do not read this decision as a Design → QA → EM pipeline.
+
+---
+
+## ASTRA-PD-002 — Product Owner handoff lock (one next role)
+
+**Reviews:** ASTRA-R10 🟡  
+**Supersedes handoff of:** ASTRA-PD-001 (scope lock unchanged)
+
+# Summary
+
+Product has decided what Sprint 0 Track A is: ASTRA-S1 + ASTRA-S2. Ship-as-is with visible stubs is rejected. PR #4 already carries the approved D-003 variant. Product will not staff S3 or later while live `/autonomy` still shows operable stubs. Product will not sequence Design, QA, CTO, or EM. Chief of Staff owns subsequent coordination.
+
+# User Value
+
+The operator needs an honest Autonomy surface before any new product work. Protecting that order is the remaining Product value. Running a multi-department pipeline from Product delays that honesty and blurs ownership.
+
+# Scope
+
+**In (now)**
+- Keep ASTRA-PD-001 scope lock (S1 + S2)
+- Treat PR #4 as the Product-approved honesty vehicle
+- Park S3 until live stubs are gone
+
+**Out (this decision)**
+- Merge or deploy
+- Architecture, UI redesign, implementation-quality, or release approval
+- Staffing S3–S11
+- Product coordinating Design, QA, CTO, or EM
+
+# Acceptance Criteria
+
+1. Track A product scope remains S1 + S2 only.
+2. No Product document names more than one next responsible role.
+3. S3 stays unstaffed while live Autonomy shows operable stubs.
+4. Product does not approve merge or deploy.
+
+# Risks
+
+- CoS is treated as Product continuing to run the pipeline.
+- S3 or Phase 2 starts while stubs remain live.
+- #2+#3 merge without #4 because QA was technically READY.
+
+# Recommendation
+
+🟡 **APPROVE WITH CHANGES**
+
+Keep the S1+S2 lock. Change only the operating model: one next role, then Product stops.
+
+---
+
+Product Decision  
+Decision ID: ASTRA-PD-002  
+Product Version: 1.0.2  
+Priority: Critical  
+Status: Active — Track A locked; Product handoff complete  
+Owner: Product Owner  
+Next Responsible Role: Chief of Staff  
+Dependencies: ASTRA-PD-001; ASTRA-S1; ASTRA-S2; PRs #2, #3, #4  
+Target Sprint: Sprint 0 Track A  
+One-line rationale: Honesty before atmosphere — S1+S2 are the only NOW work, and Product hands Track A to Chief of Staff rather than running the pipeline.
 
 ---
 
@@ -86,9 +148,10 @@ One-line rationale: Honesty before atmosphere — snapshot is real, stubs must n
 | ID | Subject | Rec | Priority | Status |
 |---|---|---|---|---|
 | ASTRA-PD-001 | Sprint 0 Track A scope lock (S1+S2; no ship-as-is) | 🟡 | Critical | Active |
+| ASTRA-PD-002 | Product Owner handoff lock (one next role: Chief of Staff) | 🟡 | Critical | Active |
 | ASTRA-R4 / S10 | Shared Drive UI | 🔴 | — | Rejected |
 | ASTRA-R5 / S11 | Autonomy Auto / mutating commands | 🔴 | — | Rejected |
 | ASTRA-R6 | Phone chrome on desktop | 🔴 | — | Rejected |
 | ASTRA-R7 / S9 | Robotics actuation | 🔴 | — | Rejected |
 | ASTRA-R3 / S4 | Phase 2 cinematic shell | 🟡 | P2 | Parked until Track A |
-| ASTRA-R8 / S3 | Jobs/Chat as labeled prototypes | 🟡 | P1 | After S2 |
+| ASTRA-R8 / S3 | Jobs/Chat as labeled prototypes | 🟡 | P1 | Parked until live stubs are gone |

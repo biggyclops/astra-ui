@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| **Version** | 1.0.1 |
+| **Version** | 1.0.2 |
 | **Status** | Approved — Product Owner canon |
 | **Owner** | Product (Astra Product Owner / Jason) |
 | **Maintained by** | Documentation Manager |
@@ -15,7 +15,7 @@
 
 Define what Astra is for, who it serves, and what success looks like — without requiring old chat history.
 
-Engineering Manager sequences *when*. Product decides *what* and *why*.
+Product decides *what*, *why*, priority, and target sprint. Product does not sequence departments after the first handoff.
 
 ## 1. Product definition
 
@@ -98,7 +98,7 @@ Highest first. EM may sequence delivery; Product will not accept work above a hi
 2. No Autonomy control appears operable unless it actually works.
 3. Ask First is the displayed policy; Auto cannot be selected.
 4. `GET /api/autonomy/snapshot` is the only Autonomy API used by the page.
-5. Design + QA sign-off. Product does not approve merge or deploy.
+5. Product does not approve merge or deploy.
 
 **Vehicles:** ASTRA-S1 → PRs #2 / #3 (snapshot). ASTRA-S2 → PR #4 (D-003 disable + Preview/Local). Track A is **not** product-complete on #2+#3 alone.
 
@@ -112,18 +112,20 @@ Signed decision: [ASTRA-PD-001](./product/DECISIONS.md).
 |---|---|---|---|
 | 1 | ASTRA-S1 | Read-only Autonomy snapshot | Live instrument; already in #2/#3 |
 | 2 | ASTRA-S2 | D-003 honesty | Ship-blocker; already in #4 |
-| 3 | ASTRA-S3 | Jobs/Chat prototype labels | P1 after S2 is in the proposed merge set |
+| 3 | ASTRA-S3 | Jobs/Chat prototype labels | P1 — parked until live Autonomy no longer shows operable stubs |
 
-Do not staff S4–S11. Do not start new surfaces. Default for unreviewed ideas: **reject until reviewed**.
+Do not staff S3, S4–S11, or new surfaces while Track A honesty is still open. Default for unreviewed ideas: **reject until reviewed**.
+
+Signed handoff: [ASTRA-PD-002](./product/DECISIONS.md).
 
 ## 8. Change control
 
 - Product vision changes require explicit Product / Jason approval.
 - Docs Manager records approved text; does not invent it.
 - Bump **Version** on material guidance changes.
-- EM owns ROADMAP sequencing and `project_status.yaml`.
-- CTO owns architecture. Design owns visual identity. QA owns release readiness. Product does not override those roles.
 - New feature work needs a Product review in `docs/product/REVIEWS.md` before Engineering expands scope. Record signed locks in `docs/product/DECISIONS.md`.
+- After a signed decision, Product names **exactly one** next responsible role. Chief of Staff coordinates any later department reviews. Product does not sequence Design, QA, CTO, or EM after that handoff.
+- Product does not approve merge, deploy, architecture, or visual identity.
 
 ## Verdict log (in-flight)
 
@@ -137,3 +139,4 @@ Do not staff S4–S11. Do not start new surfaces. Default for unreviewed ideas: 
 | Autonomy Auto / mutating commands | 🔴 REJECT | Not this phase. Requires a new Product + CTO approval later. |
 | Phone chrome on desktop | 🔴 REJECT | Identity law. Not negotiable. |
 | Robotics motor/servo control | 🔴 REJECT | Telemetry-first later. Control is not a Sprint 0 or Phase 1 story. |
+| Product Owner charter applied to Track A | 🟡 APPROVE WITH CHANGES | Keep S1+S2 lock. Single handoff to Chief of Staff. Do not staff S3 yet. |

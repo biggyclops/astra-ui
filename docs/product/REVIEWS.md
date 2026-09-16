@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| **Version** | 1.0.1 |
+| **Version** | 1.0.2 |
 | **Status** | Approved — Product Owner |
 | **Owner** | Product |
 | **Last Reviewed** | 2026-09-16 |
@@ -349,17 +349,76 @@ Track A acceptance remains S1 + S2 (see ASTRA-R1, ASTRA-R2, ASTRA-PD-001).
 
 🔴 **REJECT**
 
-Fix D-003 (ASTRA-S2 / PR #4). Do not accept stubs. Product does not approve merge.
+Fix D-003 (ASTRA-S2 / PR #4). Do not accept stubs. Product does not approve merge. Scope lock: [ASTRA-PD-001](./DECISIONS.md).
+
+---
+
+# ASTRA-R10 — Product Owner charter applied to Sprint 0 Track A
+
+**Request:** Operate as Product Owner. Confirm what is built now, why, and who is the single next owner. PRs: [#2](https://github.com/biggyclops/astra-ui/pull/2) snapshot, [#3](https://github.com/biggyclops/astra-ui/pull/3) Q-001, [#4](https://github.com/biggyclops/astra-ui/pull/4) D-003.
+
+## Summary
+
+Astra's current product job is honesty, not atmosphere and not remote control. Track A is the live `/autonomy` instrument: a GET-only snapshot **or** an honest degraded state, with no control that looks operable unless it works. PRs #2 and #3 cover the snapshot. PR #4 is the approved D-003 honesty variant. Shipping Phase 1 with visible stubs is rejected. Product work on *what* and *why* for this milestone is complete. Remaining department reviews are not Product's to sequence.
+
+## User Value
+
+The operator (Jason) needs to trust the screen. A control plane that displays Pause, Resume, Approve, or Auto as if they work teaches the operator that Astra lies. That trust is the whole Phase 1 value. Expanding into Jobs/Chat labels, cinematic shell, Phone HUD, or new surfaces while live Autonomy still shows stubs spends that trust.
+
+## Scope
+
+**In**
+- ASTRA-S1 — read-only snapshot (`GET /api/autonomy/snapshot` only) via PRs #2 / #3
+- ASTRA-S2 — disable stub controls and label Preview/Local via PR #4
+- Keep Nodes and Media as live surfaces (no regression, no Drive-clone)
+- Ask First displayed; Auto not selectable
+
+## Acceptance Criteria
+
+- Signed-in operator opens `/autonomy` and is not stuck on a login plate.
+- Authenticated `GET /api/autonomy/snapshot` returns **200** JSON; unauthenticated returns **401**.
+- UI shows live snapshot fields **or** an honest degraded/unreachable state.
+- Pause/Resume, command field + Send + chips, capability cards, Approve/Not Now, and mode chips are not operable and are labeled Preview/Local (or Design-approved equivalent).
+- Ask First is displayed; Auto cannot be selected.
+- The page calls no mutating Autonomy API.
+- Desktop chrome remains Core mark + ASTRA wordmark.
+- No new product surface is staffed while those criteria are unmet on the live operator path.
+
+## Non-Goals
+
+- Merge or deploy (not a Product decision)
+- Architecture review, UI redesign, or implementation-quality review
+- Autonomy Auto, live Pause/Resume, command composer, or job dispatch from `/autonomy`
+- Phase 2 cinematic shell merge or restart
+- Shared Drive / Chronos file-manager UI
+- Phone chrome on desktop
+- Robotics motor/servo/camera **control**
+- Production Jobs scheduler or real Chat assistant path
+- ASTRA-S3 Jobs/Chat prototype labels (P1 — parked until live stubs are gone)
+- Coordinating Design, QA, CTO, or EM after this handoff
+
+## Risks
+
+- QA technical READY on #2+#3 is misread as Product-complete while live stubs remain.
+- Programmer starts S3, Phase 2, or Phone work while `/autonomy` still lies.
+- Product is asked to approve merge or to run the Design → QA → EM pipeline.
+- Ship-as-is pressure reopens Auto or live Pause/Resume for a demo.
+
+## Recommendation
+
+🟡 **APPROVE WITH CHANGES**
+
+Keep the Track A lock: S1 + S2 only. Do not staff S3 or later while live Autonomy still shows operable stubs. Product names one next owner and stops.
 
 ---
 
 Product Decision  
-Decision ID: ASTRA-PD-001  
-Product Version: 1.0.1  
+Decision ID: ASTRA-PD-002  
+Product Version: 1.0.2  
 Priority: Critical  
-Status: Active — ship-as-is rejected  
+Status: Active — Track A locked; Product handoff complete  
 Owner: Product Owner  
-Next Responsible Role: Programmer (PR #4) → Design → QA → EM  
-Dependencies: ASTRA-S1, ASTRA-S2, PRs #2 #3 #4  
+Next Responsible Role: Chief of Staff  
+Dependencies: ASTRA-PD-001; ASTRA-S1; ASTRA-S2; PRs #2, #3, #4  
 Target Sprint: Sprint 0 Track A  
-One-line rationale: A control plane that lies is worse than an incomplete one.
+One-line rationale: Honesty before atmosphere — S1+S2 are the only NOW work, and Product hands Track A to Chief of Staff rather than running the pipeline.
