@@ -4,7 +4,7 @@
 # Approved: Jason via CoS 2026-09-16 — Autonomy honesty first
 
 meta:
-  version: "1.0.0"
+  version: "1.0.1"
   sprint: "Sprint 0 Track A"
   track_focus: "Autonomy honesty first"
   updated: "2026-09-16"
@@ -12,8 +12,11 @@ meta:
   design_system: "docs/DESIGN_SYSTEM.md"
   master_index: "docs/ASTRA_MASTER.md"
   roadmap: "docs/ROADMAP.md"
+  qa_gate: "docs/qa/SPRINT0_TRACK_A_GATE.md"
   frontend_architecture: "docs/frontend-architecture.md"
   docs_branch: "docs/canon-v1"
+  docs_pr: "https://github.com/biggyclops/astra-ui/pull/1"
+  docs_pr_merge: "blocked — EM/Jason only"
 
 visual_identity:
   policy: "Jason-approved Astra Visual Identity Policy"
@@ -45,9 +48,11 @@ milestones:
       eng: Programmer
       qa: Astra QA
       em: Astra EM
+    qa_gate: "docs/qa/SPRINT0_TRACK_A_GATE.md"
+    qa_verdict: "NOT READY — awaiting live evidence"
     dod:
       - "Design consistency pass vs DESIGN_SYSTEM.md (pass or ticket list)"
-      - "QA acceptance on read-only Autonomy surface"
+      - "QA acceptance on read-only Autonomy surface (live desktop)"
       - "No merge without Design + QA"
       - "Push or explicitly document unpushed Mini-Beast tip before merge review"
       - "routes.ts not in scope"
@@ -88,10 +93,12 @@ milestones:
       - "routes.ts remains quarantined"
 
   - id: phone-smoke
-    title: "AstraPhone v0.1.14 smoke (secondary)"
+    title: "AstraPhone v0.1.26 smoke (secondary)"
     priority: P2
     status: pending
-    summary: "Wake path smoke only — not full HUD/Settings consistency this track"
+    version: "0.1.26"
+    build: "28"
+    summary: "Wake path smoke only on lasarus — not full HUD/Settings consistency this track"
     owners:
       primary: AstraPhone Engineer
       design: Astra Design
@@ -135,7 +142,7 @@ design_backlog:
     item: "Visual QA cinematic/Phase 2 shell after restart approval"
     status: blocked_on_restart
   - id: phone-hud-settings
-    item: "AstraPhone v0.1.14 HUD + Settings full consistency (Next unless early)"
+    item: "AstraPhone v0.1.26 HUD + Settings full consistency (Next unless early)"
     status: deferred_secondary
 
 blockers:
@@ -147,6 +154,10 @@ blockers:
     summary: "Mini-Beast autonomy tip 8e0a8a2 ahead of GitHub 52c96eb — push or document before merge review"
     owner: Programmer
     blocks: autonomy-honesty
+  - id: qa-live-gate
+    summary: "SPRINT0_TRACK_A_GATE.md verdict NOT READY until live desktop evidence"
+    owner: Astra QA
+    blocks: autonomy-honesty
 
 handoff_required:
   - "docs/handoffs/ entry when Autonomy honesty closes"
@@ -154,4 +165,4 @@ handoff_required:
 
 docs_standing_by:
   - "Sync Mini-Beast checkout to docs/canon-v1 after this refresh"
-  - "docs/canon-v1 → main PR only when EM/Jason say so"
+  - "docs/canon-v1 → main PR #1 only when EM/Jason say so"
