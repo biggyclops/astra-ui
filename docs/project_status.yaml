@@ -3,7 +3,7 @@
 # Canon: astra-ui/docs (docs/canon-v1)
 
 meta:
-  version: "1.0.8"
+  version: "1.0.9"
   sprint: "Sprint 0 Track A"
   track_focus: "Autonomy honesty first"
   updated: "2026-09-16"
@@ -12,31 +12,37 @@ meta:
   docs_pr: "https://github.com/biggyclops/astra-ui/pull/1"
   eng_pr: "https://github.com/biggyclops/astra-ui/pull/2"
   eng_pr_q001: "https://github.com/biggyclops/astra-ui/pull/3"
-  eng_pr_merge: "blocked — QA re-pass after Q-001 + Jason D-003"
+  eng_pr_merge: "blocked — Jason D-003 call only"
 
 live_serving:
   host: "Mini-Beast 100.81.216.117"
-  checkout: "feature/phase2-shell @ db93051 (+ live Q-001 registration)"
   vite_5173:
     status: up
-    api_proxy: "Vite /api → :5000 → astra-ui.service :6001"
-  production_6001:
-    unit: astra-ui.service
-    status: restarted_for_q001
-    note: "Eng npm run build + systemctl --user restart for Q-001 live fix"
+    url: "http://100.81.216.117:5173/autonomy"
   autonomy_snapshot_unauth: 401
-  autonomy_snapshot_auth: "200 JSON (Eng verify; awaiting QA re-pass)"
+  autonomy_snapshot_auth: "200 JSON (QA re-pass PASS)"
+  hades_5050: offline_noted_separate
 
 milestones:
   - id: autonomy-honesty
     priority: P0
-    status: in_progress
+    status: awaiting_jason_d003
     design_status: "APPROVE WITH TICKETS"
-    qa_status: "NOT READY — re-pass after Q-001"
+    qa_status: "READY (technical)"
     pr: "https://github.com/biggyclops/astra-ui/pull/2"
     q001_pr: "https://github.com/biggyclops/astra-ui/pull/3"
-    github_tip: "1135510 (autonomy-ui + Q-001)"
-    prior_tip: "8e0a8a2"
+    tips:
+      pr2: "8e0a8a2"
+      pr3: "1135510"
+    qa_evidence:
+      A1: PASS
+      A2_snapshot: PASS
+      A3: PASS
+      A5: PASS
+      A6: PASS
+      A7: PASS
+      A8: PASS
+      Q-001: PASS
 
   - id: phase2-posture
     priority: P1
@@ -48,33 +54,24 @@ milestones:
 
 bugs:
   - id: Q-001
-    priority: P0
-    title: "Signed-in snapshot 404 on live :5173/api"
-    root_cause: "stale prod + apiRouter registration path"
-    durable_fix: "registerAutonomyRoutes(apiRouter, …, /autonomy/snapshot) — PR #3"
-    live_fix: "build + astra-ui.service restart by Eng"
-    eng_verify: "auth 200 / unauth 401"
-    status: fixed_pending_qa
-    owners:
-      eng: Programmer
-      qa: Astra QA
+    status: closed_qa_pass
+    pr: "https://github.com/biggyclops/astra-ui/pull/3"
 
 design_tickets:
   - id: D-003
     priority: P1
+    title: "False affordances — stub Pause/Resume/Command/Approve"
     jason_call: pending
+    blocks_clean_honesty: true
+    blocks_merge_until_jason: true
   - id: D-002
     priority: soft
   - id: D-001
-    status: "re-open for QA snapshot visual after Q-001"
+    status: closed_via_qa_signed_in_pass
 
 blockers:
-  - id: qa-repass-q001
-    summary: "QA re-pass signed-in snapshot after live fix"
-    owner: Astra QA
-    blocks: autonomy-honesty
   - id: d003-jason-call
-    summary: "Accept stubs vs require fix before honesty/merge"
+    summary: "Only remaining merge gate — accept stubs for merge vs require D-003 fix first"
     owner: Astra EM
     blocks: autonomy-honesty
 
@@ -84,9 +81,9 @@ quarantine:
     status: quarantined
 
 notes:
-  - "Hades :5050 may still be offline (orb offline) — separate from Q-001"
-  - "Hold merge PR #2/#3 until QA READY"
+  - "Hades :5050 offline / orbState offline — not a Track A fail"
+  - "Merge #2+#3 only after Jason D-003"
 
 docs_standing_by:
-  - "Sync Mini-Beast docs/ to 1.0.8"
+  - "Sync Mini-Beast docs/ to 1.0.9"
   - "PR #1 do-not-merge"
