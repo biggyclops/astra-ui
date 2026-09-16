@@ -4,7 +4,7 @@
 # Approved: Jason via CoS 2026-09-16 — Autonomy honesty first
 
 meta:
-  version: "1.0.1"
+  version: "1.0.2"
   sprint: "Sprint 0 Track A"
   track_focus: "Autonomy honesty first"
   updated: "2026-09-16"
@@ -33,15 +33,37 @@ sprint_laws:
   - "Programmer PRs only; no merge without Design + QA"
   - "Dirty unrelated server/routes.ts quarantined from DoD"
 
+live_serving:
+  host: "Mini-Beast 100.81.216.117"
+  repo: "/home/comea/astra-ui/astra-ui"
+  checkout: "feature/phase2-shell @ db93051 (includes autonomy 8e0a8a2)"
+  dirty_tree: "~190 files"
+  vite_5173:
+    status: up
+    http: 200
+    serves: "dirty phase2-shell source (not cinematic 6f7307b)"
+  nginx_5000:
+    upstream: "127.0.0.1:6001"
+  production_6001:
+    unit: astra-ui.service
+    status: active_stale_vs_dist
+    note: "dist newer than process; bounce loads current phase2 dist, not cinematic"
+  autonomy_snapshot_unauth: 401
+  cinematic_6f7307b_serving: false
+  reported_by: Astra Systems
+  reported_at: "2026-09-16"
+
 milestones:
   - id: autonomy-honesty
     title: "Autonomy UI Phase 1 honesty (Design + QA)"
     priority: P0
     status: in_progress
+    live_target: "http://100.81.216.117:5173/autonomy (session auth for snapshot)"
     branch: feature/autonomy-ui
     github_tip: "52c96eb"
     minibeast_tip: "8e0a8a2"
-    github_vs_local: "Mini-Beast ahead 1 (unpushed): Phase 1 read-only /api/autonomy/snapshot"
+    serving_checkout: "feature/phase2-shell @ db93051"
+    github_vs_local: "Mini-Beast ahead of GitHub autonomy tip; currently checked out via phase2-shell lineage"
     summary: "Hero orb + Phase 1 read-only snapshot — prove design-true; no auto"
     owners:
       primary: Astra Design
@@ -49,7 +71,7 @@ milestones:
       qa: Astra QA
       em: Astra EM
     qa_gate: "docs/qa/SPRINT0_TRACK_A_GATE.md"
-    qa_verdict: "NOT READY — awaiting live evidence"
+    qa_verdict: "NOT READY — live :5173 available per Systems; awaiting QA pass"
     dod:
       - "Design consistency pass vs DESIGN_SYSTEM.md (pass or ticket list)"
       - "QA acceptance on read-only Autonomy surface (live desktop)"
@@ -73,10 +95,11 @@ milestones:
     priority: P1
     status: pending_restart_qa
     local_branch: feature/phase2-shell
+    local_tip: "db93051"
     related_remote: feature/astra-cinematic-shell
     related_remote_tip: "6f7307b"
-    github_vs_local: "feature/phase2-shell is Mini-Beast local only; GitHub remote track is feature/astra-cinematic-shell"
-    summary: "Atmosphere CSS / cinematic polish; capacity after Autonomy QA; restart/push need facts + approval"
+    github_vs_local: "phase2-shell @ db93051 serving now; 6f7307b NOT in HEAD — blind restart ≠ cinematic QA"
+    summary: "Cinematic visual QA requires checkout 6f7307b → clean dirty tree → npm run build → restart"
     owners:
       primary: Astra EM
       systems: Astra Systems
@@ -84,12 +107,12 @@ milestones:
       eng: Programmer
       qa: Astra QA
     notes:
-      - "Await Astra Systems restart facts on Mini-Beast :5173/:5000"
-      - "Then EM sets status to restart_qa or parked"
-      - "Visual QA only after explicit restart approval"
+      - "Systems facts landed 2026-09-16"
+      - "Optional: systemctl --user restart astra-ui.service refreshes phase2 dist on :5000 only"
+      - "Cinematic path needs Jason-approved checkout+build+restart plan"
     dod:
       - "Status is explicitly pending_restart_qa | restart_qa | parked"
-      - "If restart_qa: Design + QA smoke recorded"
+      - "If restart_qa for cinematic: serving tip must be 6f7307b (or EM-named equiv) + Design/QA smoke"
       - "routes.ts remains quarantined"
 
   - id: phone-smoke
@@ -120,49 +143,49 @@ ui_in_flight:
     branch: feature/autonomy-ui
     github_tip: "52c96eb"
     minibeast_tip: "8e0a8a2"
+    serving_via: "feature/phase2-shell @ db93051 on :5173"
     milestone: autonomy-honesty
-    summary: "Autonomy hero orb + Phase 1 read-only snapshot (Mini-Beast tip unpushed)"
+    summary: "Autonomy hero orb + Phase 1 read-only snapshot"
   - id: astra-cinematic-shell
     branch: feature/astra-cinematic-shell
     github_tip: "6f7307b"
     milestone: phase2-posture
-    summary: "Cinematic shell on GitHub remote"
+    summary: "Cinematic shell on GitHub remote — not currently serving"
   - id: phase2-shell-local
     branch: feature/phase2-shell
-    github_tip: null
-    minibeast_tip: local
+    tip: "db93051"
     milestone: phase2-posture
-    summary: "Local cinematic polish + docs restore; no push/restart without approval"
+    summary: "Checked out + serving on Mini-Beast; dirty tree ~190 files"
 
 design_backlog:
   - id: autonomy-design-pass
-    item: "Autonomy Phase 1 vs Design System (Track A P0)"
-    status: queued
+    item: "Autonomy Phase 1 vs Design System on live :5173 (Track A P0)"
+    status: queued_live_available
   - id: phase2-visual-qa
-    item: "Visual QA cinematic/Phase 2 shell after restart approval"
-    status: blocked_on_restart
+    item: "Visual QA cinematic @ 6f7307b after checkout+build+restart"
+    status: blocked_on_jason_path
   - id: phone-hud-settings
     item: "AstraPhone v0.1.26 HUD + Settings full consistency (Next unless early)"
     status: deferred_secondary
 
 blockers:
-  - id: phase2-restart-facts
-    summary: "Need Astra Systems report on Mini-Beast restart facts before Phase 2 go/no-go"
-    owner: Astra Systems
-    blocks: phase2-posture
   - id: autonomy-unpushed-tip
-    summary: "Mini-Beast autonomy tip 8e0a8a2 ahead of GitHub 52c96eb — push or document before merge review"
+    summary: "Autonomy tip documentation / push before merge review"
     owner: Programmer
     blocks: autonomy-honesty
   - id: qa-live-gate
-    summary: "SPRINT0_TRACK_A_GATE.md verdict NOT READY until live desktop evidence"
+    summary: "SPRINT0_TRACK_A_GATE.md NOT READY until live pass on :5173 completes"
     owner: Astra QA
     blocks: autonomy-honesty
+  - id: cinematic-not-serving
+    summary: "6f7307b not in HEAD; cinematic QA needs checkout+build+restart — not a blind bounce"
+    owner: Astra EM
+    blocks: phase2-posture
 
 handoff_required:
   - "docs/handoffs/ entry when Autonomy honesty closes"
   - "docs/handoffs/ entry when Phase 2 posture becomes restart_qa or parked"
 
 docs_standing_by:
-  - "Sync Mini-Beast checkout to docs/canon-v1 after this refresh"
+  - "Sync Mini-Beast checkout to docs/canon-v1 tip (include 1.0.2)"
   - "docs/canon-v1 → main PR #1 only when EM/Jason say so"
