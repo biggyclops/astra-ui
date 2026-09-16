@@ -4,21 +4,16 @@
 # Approved: Jason via CoS 2026-09-16 — Autonomy honesty first
 
 meta:
-  version: "1.0.5"
+  version: "1.0.6"
   sprint: "Sprint 0 Track A"
   track_focus: "Autonomy honesty first"
   updated: "2026-09-16"
-  approved_by: "Jason (CoS)"
-  design_system: "docs/DESIGN_SYSTEM.md"
-  master_index: "docs/ASTRA_MASTER.md"
-  roadmap: "docs/ROADMAP.md"
   qa_gate: "docs/qa/SPRINT0_TRACK_A_GATE.md"
-  qa_gate_commit: "f8e48e5"
   docs_branch: "docs/canon-v1"
   docs_pr: "https://github.com/biggyclops/astra-ui/pull/1"
   docs_pr_merge: "blocked — EM/Jason only"
   eng_pr: "https://github.com/biggyclops/astra-ui/pull/2"
-  eng_pr_merge: "blocked — QA READY + Jason D-003 call"
+  eng_pr_merge: "blocked — Q-001 fix + QA READY + Jason D-003 call"
 
 sprint_laws:
   - "Autonomy honesty first"
@@ -31,98 +26,99 @@ sprint_laws:
 live_serving:
   host: "Mini-Beast 100.81.216.117"
   checkout: "feature/phase2-shell @ db93051 (includes autonomy 8e0a8a2)"
-  probe_from: "Chronos / Tailscale / LAN — Grok Bot box cannot reach 100.x"
   vite_5173:
     status: up
-    http: 200
     urls:
       - "http://100.81.216.117:5173/autonomy"
   autonomy_snapshot_unauth: 401
-  cinematic_6f7307b_serving: false
+  autonomy_snapshot_auth: "404 path-strip Q-001 — No route for GET /autonomy/snapshot"
 
 milestones:
   - id: autonomy-honesty
     title: "Autonomy UI Phase 1 honesty (Design + QA)"
     priority: P0
-    status: in_progress
-    eng_status: "pushed + PR open"
+    status: blocked
+    eng_status: "PR #2 open; Q-001 fix in progress"
     design_status: "APPROVE WITH TICKETS"
-    qa_status: "NOT READY (gate f8e48e5)"
+    qa_status: "NOT READY — Q-001 FAIL"
     branch: feature/autonomy-ui
     github_tip: "8e0a8a2"
     pr: "https://github.com/biggyclops/astra-ui/pull/2"
-    live_target: "http://100.81.216.117:5173/autonomy (signed-in)"
+    live_target: "http://100.81.216.117:5173/autonomy"
     qa_evidence:
-      A8_build_tsc_verify: PASS
-      A1_autonomy_http: "Partial — 200 + login plate; signed-in open"
-      A2_snapshot_visual: "Blocked — needs session (D-001)"
-      A3_no_mutating_api: PASS
-      design: "APPROVE WITH TICKETS"
-    qa_verdict: "NOT READY — D-001 signed-in live pass required"
+      A1: PASS
+      A3: PASS
+      A5: PASS
+      A6: PASS
+      A7: PASS
+      A8: PASS
+      A2_snapshot: "FAIL Q-001"
+    qa_verdict: "NOT READY"
     owners:
       primary: Astra Design
       eng: Programmer
       qa: Astra QA
+      systems: Astra Systems
       em: Astra EM
 
   - id: canon-status
     priority: P0
     status: done
-    owners:
-      primary: Astra EM
-      sync: Astra Docs
 
   - id: phase2-posture
     priority: P1
     status: pending_restart_qa
     related_remote_tip: "6f7307b"
     local_tip: "db93051"
-    owners:
-      primary: Astra EM
-      systems: Astra Systems
 
   - id: phone-smoke
     priority: P2
     status: deferred
     version: "0.1.26"
-    build: "28"
 
 quarantine:
   - id: dirty-routes-ts
     path: server/routes.ts
     status: quarantined
 
+bugs:
+  - id: Q-001
+    priority: P0
+    title: "Signed-in GET /api/autonomy/snapshot path loses /api → 404"
+    detail: "Live Vite db93051 returns 404 'No route for GET /autonomy/snapshot'; unauth same URL → 401; UI NO SNAPSHOT"
+    owners:
+      eng: Programmer
+      systems: Astra Systems
+    blocks: autonomy-honesty
+    status: open
+
 design_tickets:
   - id: D-003
     priority: P1
-    title: "False affordances — stub Pause/Resume/Command/Approve"
-    blocks_clean_honesty: true
-    blocks_chrome_merge: false
+    title: "False affordances — stub controls"
     jason_call: pending
   - id: D-002
     priority: soft
-    title: "AstraPhoneOrb naming/comments"
+    title: "AstraPhoneOrb naming"
   - id: D-001
-    priority: gate_blocker
-    title: "Signed-in :5173 visual + screenshot archive"
-    owner: Astra QA
-    status: open
+    priority: gate
+    title: "Signed-in visual archive"
+    status: "partial — signed-in achieved; snapshot fail Q-001"
 
 blockers:
-  - id: d001-signed-in
-    summary: "QA NOT READY until signed-in live Autonomy pass (login plate blocking headless)"
-    owner: Astra QA
-    needs: "Jason session on Chronos/browser or auth help"
+  - id: q001-snapshot-path
+    summary: "Fix /api strip on live Vite before QA READY"
+    owner: Programmer
     blocks: autonomy-honesty
   - id: d003-jason-call
-    summary: "Jason accept stubs for merge vs require fix before merge/honesty"
+    summary: "Jason accept stubs vs require fix before honesty/merge policy"
     owner: Astra EM
     blocks: autonomy-honesty
   - id: cinematic-not-serving
-    summary: "6f7307b not serving; Phase 2 pending_restart_qa"
+    summary: "Phase 2 pending_restart_qa"
     owner: Astra EM
     blocks: phase2-posture
 
 docs_standing_by:
-  - "Sync Mini-Beast docs/ to tip including 1.0.5"
+  - "Sync Mini-Beast docs/ to 1.0.6"
   - "PR #1 do-not-merge"
