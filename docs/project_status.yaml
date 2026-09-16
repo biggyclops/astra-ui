@@ -1,50 +1,40 @@
 # Sprint 0 Track A — project status
 # Owner: Astra EM | Synced by: Astra Docs
 # Canon: astra-ui/docs (docs/canon-v1)
-# Approved: Jason via CoS 2026-09-16 — Autonomy honesty first
 
 meta:
-  version: "1.0.6"
+  version: "1.0.7"
   sprint: "Sprint 0 Track A"
   track_focus: "Autonomy honesty first"
   updated: "2026-09-16"
   qa_gate: "docs/qa/SPRINT0_TRACK_A_GATE.md"
   docs_branch: "docs/canon-v1"
   docs_pr: "https://github.com/biggyclops/astra-ui/pull/1"
-  docs_pr_merge: "blocked — EM/Jason only"
   eng_pr: "https://github.com/biggyclops/astra-ui/pull/2"
-  eng_pr_merge: "blocked — Q-001 fix + QA READY + Jason D-003 call"
-
-sprint_laws:
-  - "Autonomy honesty first"
-  - "No Autonomy auto"
-  - "No deferred infra P0"
-  - "Design System law (desktop Core+wordmark)"
-  - "Programmer PRs only; no merge without Design + QA"
-  - "Dirty unrelated server/routes.ts quarantined from DoD"
+  eng_pr_merge: "blocked — Q-001 + QA READY + Jason D-003"
 
 live_serving:
   host: "Mini-Beast 100.81.216.117"
-  checkout: "feature/phase2-shell @ db93051 (includes autonomy 8e0a8a2)"
+  checkout: "feature/phase2-shell @ db93051"
   vite_5173:
     status: up
-    urls:
-      - "http://100.81.216.117:5173/autonomy"
+    api_proxy: "Vite /api → localhost:5000 → nginx → astra-ui.service :6001 (no pathRewrite)"
+  production_6001:
+    unit: astra-ui.service
+    status: stale_vs_dist
+    up_since_utc: "2026-09-16 02:06"
+    dist_mtime_utc: "2026-09-16 12:55"
   autonomy_snapshot_unauth: 401
-  autonomy_snapshot_auth: "404 path-strip Q-001 — No route for GET /autonomy/snapshot"
+  autonomy_snapshot_auth: "404 via apiRouter catch-all — production never loaded registerAutonomyRoutes"
 
 milestones:
   - id: autonomy-honesty
-    title: "Autonomy UI Phase 1 honesty (Design + QA)"
     priority: P0
     status: blocked
-    eng_status: "PR #2 open; Q-001 fix in progress"
     design_status: "APPROVE WITH TICKETS"
-    qa_status: "NOT READY — Q-001 FAIL"
-    branch: feature/autonomy-ui
-    github_tip: "8e0a8a2"
+    qa_status: "NOT READY — Q-001"
     pr: "https://github.com/biggyclops/astra-ui/pull/2"
-    live_target: "http://100.81.216.117:5173/autonomy"
+    github_tip: "8e0a8a2"
     qa_evidence:
       A1: PASS
       A3: PASS
@@ -53,72 +43,52 @@ milestones:
       A7: PASS
       A8: PASS
       A2_snapshot: "FAIL Q-001"
-    qa_verdict: "NOT READY"
-    owners:
-      primary: Astra Design
-      eng: Programmer
-      qa: Astra QA
-      systems: Astra Systems
-      em: Astra EM
-
-  - id: canon-status
-    priority: P0
-    status: done
 
   - id: phase2-posture
     priority: P1
     status: pending_restart_qa
-    related_remote_tip: "6f7307b"
-    local_tip: "db93051"
 
   - id: phone-smoke
     priority: P2
     status: deferred
-    version: "0.1.26"
+
+bugs:
+  - id: Q-001
+    priority: P0
+    title: "Signed-in snapshot 404 on live :5173/api"
+    root_cause: "Vite proxies /api to stale astra-ui.service; process missing app.get(/api/autonomy/snapshot); falls through apiRouter → 404 /autonomy/snapshot"
+    fast_unblock: "Jason-approved systemctl --user restart astra-ui.service (loads current dist; also fixes :5173/api)"
+    durable_fix: "Eng register GET /autonomy/snapshot on apiRouter (and/or ensure app-level route matches)"
+    owners:
+      eng: Programmer
+      systems: Astra Systems
+    status: open
+    jason_bounce: pending
+
+design_tickets:
+  - id: D-003
+    priority: P1
+    jason_call: pending
+  - id: D-002
+    priority: soft
+  - id: D-001
+    status: "signed-in done; blocked on Q-001 snapshot"
+
+blockers:
+  - id: q001-stale-prod
+    summary: "Approve production bounce and/or land Eng durable route fix"
+    owner: Astra EM
+    blocks: autonomy-honesty
+  - id: d003-jason-call
+    summary: "Accept stubs vs require fix before honesty/merge"
+    owner: Astra EM
+    blocks: autonomy-honesty
 
 quarantine:
   - id: dirty-routes-ts
     path: server/routes.ts
     status: quarantined
 
-bugs:
-  - id: Q-001
-    priority: P0
-    title: "Signed-in GET /api/autonomy/snapshot path loses /api → 404"
-    detail: "Live Vite db93051 returns 404 'No route for GET /autonomy/snapshot'; unauth same URL → 401; UI NO SNAPSHOT"
-    owners:
-      eng: Programmer
-      systems: Astra Systems
-    blocks: autonomy-honesty
-    status: open
-
-design_tickets:
-  - id: D-003
-    priority: P1
-    title: "False affordances — stub controls"
-    jason_call: pending
-  - id: D-002
-    priority: soft
-    title: "AstraPhoneOrb naming"
-  - id: D-001
-    priority: gate
-    title: "Signed-in visual archive"
-    status: "partial — signed-in achieved; snapshot fail Q-001"
-
-blockers:
-  - id: q001-snapshot-path
-    summary: "Fix /api strip on live Vite before QA READY"
-    owner: Programmer
-    blocks: autonomy-honesty
-  - id: d003-jason-call
-    summary: "Jason accept stubs vs require fix before honesty/merge policy"
-    owner: Astra EM
-    blocks: autonomy-honesty
-  - id: cinematic-not-serving
-    summary: "Phase 2 pending_restart_qa"
-    owner: Astra EM
-    blocks: phase2-posture
-
 docs_standing_by:
-  - "Sync Mini-Beast docs/ to 1.0.6"
+  - "Sync Mini-Beast docs/ to 1.0.7"
   - "PR #1 do-not-merge"
