@@ -18,6 +18,8 @@ A dedicated `astra-docs` repository is **deferred** until the set is large enoug
 | [`ASTRA_MASTER.md`](./ASTRA_MASTER.md) | Sole entry index / doc map |
 | [`DESIGN_SYSTEM.md`](./DESIGN_SYSTEM.md) | Visual identity (Design content; Docs publication) |
 | [`PRODUCT.md`](./PRODUCT.md) | Product definition (Product-approved) |
+| [`product/REVIEWS.md`](./product/REVIEWS.md) | Feature reviews (Product) |
+| [`product/STORIES.md`](./product/STORIES.md) | Implementation-ready stories (Product) |
 | [`ARCHITECTURE.md`](./ARCHITECTURE.md) | Platform / systems architecture |
 | [`ROADMAP.md`](./ROADMAP.md) | Roadmap narrative (EM milestones) |
 | [`COMPONENT_LIBRARY.md`](./COMPONENT_LIBRARY.md) | Shared UI component inventory |
@@ -63,6 +65,9 @@ docs/
   ASTRA_MASTER.md
   DESIGN_SYSTEM.md
   PRODUCT.md
+  product/
+    REVIEWS.md
+    STORIES.md
   ARCHITECTURE.md
   ROADMAP.md
   COMPONENT_LIBRARY.md
