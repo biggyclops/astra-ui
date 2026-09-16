@@ -1,0 +1,33 @@
+# Lightweight project status stub — restored 2026-09-16 by Astra Design.
+# Formal roadmap ownership: Astra EM (project_status.yaml milestones TBD).
+# This file exists so Master pointers resolve; do not treat it as the full roadmap.
+
+meta:
+  restored: "2026-09-16"
+  design_system: "docs/DESIGN_SYSTEM.md"
+  master_index: "docs/ASTRA_MASTER.md"
+  frontend_architecture: "docs/frontend-architecture.md"
+
+visual_identity:
+  policy: "Jason-approved Astra Visual Identity Policy"
+  desktop_chrome: "Core mark + ASTRA wordmark"
+  phone_chrome: "Phone-adapted; do not clone onto desktop"
+  identity_redesign: "requires explicit Jason approval"
+
+ui_in_flight:
+  - id: phase2-shell
+    branch: feature/phase2-shell
+    commit: c42e794
+    summary: "Cinematic atmosphere CSS; no push/restart without approval"
+    design_qa: pending_restart_approval
+  - id: autonomy-ui
+    branch: feature/autonomy-ui
+    commit: 8e0a8a2
+    summary: "Autonomy hero orb + Phase 1 read-only snapshot"
+
+design_backlog:
+  - "Read-only AstraPhone v0.1.14 HUD + Settings consistency pass vs Design System"
+  - "Visual QA Phase 2 shell after restart approval"
+  - "Keep Master docs + DESIGN_SYSTEM.md in sync when chrome ships"
+
+em_note: "Replace/extend this stub when formal milestones land."
