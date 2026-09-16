@@ -1,3 +1,13 @@
+# Astra Architecture
+
+**Status:** Canonical systems architecture (imported from Eng `docs/ARCHITECTURE.md` on GitHub main, 2026-09-16)  
+**Owner:** CTO (substance); maintained by Documentation Manager  
+**See also:** [ASTRA_MASTER.md](./ASTRA_MASTER.md) · [frontend-architecture.md](./frontend-architecture.md) · [ARCHITECTURE_SETUP.md](./ARCHITECTURE_SETUP.md) · [DOCUMENTATION_ARCHITECTURE.md](./DOCUMENTATION_ARCHITECTURE.md)
+
+> Platform / systems view for Astra as an operator environment. UI shell details live in `frontend-architecture.md`. Runtime setup live in Eng runbooks. Architecture claim changes need CTO review.
+
+---
+
 # Astra UI Architecture
 
 This document describes Astra UI as a systems-integration project rather than only a frontend application.
