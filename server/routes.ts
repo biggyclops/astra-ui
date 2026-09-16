@@ -7,6 +7,7 @@ import fs from "node:fs";
 import pathModule from "node:path";
 import crypto from "node:crypto";
 import { log } from "./logger";
+import { registerAutonomyRoutes } from "./autonomy";
 
 const execFileAsync = promisify(execFile);
 
@@ -400,6 +401,8 @@ export async function registerRoutes(app: Express) {
   app.get("/api/status", async (_req: Request, res: Response) => {
     res.json(await getOrRefreshStatus());
   });
+
+  registerAutonomyRoutes(app, () => getOrRefreshStatus());
 
   app.post("/api/status/check", async (_req: Request, res: Response) => {
     statusCacheTime = 0;

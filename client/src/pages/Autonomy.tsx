@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { useAutonomySnapshot, type AutonomyJob } from "@/hooks/use-autonomy";
 
 type AutonomyMode = "off" | "suggest" | "ask" | "auto";
 type TaskState = "queued" | "running" | "completed";
@@ -61,89 +62,25 @@ const COMMAND_CHIPS = [
   "Check my systems",
 ];
 
-const INITIAL_TASKS: QueueItem[] = [
-  {
-    id: "t1",
-    title: "Creating Astra Episode 01",
-    detail: "Scene 7 of 24",
-    computer: "HADES",
-    gpu: "RTX 3060",
-    state: "running",
-    progress: 29,
-    eta: "~42 min remaining",
-  },
-  {
-    id: "t2",
-    title: "Generating 10 concept images",
-    detail: "Style pack · nebula noir",
-    computer: "HADES",
-    gpu: "RTX 3060",
-    state: "running",
-    progress: 73,
-    eta: "~8 min remaining",
-  },
-  {
-    id: "t3",
-    title: "Testing DeskFault build",
-    detail: "Unit + smoke suite",
-    computer: "CHRONOS",
-    state: "queued",
-  },
-  {
-    id: "t4",
-    title: "Storyboard Episode 01 act break",
-    detail: "Waiting for scene batch",
-    computer: "MINI-BEAST",
-    state: "queued",
-  },
-  {
-    id: "t5",
-    title: "Synced voice preview pack",
-    detail: "Talos TTS dry-run (mock)",
-    computer: "TALOS",
-    state: "completed",
-    progress: 100,
-  },
-];
+function formatEta(seconds: number | null | undefined) {
+  if (seconds == null) return undefined;
+  if (seconds < 60) return `~${seconds}s remaining`;
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return s ? `~${m}m ${s}s remaining` : `~${m} min remaining`;
+}
 
-const INITIAL_ACTIVITY: ActivityItem[] = [
-  {
-    id: "a1",
-    title: "Rendered Episode 01 scenes 1–6",
-    computer: "Hades",
-    finishedAt: "12m ago",
-    resultLabel: "View Results",
-  },
-  {
-    id: "a2",
-    title: "DeskFault scaffold generated",
-    computer: "Chronos",
-    finishedAt: "38m ago",
-    resultLabel: "View Results",
-  },
-  {
-    id: "a3",
-    title: "Ops health sweep (mock)",
-    computer: "Mini-Beast",
-    finishedAt: "1h ago",
-    resultLabel: "View Results",
-  },
-];
-
-const INITIAL_SUGGESTIONS: Suggestion[] = [
-  {
-    id: "s1",
-    title: "Tonight on Hades",
-    detail:
-      "Hades will be idle tonight. I can render the remaining 14 scenes of Episode 01.",
-  },
-  {
-    id: "s2",
-    title: "Overnight stills",
-    detail:
-      "After this image batch, I can queue 24 more style variants for Episode 01 while you sleep.",
-  },
-];
+function jobToQueueItem(job: AutonomyJob, state: TaskState): QueueItem {
+  return {
+    id: job.id,
+    title: job.title,
+    detail: job.type,
+    computer: job.node || "HADES",
+    state,
+    progress: job.progress,
+    eta: formatEta(job.etaSeconds),
+  };
+}
 
 /** Phone-style HUD label: mono + wide tracking (matches AstraPhone OrbitalCoreView readout). */
 function hudClass(extra?: string) {
@@ -397,57 +334,70 @@ function AstraPhoneOrb({ active, thinking }: { active: boolean; thinking?: boole
 
 export default function Autonomy() {
   const [mode, setMode] = useState<AutonomyMode>("ask");
-  const [active, setActive] = useState(true);
-  const [tasks, setTasks] = useState(INITIAL_TASKS);
-  const [suggestions, setSuggestions] = useState(INITIAL_SUGGESTIONS);
+  const [operatorPaused, setOperatorPaused] = useState(false);
+  const [dismissedSuggestions, setDismissedSuggestions] = useState<string[]>([]);
   const [command, setCommand] = useState("");
   const [commandPulse, setCommandPulse] = useState(false);
+  const { data: snapshot, isLoading } = useAutonomySnapshot();
+
+  const liveTasks = useMemo(() => {
+    const items: QueueItem[] = [];
+    if (snapshot?.working) items.push(jobToQueueItem(snapshot.working, "running"));
+    for (const job of snapshot?.queue ?? []) {
+      if (snapshot?.working && job.id === snapshot.working.id) continue;
+      items.push(jobToQueueItem(job, job.status === "running" ? "running" : "queued"));
+    }
+    return items;
+  }, [snapshot]);
+
+  const activity = useMemo<ActivityItem[]>(() => {
+    return (snapshot?.history ?? []).map((job) => ({
+      id: job.id,
+      title: job.title,
+      computer: job.node || "HADES",
+      finishedAt: job.status,
+      resultLabel: job.status === "done" ? "View Results" : job.status,
+    }));
+  }, [snapshot]);
+
+  const liveSuggestions = useMemo<Suggestion[]>(() => {
+    const rows: Suggestion[] = [];
+    if (snapshot?.advisor.topRecommendation) {
+      rows.push({
+        id: "top",
+        title: "Recommendation",
+        detail: snapshot.advisor.topRecommendation,
+      });
+    }
+    (snapshot?.advisor.currentAdvisories ?? []).forEach((text, i) => {
+      if (text === snapshot?.advisor.topRecommendation) return;
+      rows.push({ id: `adv-${i}`, title: "Advisory", detail: text });
+    });
+    return rows.filter((s) => !dismissedSuggestions.includes(s.id));
+  }, [snapshot, dismissedSuggestions]);
 
   const primary = useMemo(
-    () => tasks.find((t) => t.state === "running") ?? tasks[0],
-    [tasks],
+    () => liveTasks.find((t) => t.state === "running") ?? null,
+    [liveTasks],
   );
-  const doing = useMemo(() => tasks.filter((t) => t.state === "running"), [tasks]);
-  const next = useMemo(() => tasks.filter((t) => t.state === "queued"), [tasks]);
+  const doing = useMemo(() => liveTasks.filter((t) => t.state === "running"), [liveTasks]);
+  const next = useMemo(() => liveTasks.filter((t) => t.state === "queued"), [liveTasks]);
+  const suggestions = liveSuggestions;
 
   const pauseAll = () => {
-    setActive(false);
-    setTasks((prev) =>
-      prev.map((t) => (t.state === "running" ? { ...t, state: "queued" as const } : t)),
-    );
+    setOperatorPaused(true);
   };
 
   const resumeAll = () => {
-    setActive(true);
-    setTasks((prev) => {
-      const firstQueued = prev.find((t) => t.state === "queued");
-      if (!firstQueued) return prev;
-      return prev.map((t) =>
-        t.id === firstQueued.id
-          ? { ...t, state: "running" as const, progress: t.progress ?? 8 }
-          : t,
-      );
-    });
+    setOperatorPaused(false);
   };
 
   const dismissSuggestion = (id: string) => {
-    setSuggestions((prev) => prev.filter((s) => s.id !== id));
+    setDismissedSuggestions((prev) => [...prev, id]);
   };
 
   const approveSuggestion = (id: string) => {
-    const s = suggestions.find((x) => x.id === id);
-    if (!s) return;
-    setSuggestions((prev) => prev.filter((x) => x.id !== id));
-    setTasks((prev) => [
-      ...prev,
-      {
-        id: `approved-${id}`,
-        title: s.title,
-        detail: "Queued from suggestion (mock)",
-        computer: "HADES",
-        state: "queued" as const,
-      },
-    ]);
+    setDismissedSuggestions((prev) => [...prev, id]);
   };
 
   const sendCommand = () => {
@@ -457,7 +407,9 @@ export default function Autonomy() {
     setCommand("");
   };
 
-  const working = active && mode !== "off";
+  const hadesReachable = snapshot?.hadesReachable ?? false;
+  const orbWorking = !operatorPaused && mode !== "off" && snapshot?.orbState === "working";
+  const working = orbWorking;
 
   return (
     <div className="relative min-h-full overflow-hidden bg-[#05070f] text-slate-100">
@@ -480,7 +432,7 @@ export default function Autonomy() {
                 ),
               )}
             >
-              {working ? "Autonomy Active" : "Autonomy Paused"}
+              {working ? "Autonomy Active" : operatorPaused || mode === "off" ? "Autonomy Paused" : "Astra Idle"}
             </span>
             <span
               className={cn(
@@ -488,7 +440,13 @@ export default function Autonomy() {
                 hudClass("text-purple-100"),
               )}
             >
-              Mock Mode
+              {isLoading
+                ? "Syncing"
+                : !snapshot
+                  ? "No snapshot"
+                  : hadesReachable
+                    ? "Hades live"
+                    : "Hades unavailable"}
             </span>
           </div>
 
@@ -499,8 +457,17 @@ export default function Autonomy() {
 
             <div className="min-w-0 text-center md:text-left">
               <p className={cn(hudClass("text-[#00f2ff] tracking-[0.35em]"))}>
-                {working ? "Astra is working" : "Astra is paused"}
+                {working ? "Astra is working" : !hadesReachable && snapshot ? "Hades unavailable" : operatorPaused || mode === "off" ? "Astra is paused" : "Astra is idle"}
               </p>
+
+              {!primary && (
+                <div className="mt-3 space-y-1">
+                  <h1 className="font-sans text-2xl font-semibold tracking-tight text-white md:text-[1.85rem]">
+                    ASTRA IS IDLE
+                  </h1>
+                  <p className="mt-1 font-sans text-base text-cyan-100/85">No active jobs</p>
+                </div>
+              )}
 
               {primary && (
                 <div className="mt-3 space-y-3">
@@ -796,7 +763,10 @@ export default function Autonomy() {
             What I&apos;m doing
           </SectionLabel>
           <div className="space-y-2">
-            {INITIAL_ACTIVITY.map((item) => (
+            {activity.length === 0 && (
+              <p className="font-sans text-sm text-slate-500">No recent jobs</p>
+            )}
+            {activity.map((item) => (
               <div
                 key={item.id}
                 className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-white/5 bg-white/[0.02] px-3 py-2.5"
@@ -825,8 +795,8 @@ export default function Autonomy() {
         <section className="rounded-3xl border border-white/10 bg-black/40 p-5 md:p-6">
           <SectionLabel>Autonomy settings</SectionLabel>
           <p className="mb-4 max-w-2xl font-sans text-sm text-slate-400">
-            How free should I be when your machines are idle? Default for this mock is Ask First —
-            I propose work, you approve.
+            How free should I be when your machines are idle? Painted only in Phase 1 —
+            I propose work, you approve. Settings are not persisted.
           </p>
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
             {MODE_OPTIONS.map((opt) => (
@@ -851,7 +821,7 @@ export default function Autonomy() {
         </section>
 
         <p className="text-center font-mono text-[11px] uppercase tracking-[0.16em] text-slate-600">
-          Standalone /autonomy mock · Vite preview
+          /autonomy · read-only snapshot{snapshot?.generatedAt ? ` · ${new Date(snapshot.generatedAt).toLocaleTimeString()}` : ""}
         </p>
       </div>
     </div>
