@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Activity,
@@ -6,15 +6,15 @@ import {
   CheckCircle2,
   Clapperboard,
   Code2,
-  Image as ImageIcon,
   Pause,
   Play,
+  Send,
   Sparkles,
   Tv,
-  Video,
   Wrench,
   X,
   Eye,
+  ArrowRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -27,8 +27,10 @@ type QueueItem = {
   title: string;
   detail: string;
   computer: string;
+  gpu?: string;
   state: TaskState;
   progress?: number;
+  eta?: string;
 };
 
 type ActivityItem = {
@@ -52,42 +54,53 @@ const MODE_OPTIONS: { id: AutonomyMode; label: string; hint: string }[] = [
   { id: "auto", label: "Auto Run Approved", hint: "Run pre-approved work" },
 ];
 
+const COMMAND_CHIPS = [
+  "Create a 10-minute episode",
+  "Generate 10 Astra images",
+  "Work on DeskFault",
+  "Check my systems",
+];
+
 const INITIAL_TASKS: QueueItem[] = [
   {
     id: "t1",
     title: "Creating Astra Episode 01",
     detail: "Scene 7 of 24",
-    computer: "Hades",
+    computer: "HADES",
+    gpu: "RTX 3060",
     state: "running",
     progress: 29,
+    eta: "~42 min remaining",
   },
   {
     id: "t2",
     title: "Generating 10 concept images",
     detail: "Style pack · nebula noir",
-    computer: "Hades",
+    computer: "HADES",
+    gpu: "RTX 3060",
     state: "running",
     progress: 73,
+    eta: "~8 min remaining",
   },
   {
     id: "t3",
     title: "Testing DeskFault build",
     detail: "Unit + smoke suite",
-    computer: "Chronos",
+    computer: "CHRONOS",
     state: "queued",
   },
   {
     id: "t4",
     title: "Storyboard Episode 01 act break",
     detail: "Waiting for scene batch",
-    computer: "Mini-Beast",
+    computer: "MINI-BEAST",
     state: "queued",
   },
   {
     id: "t5",
     title: "Synced voice preview pack",
     detail: "Talos TTS dry-run (mock)",
-    computer: "Talos",
+    computer: "TALOS",
     state: "completed",
     progress: 100,
   },
@@ -120,203 +133,701 @@ const INITIAL_ACTIVITY: ActivityItem[] = [
 const INITIAL_SUGGESTIONS: Suggestion[] = [
   {
     id: "s1",
-    title: "Hades is idle soon",
-    detail: "I can render the remaining 14 scenes for Astra Episode 01 while you’re away.",
+    title: "Tonight on Hades",
+    detail:
+      "Hades will be idle tonight. I can render the remaining 14 scenes of Episode 01.",
   },
   {
     id: "s2",
-    title: "Queue concept stills overnight",
-    detail: "Spin 24 more style variants for Episode 01 after the current image batch finishes.",
-  },
-  {
-    id: "s3",
-    title: "Ship DeskFault test report",
-    detail: "When Chronos finishes the build, I can summarize failures into a chat note.",
+    title: "Overnight stills",
+    detail:
+      "After this image batch, I can queue 24 more style variants for Episode 01 while you sleep.",
   },
 ];
 
-function AstraOrb({ active }: { active: boolean }) {
+/** Phone-style HUD label: mono + wide tracking (matches AstraPhone OrbitalCoreView readout). */
+function hudClass(extra?: string) {
+  return cn(
+    "font-mono text-[11px] font-bold uppercase tracking-[0.22em] text-cyan-300",
+    extra,
+  );
+}
+
+function SectionLabel({
+  children,
+  icon,
+}: {
+  children: ReactNode;
+  icon?: ReactNode;
+}) {
   return (
-    <div className="relative mx-auto flex h-44 w-44 items-center justify-center md:h-52 md:w-52">
-      <motion.div
-        className="absolute inset-0 rounded-full border border-cyan-400/20"
-        animate={{ rotate: 360 }}
-        transition={{ duration: 28, ease: "linear", repeat: Infinity }}
-      >
-        <span className="absolute left-1/2 top-0 h-2 w-2 -translate-x-1/2 rounded-full bg-cyan-300 shadow-[0_0_12px_rgba(34,211,238,0.9)]" />
-      </motion.div>
-      <motion.div
-        className="absolute inset-3 rounded-full border border-purple-400/25 border-dashed"
-        animate={{ rotate: -360 }}
-        transition={{ duration: 42, ease: "linear", repeat: Infinity }}
-      />
-      <motion.div
-        className="absolute inset-8 rounded-full border border-blue-400/15"
-        animate={{ scale: active ? [1, 1.04, 1] : 1, opacity: active ? [0.55, 0.9, 0.55] : 0.35 }}
-        transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
-      />
-      <motion.div
-        className={cn(
-          "relative z-10 flex h-28 w-28 items-center justify-center rounded-full border md:h-32 md:w-32",
-          active
-            ? "border-cyan-300/40 bg-gradient-to-br from-cyan-400/25 via-blue-600/30 to-purple-700/40 shadow-[0_0_48px_rgba(34,211,238,0.35)]"
-            : "border-amber-300/30 bg-gradient-to-br from-amber-500/15 via-slate-800/40 to-purple-900/30 shadow-[0_0_28px_rgba(251,191,36,0.2)]",
-        )}
-        animate={active ? { boxShadow: ["0 0 28px rgba(34,211,238,0.25)", "0 0 52px rgba(34,211,238,0.45)", "0 0 28px rgba(34,211,238,0.25)"] } : undefined}
-        transition={{ duration: 2.8, repeat: Infinity }}
-      >
-        <span className="font-display text-4xl font-black tracking-tight text-cyan-50 md:text-5xl">A</span>
-      </motion.div>
-      <div className="pointer-events-none absolute inset-0 rounded-full bg-[radial-gradient(circle_at_center,rgba(34,211,238,0.12),transparent_62%)]" />
+    <div className={cn(hudClass("mb-3 flex items-center gap-2 text-cyan-200/85"))}>
+      {icon}
+      {children}
     </div>
   );
 }
 
-function RadarBackdrop() {
+/** Continuous timebase — ports Swift TimelineView(.animation). */
+function useOrbitalTime() {
+  const [t, setT] = useState(0);
+  useEffect(() => {
+    let raf = 0;
+    const start = performance.now();
+    const tick = (now: number) => {
+      setT((now - start) / 1000);
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+  return t;
+}
+
+/**
+ * Desktop port of AstraPhone `OrbitalCoreView` + `AstraCoreLogo`.
+ * Source: AstraPhone/ContentView.swift (OrbitalCoreView / centerCore / orbitalField).
+ * Larger scale for desktop; same motion language (ellipses, ticks, arc, spinning A).
+ */
+function AstraPhoneOrb({ active, thinking }: { active: boolean; thinking?: boolean }) {
+  const time = useOrbitalTime();
+  const appearActive = active;
+  const isThinking = Boolean(thinking && active);
+  const thinkPulse = isThinking ? 0.5 + 0.5 * Math.sin(time * 5.2) : 0;
+  const thinkScale = isThinking ? 1 + 0.045 * Math.sin(time * 5.2) : 1;
+  const spinMul = isThinking ? 110 : appearActive ? 55 : 14;
+  const logoSpin = appearActive ? time * (isThinking ? 42 : 28) : 0;
+  // Optical field ~ larger; mark itself carries brand weight (no CSS "ball")
+  const scale = 1.35;
+
   return (
-    <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
-      <div className="absolute -left-24 top-10 h-72 w-72 rounded-full border border-cyan-400/10" />
-      <div className="absolute -left-10 top-24 h-48 w-48 rounded-full border border-purple-400/10" />
-      <div className="absolute right-[-80px] top-40 h-96 w-96 rounded-full border border-blue-400/10" />
-      <motion.div
-        className="absolute left-8 top-16 h-64 w-64 origin-center rounded-full"
+    <div
+      className="relative mx-auto shrink-0"
+      style={{ width: 320 * scale, height: 300 * scale }}
+      aria-hidden
+    >
+      {/* Soft starfield */}
+      <div
+        className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-full"
         style={{
+          width: 360 * scale,
+          height: 360 * scale,
           background:
-            "conic-gradient(from 0deg, transparent 0deg, rgba(34,211,238,0.12) 50deg, transparent 90deg)",
+            "radial-gradient(circle at 50% 45%, rgba(0,242,255,0.08) 0%, rgba(2,6,18,0.2) 42%, transparent 68%)",
         }}
-        animate={{ rotate: 360 }}
-        transition={{ duration: 10, ease: "linear", repeat: Infinity }}
+      >
+        {Array.from({ length: 56 }).map((_, i) => {
+          const x = (Math.sin(i * 12.9898 + 0.5) * 0.5 + 0.5) * 100;
+          const y = (Math.cos(i * 78.233 + 0.25) * 0.5 + 0.5) * 100;
+          const driftX = Math.sin(time * 0.12 + i) * 1.4;
+          const driftY = Math.cos(time * 0.09 + i * 0.7) * 1.4;
+          const r = ((i % 4) + 1) * 0.6;
+          return (
+            <span
+              key={i}
+              className="absolute rounded-full bg-cyan-50"
+              style={{
+                left: `calc(${x}% + ${driftX}px)`,
+                top: `calc(${y}% + ${driftY}px)`,
+                width: r,
+                height: r,
+                opacity: 0.2 + (i % 6) * 0.08,
+                boxShadow: `0 0 ${3 + (i % 3) * 2}px rgba(0,242,255,${0.3 + (i % 4) * 0.12})`,
+              }}
+            />
+          );
+        })}
+      </div>
+
+      {/* Orbital ellipses */}
+      {[0, 1, 2, 3].map((index) => {
+        const w = (200 + index * 36) * scale;
+        const h = (96 + index * 20) * scale;
+        const deg = index * 48 + time * (appearActive ? 16 : 5);
+        return (
+          <div
+            key={`ell-${index}`}
+            className="pointer-events-none absolute left-1/2 top-1/2"
+            style={{
+              width: w,
+              height: h,
+              marginLeft: -w / 2,
+              marginTop: -h / 2,
+              transform: `rotate(${deg}deg)`,
+              borderRadius: "50%",
+              border: `${index === 0 ? 2 : 1.15}px solid transparent`,
+              borderTopColor: "rgba(0,242,255,0.9)",
+              borderRightColor: "rgba(59,130,246,0.35)",
+              borderBottomColor: "transparent",
+              borderLeftColor: "rgba(168,85,247,0.2)",
+              boxShadow: `0 0 12px rgba(0,242,255,${appearActive ? 0.55 : 0.22})`,
+              opacity: 0.95 - index * 0.12,
+            }}
+          />
+        );
+      })}
+
+      {/* Tick capsules */}
+      {Array.from({ length: 28 }).map((_, tick) => {
+        const deg = tick * (360 / 28) + time * (appearActive ? 9 : 2.5);
+        const len = (tick % 3 === 0 ? 16 : 7) * scale;
+        return (
+          <div
+            key={`tick-${tick}`}
+            className="pointer-events-none absolute left-1/2 top-1/2 origin-center"
+            style={{
+              width: 148 * scale * 2,
+              height: 2,
+              marginLeft: -148 * scale,
+              marginTop: -1,
+              transform: `rotate(${deg}deg)`,
+            }}
+          >
+            <span
+              className="absolute right-0 top-0 rounded-full bg-[#00f2ff]"
+              style={{
+                width: len,
+                height: 1.6,
+                opacity: tick % 3 === 0 ? 0.7 : 0.22,
+              }}
+            />
+          </div>
+        );
+      })}
+
+      {/* Outer guide rings */}
+      <div
+        className="pointer-events-none absolute left-1/2 top-1/2 rounded-full border border-white/[0.07]"
+        style={{
+          width: 310 * scale,
+          height: 310 * scale,
+          marginLeft: -155 * scale,
+          marginTop: -155 * scale,
+        }}
+      />
+      <div
+        className="pointer-events-none absolute left-1/2 top-1/2 rounded-full border border-dashed border-[#00f2ff]/25"
+        style={{
+          width: 268 * scale,
+          height: 268 * scale,
+          marginLeft: -134 * scale,
+          marginTop: -134 * scale,
+          transform: `rotate(${-time * 7}deg)`,
+        }}
+      />
+
+      {isThinking &&
+        [0, 1].map((ring) => (
+          <div
+            key={`think-${ring}`}
+            className="pointer-events-none absolute left-1/2 top-1/2 rounded-full border border-[#00f2ff]/50"
+            style={{
+              width: (150 + ring * 36) * scale * (1 + thinkPulse * 0.08),
+              height: (150 + ring * 36) * scale * (1 + thinkPulse * 0.08),
+              marginLeft: (-(150 + ring * 36) * scale * (1 + thinkPulse * 0.08)) / 2,
+              marginTop: (-(150 + ring * 36) * scale * (1 + thinkPulse * 0.08)) / 2,
+              opacity: 0.55 - ring * 0.18,
+            }}
+          />
+        ))}
+
+      {/* Soft glow halo only — brand mark is the core, not a filled sphere */}
+      <div
+        className="pointer-events-none absolute left-1/2 top-1/2 rounded-full"
+        style={{
+          width: 168 * scale,
+          height: 168 * scale,
+          marginLeft: (-168 * scale) / 2,
+          marginTop: (-168 * scale) / 2,
+          background:
+            "radial-gradient(circle, rgba(0,242,255,0.28) 0%, rgba(37,99,235,0.12) 42%, transparent 70%)",
+          filter: "blur(2px)",
+          opacity: appearActive ? 1 : 0.35,
+          transform: `scale(${thinkScale})`,
+        }}
+      />
+
+      {/* Spinning arc around mark */}
+      <svg
+        className="pointer-events-none absolute left-1/2 top-1/2"
+        width={150 * scale}
+        height={150 * scale}
+        style={{
+          marginLeft: (-150 * scale) / 2,
+          marginTop: (-150 * scale) / 2,
+          transform: `rotate(${time * spinMul}deg)`,
+        }}
+        viewBox="0 0 150 150"
+      >
+        <circle
+          cx="75"
+          cy="75"
+          r="62"
+          fill="none"
+          stroke="rgba(0,242,255,0.55)"
+          strokeWidth="2.2"
+          strokeLinecap="round"
+          strokeDasharray={`${0.42 * 2 * Math.PI * 62} ${2 * Math.PI * 62}`}
+        />
+      </svg>
+
+      {/* Real Astra core logo asset */}
+      <img
+        src="/astra-core-logo.png"
+        alt="Astra"
+        className="absolute left-1/2 top-1/2 object-contain select-none"
+        style={{
+          width: 132 * scale,
+          height: 132 * scale,
+          marginLeft: (-132 * scale) / 2,
+          marginTop: (-132 * scale) / 2,
+          filter: appearActive
+            ? "drop-shadow(0 0 18px rgba(0,242,255,0.95)) drop-shadow(0 0 42px rgba(0,242,255,0.45))"
+            : "brightness(0.35) saturate(0.3) opacity(0.5)",
+          transform: appearActive
+            ? `scale(${thinkScale}) rotate3d(0.12, 1, 0, ${logoSpin}deg)`
+            : "scale(1)",
+          willChange: "transform",
+        }}
+        draggable={false}
       />
     </div>
   );
 }
 
 export default function Autonomy() {
-  const [active, setActive] = useState(true);
   const [mode, setMode] = useState<AutonomyMode>("ask");
-  const [tasks] = useState(INITIAL_TASKS);
-  const [activity] = useState(INITIAL_ACTIVITY);
+  const [active, setActive] = useState(true);
+  const [tasks, setTasks] = useState(INITIAL_TASKS);
   const [suggestions, setSuggestions] = useState(INITIAL_SUGGESTIONS);
+  const [command, setCommand] = useState("");
+  const [commandPulse, setCommandPulse] = useState(false);
 
-  const primary = useMemo(() => tasks.find((t) => t.state === "running") ?? tasks[0], [tasks]);
-  const runningCount = tasks.filter((t) => t.state === "running").length;
+  const primary = useMemo(
+    () => tasks.find((t) => t.state === "running") ?? tasks[0],
+    [tasks],
+  );
+  const doing = useMemo(() => tasks.filter((t) => t.state === "running"), [tasks]);
+  const next = useMemo(() => tasks.filter((t) => t.state === "queued"), [tasks]);
 
-  const studios = [
-    {
-      id: "images",
-      title: "Images",
-      blurb: "Concept stills, style packs, upscales",
-      icon: ImageIcon,
-      meta: "10 in flight · mock",
-    },
-    {
-      id: "video",
-      title: "Video",
-      blurb: "Scene renders & clip assembly",
-      icon: Video,
-      meta: "Episode 01 · Scene 7",
-    },
-    {
-      id: "tv",
-      title: "TV Episodes",
-      blurb: "Boards, beats, episode pipelines",
-      icon: Tv,
-      meta: "Coming online",
-    },
-  ];
+  const pauseAll = () => {
+    setActive(false);
+    setTasks((prev) =>
+      prev.map((t) => (t.state === "running" ? { ...t, state: "queued" as const } : t)),
+    );
+  };
+
+  const resumeAll = () => {
+    setActive(true);
+    setTasks((prev) => {
+      const firstQueued = prev.find((t) => t.state === "queued");
+      if (!firstQueued) return prev;
+      return prev.map((t) =>
+        t.id === firstQueued.id
+          ? { ...t, state: "running" as const, progress: t.progress ?? 8 }
+          : t,
+      );
+    });
+  };
 
   const dismissSuggestion = (id: string) => {
     setSuggestions((prev) => prev.filter((s) => s.id !== id));
   };
 
+  const approveSuggestion = (id: string) => {
+    const s = suggestions.find((x) => x.id === id);
+    if (!s) return;
+    setSuggestions((prev) => prev.filter((x) => x.id !== id));
+    setTasks((prev) => [
+      ...prev,
+      {
+        id: `approved-${id}`,
+        title: s.title,
+        detail: "Queued from suggestion (mock)",
+        computer: "HADES",
+        state: "queued" as const,
+      },
+    ]);
+  };
+
+  const sendCommand = () => {
+    if (!command.trim()) return;
+    setCommandPulse(true);
+    setTimeout(() => setCommandPulse(false), 600);
+    setCommand("");
+  };
+
+  const working = active && mode !== "off";
+
   return (
-    <div className="relative min-h-full w-full overflow-hidden bg-transparent text-foreground">
-      <RadarBackdrop />
+    <div className="relative min-h-full overflow-hidden bg-[#05070f] text-slate-100">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_0%,rgba(34,211,238,0.12),transparent_50%),radial-gradient(ellipse_at_80%_40%,rgba(147,51,234,0.1),transparent_45%),radial-gradient(ellipse_at_20%_70%,rgba(59,130,246,0.08),transparent_40%)]" />
+      <div className="pointer-events-none absolute inset-0 opacity-[0.35] [background-image:radial-gradient(rgba(148,163,184,0.12)_1px,transparent_1px)] [background-size:28px_28px]" />
 
-      <div className="relative z-10 mx-auto flex max-w-6xl flex-col gap-5 p-4 pb-10 md:p-6">
-        {/* Hero / orb */}
-        <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-black/35 p-5 shadow-[0_0_60px_rgba(34,211,238,0.08)] backdrop-blur-md md:p-8">
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-cyan-500/10 via-transparent to-purple-600/15" />
-          <div className="relative grid items-center gap-6 lg:grid-cols-[220px_1fr]">
-            <AstraOrb active={active && mode !== "off"} />
+      <div className="relative z-10 mx-auto flex max-w-5xl flex-col gap-6 px-4 py-5 pb-14 md:px-8">
+        {/* Hero */}
+        <section className="relative overflow-hidden rounded-3xl border border-[#00f2ff]/20 bg-black/40 p-5 shadow-[0_0_60px_rgba(0,242,255,0.12)] backdrop-blur-sm md:p-7">
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-cyan-500/5 via-transparent to-purple-600/10" />
 
-            <div className="space-y-4">
-              <div className="flex flex-wrap items-center gap-2">
-                <span
-                  className={cn(
-                    "rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em]",
-                    active && mode !== "off"
-                      ? "border-cyan-400/35 bg-cyan-500/15 text-cyan-200"
-                      : "border-amber-400/35 bg-amber-500/10 text-amber-200",
-                  )}
-                >
-                  {active && mode !== "off" ? "Autonomy Active" : "Autonomy Paused"}
-                </span>
-                <span className="rounded-full border border-purple-400/25 bg-purple-500/10 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.18em] text-purple-100">
-                  Mock only
-                </span>
-              </div>
+          <div className="relative mb-3 flex items-center justify-between gap-3">
+            <span
+              className={cn(
+                "rounded-full border px-3 py-1 shadow-[0_0_16px_rgba(0,242,255,0.2)]",
+                hudClass(
+                  working
+                    ? "border-[#00f2ff]/55 bg-[#00f2ff]/15 text-[#00f2ff]"
+                    : "border-amber-400/35 bg-amber-500/10 text-amber-100",
+                ),
+              )}
+            >
+              {working ? "Autonomy Active" : "Autonomy Paused"}
+            </span>
+            <span
+              className={cn(
+                "rounded-full border border-purple-400/35 bg-purple-500/10 px-3 py-1",
+                hudClass("text-purple-100"),
+              )}
+            >
+              Mock Mode
+            </span>
+          </div>
 
-              <div>
-                <h1 className="font-display text-2xl font-bold tracking-tight text-white md:text-3xl">
-                  {active && mode !== "off" ? "ASTRA IS WORKING" : "ASTRA IS WAITING"}
-                </h1>
-                <p className="mt-2 max-w-xl text-sm text-muted-foreground">
-                  {active && mode !== "off"
-                    ? "Alive while you’re away — queueing creative and ops work across the fleet (display only)."
-                    : "Autonomy is paused. Suggestions and history stay visible; nothing runs."}
-                </p>
-              </div>
+          <div className="relative grid items-center gap-6 md:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] md:gap-8">
+            <div className="flex justify-center md:justify-start">
+              <AstraPhoneOrb active={working} thinking={working} />
+            </div>
 
-              <div className="grid gap-3 sm:grid-cols-3">
-                <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3">
-                  <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">Machine</p>
-                  <p className="mt-1 font-display text-lg font-semibold text-cyan-200">{primary?.computer ?? "—"}</p>
-                </div>
-                <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 sm:col-span-2">
-                  <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">Current job</p>
-                  <p className="mt-1 text-sm font-medium text-white">
-                    {primary ? `${primary.title} — ${primary.detail}` : "None"}
-                  </p>
-                  {typeof primary?.progress === "number" && primary.state === "running" && (
-                    <div className="mt-3">
-                      <div className="mb-1 flex items-center justify-between text-[11px] text-cyan-200/90">
-                        <span>{runningCount} active</span>
-                        <span className="font-mono">{primary.progress}%</span>
+            <div className="min-w-0 text-center md:text-left">
+              <p className={cn(hudClass("text-[#00f2ff] tracking-[0.35em]"))}>
+                {working ? "Astra is working" : "Astra is paused"}
+              </p>
+
+              {primary && (
+                <div className="mt-3 space-y-3">
+                  <div>
+                    <h1 className="font-sans text-2xl font-semibold tracking-tight text-white md:text-[1.85rem]">
+                      {primary.title}
+                    </h1>
+                    <p className="mt-1 font-sans text-base text-cyan-100/85">{primary.detail}</p>
+                  </div>
+                  <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 md:justify-start">
+                    <p className={hudClass("text-purple-200/90")}>
+                      {primary.computer}
+                      {primary.gpu ? ` • ${primary.gpu}` : ""}
+                    </p>
+                    <p className={hudClass("text-[#00f2ff]/90")}>
+                      {doing.length} Active Task{doing.length === 1 ? "" : "s"}
+                    </p>
+                  </div>
+                  {typeof primary.progress === "number" && (
+                    <div className="w-full max-w-md mx-auto md:mx-0">
+                      <div className={cn(hudClass("mb-2 flex items-center justify-between text-cyan-200/90"))}>
+                        <span>{primary.progress}% complete</span>
+                        <span>{primary.eta ?? "—"}</span>
                       </div>
-                      <div className="h-2 overflow-hidden rounded-full bg-white/5">
+                      <div className="h-2 overflow-hidden rounded-full bg-white/10">
                         <motion.div
-                          className="h-full rounded-full bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 shadow-[0_0_14px_rgba(34,211,238,0.5)]"
-                          initial={{ width: 0 }}
+                          className="h-full rounded-full bg-gradient-to-r from-[#00f2ff] via-cyan-400 to-purple-500 shadow-[0_0_18px_rgba(0,242,255,0.65)]"
+                          initial={false}
                           animate={{ width: `${primary.progress}%` }}
-                          transition={{ duration: 1.1, ease: "easeOut" }}
+                          transition={{ type: "spring", stiffness: 80, damping: 20 }}
                         />
                       </div>
                     </div>
                   )}
                 </div>
-              </div>
+              )}
 
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  size="sm"
-                  onClick={() => setActive((v) => !v)}
-                  className="gap-1.5 rounded-full border border-cyan-400/30 bg-cyan-500/20 text-cyan-50 hover:bg-cyan-500/30"
-                >
-                  {active ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
-                  {active ? "Pause" : "Resume"}
-                </Button>
+              <div className="mt-5 flex flex-wrap items-center justify-center gap-2 md:justify-start">
+                {working ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={pauseAll}
+                    className={cn(
+                      "gap-1.5 rounded-full border-amber-400/35 bg-transparent text-amber-50 hover:bg-amber-500/10",
+                      hudClass("normal-case tracking-[0.18em]"),
+                    )}
+                  >
+                    <Pause className="h-3.5 w-3.5" /> Pause
+                  </Button>
+                ) : (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={resumeAll}
+                    className={cn(
+                      "gap-1.5 rounded-full border-[#00f2ff]/40 bg-transparent text-[#00f2ff] hover:bg-[#00f2ff]/10",
+                      hudClass("normal-case tracking-[0.18em]"),
+                    )}
+                  >
+                    <Play className="h-3.5 w-3.5" /> Resume
+                  </Button>
+                )}
               </div>
             </div>
           </div>
         </section>
 
-        {/* Mode selector */}
-        <section className="rounded-3xl border border-white/10 bg-black/30 p-4 backdrop-blur-md md:p-5">
-          <div className="mb-3 flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-cyan-300" />
-            <h2 className="font-display text-sm font-semibold tracking-wide text-white">Autonomy mode</h2>
+        {/* Command */}
+        <section className="rounded-3xl border border-cyan-400/20 bg-gradient-to-br from-cyan-500/10 via-black/50 to-purple-600/10 p-5 shadow-[0_0_40px_rgba(34,211,238,0.1)] md:p-6">
+          <SectionLabel icon={<Sparkles className="h-3.5 w-3.5" />}>
+            What should I work on?
+          </SectionLabel>
+
+          <div
+            className={cn(
+              "flex items-center gap-2 rounded-2xl border bg-black/50 p-2 transition-shadow",
+              commandPulse
+                ? "border-cyan-300/60 shadow-[0_0_28px_rgba(34,211,238,0.35)]"
+                : "border-cyan-400/30 shadow-[0_0_20px_rgba(34,211,238,0.12)]",
+            )}
+          >
+            <input
+              value={command}
+              onChange={(e) => setCommand(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") sendCommand();
+              }}
+              placeholder="Tell Astra what you want accomplished while your computers are idle..."
+              className="min-w-0 flex-1 bg-transparent px-3 py-3 font-sans text-sm text-cyan-50 placeholder:text-slate-500 outline-none"
+            />
+            <Button
+              size="icon"
+              onClick={sendCommand}
+              className="h-11 w-11 shrink-0 rounded-xl border border-cyan-300/40 bg-cyan-500/25 text-cyan-50 hover:bg-cyan-500/40"
+              aria-label="Send to Astra"
+            >
+              <Send className="h-4 w-4" />
+            </Button>
           </div>
+
+          <div className="mt-3 flex flex-wrap gap-2">
+            {COMMAND_CHIPS.map((chip) => (
+              <button
+                key={chip}
+                type="button"
+                onClick={() => setCommand(chip)}
+                className={cn(
+                  "rounded-full border border-purple-400/25 bg-purple-500/10 px-3 py-1.5 text-purple-100 transition hover:border-cyan-400/40 hover:bg-cyan-500/10 hover:text-cyan-100",
+                  hudClass("normal-case tracking-[0.12em] text-[10px]"),
+                )}
+              >
+                {chip}
+              </button>
+            ))}
+          </div>
+        </section>
+
+        {/* Capabilities */}
+        <section>
+          <SectionLabel>What I can work on</SectionLabel>
+          <div className="grid gap-4 md:grid-cols-3">
+            {[
+              {
+                key: "studios",
+                title: "Studios",
+                blurb: "Images • Video • Episodes",
+                action: "Create an Episode",
+                icon: <Clapperboard className="h-5 w-5 text-cyan-300" />,
+                accent: "from-cyan-500/15 to-blue-600/10 border-cyan-400/25",
+              },
+              {
+                key: "dev",
+                title: "Developer",
+                blurb: "Apps • Code • Testing",
+                action: "Build an App",
+                icon: <Code2 className="h-5 w-5 text-blue-300" />,
+                accent: "from-blue-500/15 to-indigo-600/10 border-blue-400/25",
+              },
+              {
+                key: "ops",
+                title: "Ops",
+                blurb: "Systems • Maintenance • Monitoring",
+                action: "Check Systems",
+                icon: <Wrench className="h-5 w-5 text-purple-300" />,
+                accent: "from-purple-500/15 to-fuchsia-600/10 border-purple-400/25",
+              },
+            ].map((card) => (
+              <motion.button
+                key={card.key}
+                type="button"
+                whileHover={{ y: -2 }}
+                onClick={() => setCommand(card.action)}
+                className={cn(
+                  "group rounded-3xl border bg-gradient-to-br p-5 text-left shadow-[0_0_30px_rgba(0,0,0,0.25)] transition",
+                  card.accent,
+                )}
+              >
+                <div className="mb-4 flex items-center justify-between">
+                  <div className="rounded-2xl border border-white/10 bg-black/30 p-2.5">{card.icon}</div>
+                  <ArrowRight className="h-4 w-4 text-white/30 transition group-hover:text-cyan-300" />
+                </div>
+                <h3 className={hudClass("text-sm text-white tracking-[0.16em]")}>{card.title}</h3>
+                <p className="mt-1 font-sans text-sm text-slate-300/90">{card.blurb}</p>
+                <p className={cn(hudClass("mt-4 text-cyan-200/90 tracking-[0.16em]"))}>{card.action}</p>
+              </motion.button>
+            ))}
+          </div>
+        </section>
+
+        {/* Activity columns */}
+        <section className="grid gap-4 lg:grid-cols-3">
+          <div className="rounded-3xl border border-cyan-400/15 bg-black/40 p-5 backdrop-blur-sm">
+            <SectionLabel icon={<Activity className="h-3.5 w-3.5" />}>What I&apos;m working on</SectionLabel>
+            <div className="space-y-3">
+              {doing.length === 0 && (
+                <p className="font-sans text-sm text-slate-500">Nothing running right now.</p>
+              )}
+              {doing.map((item) => (
+                <div
+                  key={item.id}
+                  className="rounded-2xl border border-cyan-400/20 bg-cyan-500/5 p-3"
+                >
+                  <p className="font-sans text-sm font-semibold text-white">{item.title}</p>
+                  <p className="mt-0.5 font-sans text-xs text-cyan-200/80">{item.detail}</p>
+                  <p className={cn(hudClass("mt-2 text-purple-200/80 tracking-[0.14em]"))}>
+                    {item.computer}
+                    {item.gpu ? ` • ${item.gpu}` : ""}
+                  </p>
+                  {typeof item.progress === "number" && (
+                    <div className="mt-2">
+                      <div className={cn(hudClass("mb-1 flex justify-between text-[10px] text-cyan-200/70"))}>
+                        <span>{item.progress}%</span>
+                        <span>{item.eta}</span>
+                      </div>
+                      <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
+                        <div
+                          className="h-full rounded-full bg-gradient-to-r from-cyan-400 to-purple-500"
+                          style={{ width: `${item.progress}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-3xl border border-purple-400/15 bg-black/40 p-5 backdrop-blur-sm">
+            <SectionLabel icon={<Tv className="h-3.5 w-3.5 text-purple-300" />}>What&apos;s next</SectionLabel>
+            <div className="space-y-3">
+              {next.length === 0 && (
+                <p className="font-sans text-sm text-slate-500">Queue is clear.</p>
+              )}
+              {next.map((item) => (
+                <div
+                  key={item.id}
+                  className="rounded-2xl border border-purple-400/20 bg-purple-500/5 p-3"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className="font-sans text-sm font-semibold text-white">{item.title}</p>
+                      <p className="mt-0.5 font-sans text-xs text-slate-400">{item.detail}</p>
+                    </div>
+                    <span
+                      className={cn(
+                        "shrink-0 rounded-full border border-purple-400/30 bg-purple-500/10 px-2 py-0.5 text-purple-200",
+                        hudClass("text-[10px]"),
+                      )}
+                    >
+                      Queued
+                    </span>
+                  </div>
+                  <p className={cn(hudClass("mt-2 text-purple-200/70 tracking-[0.14em]"))}>
+                    {item.computer}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-3xl border border-fuchsia-400/15 bg-black/40 p-5 backdrop-blur-sm">
+            <SectionLabel icon={<Sparkles className="h-3.5 w-3.5 text-fuchsia-300" />}>
+              What I suggest
+            </SectionLabel>
+            <div className="space-y-3">
+              <AnimatePresence initial={false}>
+                {suggestions.length === 0 && (
+                  <p className="font-sans text-sm text-slate-500">No suggestions right now.</p>
+                )}
+                {suggestions.map((s) => (
+                  <motion.div
+                    key={s.id}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="rounded-2xl border border-fuchsia-400/20 bg-gradient-to-br from-fuchsia-500/10 to-cyan-500/5 p-3"
+                  >
+                    <p className="font-sans text-sm leading-relaxed text-slate-100">{s.detail}</p>
+                    <div className="mt-3 flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => approveSuggestion(s.id)}
+                        className={cn(
+                          "flex-1 gap-1 rounded-full border-[#00f2ff]/55 bg-transparent text-[#00f2ff] hover:bg-[#00f2ff]/10",
+                          hudClass("normal-case tracking-[0.16em]"),
+                        )}
+                      >
+                        <Check className="h-3.5 w-3.5" /> Approve
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => dismissSuggestion(s.id)}
+                        className={cn(
+                          "flex-1 gap-1 rounded-full border-white/25 bg-transparent text-slate-200 hover:bg-white/5",
+                          hudClass("normal-case tracking-[0.16em]"),
+                        )}
+                      >
+                        <X className="h-3.5 w-3.5" /> Not Now
+                      </Button>
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+          </div>
+        </section>
+
+        <section className="rounded-3xl border border-white/10 bg-black/30 p-5">
+          <SectionLabel icon={<CheckCircle2 className="h-3.5 w-3.5 text-emerald-300" />}>
+            What I&apos;m doing
+          </SectionLabel>
+          <div className="space-y-2">
+            {INITIAL_ACTIVITY.map((item) => (
+              <div
+                key={item.id}
+                className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-white/5 bg-white/[0.02] px-3 py-2.5"
+              >
+                <div>
+                  <p className="font-sans text-sm text-slate-200">{item.title}</p>
+                  <p className="font-sans text-[11px] text-slate-500">
+                    <span className="font-mono font-bold uppercase tracking-[0.14em] text-cyan-300/80">
+                      {item.computer}
+                    </span>{" "}
+                    · {item.finishedAt}
+                  </p>
+                </div>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className={cn("gap-1.5 text-cyan-200/80 hover:text-cyan-100", hudClass("normal-case tracking-[0.14em]"))}
+                >
+                  <Eye className="h-3.5 w-3.5" /> {item.resultLabel}
+                </Button>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-3xl border border-white/10 bg-black/40 p-5 md:p-6">
+          <SectionLabel>Autonomy settings</SectionLabel>
+          <p className="mb-4 max-w-2xl font-sans text-sm text-slate-400">
+            How free should I be when your machines are idle? Default for this mock is Ask First —
+            I propose work, you approve.
+          </p>
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
             {MODE_OPTIONS.map((opt) => (
               <button
@@ -324,228 +835,23 @@ export default function Autonomy() {
                 type="button"
                 onClick={() => setMode(opt.id)}
                 className={cn(
-                  "rounded-2xl border px-3 py-3 text-left transition-all",
+                  "rounded-2xl border px-4 py-3 text-left transition",
                   mode === opt.id
                     ? "border-cyan-400/45 bg-cyan-500/15 shadow-[0_0_24px_rgba(34,211,238,0.18)]"
-                    : "border-white/10 bg-white/[0.03] hover:border-white/20",
+                    : "border-white/10 bg-white/[0.02] hover:border-white/20",
                 )}
               >
-                <p className={cn("text-sm font-semibold", mode === opt.id ? "text-cyan-100" : "text-white")}>
+                <p className={cn(hudClass(mode === opt.id ? "text-cyan-100" : "text-white"))}>
                   {opt.label}
                 </p>
-                <p className="mt-1 text-[11px] text-muted-foreground">{opt.hint}</p>
+                <p className="mt-1 font-sans text-[11px] text-slate-500">{opt.hint}</p>
               </button>
             ))}
           </div>
         </section>
 
-        <div className="grid gap-5 lg:grid-cols-2">
-          {/* Tasks */}
-          <section className="rounded-3xl border border-white/10 bg-black/30 p-4 backdrop-blur-md md:p-5">
-            <div className="mb-4 flex items-center gap-2">
-              <Activity className="h-4 w-4 text-cyan-300" />
-              <h2 className="font-display text-sm font-semibold tracking-wide text-white">TASKS</h2>
-            </div>
-            <div className="space-y-2">
-              {tasks.map((item) => (
-                <div
-                  key={item.id}
-                  className="rounded-2xl border border-white/8 bg-white/[0.03] px-3 py-3"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-white">{item.title}</p>
-                      <p className="mt-0.5 text-[11px] text-muted-foreground">
-                        {item.detail}
-                        <span className="mx-1.5 opacity-40">·</span>
-                        <span className="text-cyan-300/90">{item.computer}</span>
-                      </p>
-                    </div>
-                    <span
-                      className={cn(
-                        "shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
-                        item.state === "running" && "border-cyan-400/30 bg-cyan-500/15 text-cyan-200",
-                        item.state === "queued" && "border-purple-400/30 bg-purple-500/10 text-purple-200",
-                        item.state === "completed" && "border-emerald-400/30 bg-emerald-500/10 text-emerald-200",
-                      )}
-                    >
-                      {item.state === "running" ? (
-                        <motion.span
-                          className="inline-flex items-center gap-1"
-                          animate={{ opacity: [1, 0.55, 1] }}
-                          transition={{ duration: 1.6, repeat: Infinity }}
-                        >
-                          <span className="h-1.5 w-1.5 rounded-full bg-cyan-300" />
-                          running
-                        </motion.span>
-                      ) : (
-                        item.state
-                      )}
-                    </span>
-                  </div>
-                  {typeof item.progress === "number" && item.state === "running" && (
-                    <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/5">
-                      <div
-                        className="h-full rounded-full bg-gradient-to-r from-cyan-400 to-purple-500"
-                        style={{ width: `${item.progress}%` }}
-                      />
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </section>
-
-          {/* Suggestions */}
-          <section className="rounded-3xl border border-white/10 bg-black/30 p-4 backdrop-blur-md md:p-5">
-            <div className="mb-4 flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-purple-300" />
-              <h2 className="font-display text-sm font-semibold tracking-wide text-white">ASTRA SUGGESTS</h2>
-            </div>
-            <AnimatePresence initial={false}>
-              {suggestions.length === 0 ? (
-                <motion.p
-                  key="empty"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="text-sm text-muted-foreground"
-                >
-                  No suggestions right now.
-                </motion.p>
-              ) : (
-                <div className="space-y-3">
-                  {suggestions.map((s) => (
-                    <motion.div
-                      key={s.id}
-                      layout
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.98 }}
-                      className="rounded-2xl border border-purple-400/20 bg-gradient-to-br from-purple-500/10 to-cyan-500/5 p-4"
-                    >
-                      <p className="text-sm font-medium text-white">{s.title}</p>
-                      <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{s.detail}</p>
-                      <div className="mt-3 flex gap-2">
-                        <Button
-                          size="sm"
-                          className="flex-1 gap-1.5 rounded-full bg-cyan-500/25 text-cyan-50 hover:bg-cyan-500/35"
-                          onClick={() => dismissSuggestion(s.id)}
-                        >
-                          <Check className="h-3.5 w-3.5" />
-                          Approve
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="flex-1 gap-1.5 rounded-full border-white/15"
-                          onClick={() => dismissSuggestion(s.id)}
-                        >
-                          <X className="h-3.5 w-3.5" />
-                          Not Now
-                        </Button>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-              )}
-            </AnimatePresence>
-          </section>
-        </div>
-
-        {/* Studios / Developer / Ops */}
-        <div className="grid gap-5 lg:grid-cols-3">
-          <section className="rounded-3xl border border-white/10 bg-black/30 p-4 backdrop-blur-md md:p-5 lg:col-span-1">
-            <div className="mb-4 flex items-center gap-2">
-              <Clapperboard className="h-4 w-4 text-cyan-300" />
-              <h2 className="font-display text-sm font-semibold tracking-wide text-white">STUDIOS</h2>
-            </div>
-            <div className="space-y-2">
-              {studios.map((studio) => {
-                const Icon = studio.icon;
-                return (
-                  <div key={studio.id} className="rounded-2xl border border-white/8 bg-white/[0.03] p-3">
-                    <div className="flex items-center gap-2">
-                      <div className="rounded-xl border border-cyan-400/20 bg-cyan-400/10 p-2 text-cyan-200">
-                        <Icon className="h-4 w-4" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-white">{studio.title}</p>
-                        <p className="text-[11px] text-muted-foreground">{studio.meta}</p>
-                      </div>
-                    </div>
-                    <p className="mt-2 text-xs text-muted-foreground">{studio.blurb}</p>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-
-          <section className="rounded-3xl border border-white/10 bg-black/30 p-4 backdrop-blur-md md:p-5">
-            <div className="mb-4 flex items-center gap-2">
-              <Code2 className="h-4 w-4 text-blue-300" />
-              <h2 className="font-display text-sm font-semibold tracking-wide text-white">DEVELOPER</h2>
-            </div>
-            <p className="text-sm text-white">Apps, coding & testing</p>
-            <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-              DeskFault build is queued on Chronos. Autonomy can scaffold, test, and report — mock lane only for now.
-            </p>
-            <div className="mt-4 rounded-2xl border border-dashed border-blue-400/25 bg-blue-500/5 px-3 py-4 text-center text-xs text-blue-100/80">
-              Testing DeskFault build — queued
-            </div>
-          </section>
-
-          <section className="rounded-3xl border border-white/10 bg-black/30 p-4 backdrop-blur-md md:p-5">
-            <div className="mb-4 flex items-center gap-2">
-              <Wrench className="h-4 w-4 text-purple-300" />
-              <h2 className="font-display text-sm font-semibold tracking-wide text-white">OPS</h2>
-            </div>
-            <p className="text-sm text-white">Maintenance & monitoring</p>
-            <ul className="mt-3 space-y-2 text-xs text-muted-foreground">
-              <li className="flex items-center gap-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" /> Fleet status probes — mock calm
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-cyan-400" /> Storage watch — deferred (read-only)
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-purple-400" /> No infra actions from this page
-              </li>
-            </ul>
-          </section>
-        </div>
-
-        {/* Recent activity */}
-        <section className="rounded-3xl border border-white/10 bg-black/30 p-4 backdrop-blur-md md:p-5">
-          <div className="mb-4 flex items-center gap-2">
-            <CheckCircle2 className="h-4 w-4 text-emerald-300" />
-            <h2 className="font-display text-sm font-semibold tracking-wide text-white">Recent Activity</h2>
-          </div>
-          <div className="grid gap-2 md:grid-cols-3">
-            {activity.map((item) => (
-              <div key={item.id} className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
-                <p className="text-sm font-medium text-white">{item.title}</p>
-                <p className="mt-1 text-[11px] text-muted-foreground">
-                  <span className="text-cyan-300/90">{item.computer}</span>
-                  <span className="mx-1.5 opacity-40">·</span>
-                  {item.finishedAt}
-                </p>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="mt-3 gap-1.5 rounded-full border-white/15"
-                  disabled
-                >
-                  <Eye className="h-3.5 w-3.5" />
-                  {item.resultLabel}
-                </Button>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <p className="text-center text-[11px] text-muted-foreground/70">
-          Standalone <span className="font-mono text-cyan-400/80">/autonomy</span> · no home/nav changes · mock data only ·
-          P0–P3 infra stays deferred
+        <p className="text-center font-mono text-[11px] uppercase tracking-[0.16em] text-slate-600">
+          Standalone /autonomy mock · Vite preview
         </p>
       </div>
     </div>
