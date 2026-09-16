@@ -1,10 +1,10 @@
 # Sprint 0 Track A — project status
 # Owner: Astra EM | Synced by: Astra Docs
-# Canon: astra-ui/docs (docs/canon-v1). Mini-Beast: /home/comea/astra-ui/astra-ui/docs/
+# Canon: astra-ui/docs (docs/canon-v1)
 # Approved: Jason via CoS 2026-09-16 — Autonomy honesty first
 
 meta:
-  version: "1.0.4"
+  version: "1.0.5"
   sprint: "Sprint 0 Track A"
   track_focus: "Autonomy honesty first"
   updated: "2026-09-16"
@@ -13,19 +13,12 @@ meta:
   master_index: "docs/ASTRA_MASTER.md"
   roadmap: "docs/ROADMAP.md"
   qa_gate: "docs/qa/SPRINT0_TRACK_A_GATE.md"
-  frontend_architecture: "docs/frontend-architecture.md"
+  qa_gate_commit: "f8e48e5"
   docs_branch: "docs/canon-v1"
   docs_pr: "https://github.com/biggyclops/astra-ui/pull/1"
   docs_pr_merge: "blocked — EM/Jason only"
   eng_pr: "https://github.com/biggyclops/astra-ui/pull/2"
-  eng_pr_merge: "blocked — QA live + Jason call on D-003 honesty"
-
-visual_identity:
-  policy: "Jason-approved Astra Visual Identity Policy"
-  desktop_chrome: "Core mark + ASTRA wordmark"
-  phone_chrome: "Phone-adapted; do not clone onto desktop"
-  identity_redesign: "requires explicit Jason approval"
-  law_this_sprint: true
+  eng_pr_merge: "blocked — QA READY + Jason D-003 call"
 
 sprint_laws:
   - "Autonomy honesty first"
@@ -37,29 +30,15 @@ sprint_laws:
 
 live_serving:
   host: "Mini-Beast 100.81.216.117"
-  repo: "/home/comea/astra-ui/astra-ui"
   checkout: "feature/phase2-shell @ db93051 (includes autonomy 8e0a8a2)"
-  dirty_tree: "~190 files"
   probe_from: "Chronos / Tailscale / LAN — Grok Bot box cannot reach 100.x"
   vite_5173:
     status: up
     http: 200
     urls:
       - "http://100.81.216.117:5173/autonomy"
-      - "http://192.168.0.51:5173/autonomy"
-    serves: "dirty phase2-shell source (not cinematic 6f7307b)"
-  nginx_5000:
-    upstream: "127.0.0.1:6001"
-    urls:
-      - "http://100.81.216.117:5000/autonomy"
-  production_6001:
-    unit: astra-ui.service
-    status: active_stale_vs_dist
-    note: "dist newer than process; optional bounce loads current phase2 dist, not cinematic"
   autonomy_snapshot_unauth: 401
   cinematic_6f7307b_serving: false
-  reported_by: Astra Systems
-  reported_at: "2026-09-16"
 
 milestones:
   - id: autonomy-honesty
@@ -67,36 +46,26 @@ milestones:
     priority: P0
     status: in_progress
     eng_status: "pushed + PR open"
-    design_status: "APPROVE WITH TICKETS (2026-09-16)"
-    live_target: "http://100.81.216.117:5173/autonomy (session auth for snapshot)"
+    design_status: "APPROVE WITH TICKETS"
+    qa_status: "NOT READY (gate f8e48e5)"
     branch: feature/autonomy-ui
     github_tip: "8e0a8a2"
-    minibeast_tip: "8e0a8a2"
     pr: "https://github.com/biggyclops/astra-ui/pull/2"
-    serving_checkout: "feature/phase2-shell @ db93051"
-    summary: "Hero orb + Phase 1 read-only snapshot — chrome PASS; honesty tickets open"
+    live_target: "http://100.81.216.117:5173/autonomy (signed-in)"
+    qa_evidence:
+      A8_build_tsc_verify: PASS
+      A1_autonomy_http: "Partial — 200 + login plate; signed-in open"
+      A2_snapshot_visual: "Blocked — needs session (D-001)"
+      A3_no_mutating_api: PASS
+      design: "APPROVE WITH TICKETS"
+    qa_verdict: "NOT READY — D-001 signed-in live pass required"
     owners:
       primary: Astra Design
       eng: Programmer
       qa: Astra QA
       em: Astra EM
-    qa_gate: "docs/qa/SPRINT0_TRACK_A_GATE.md"
-    qa_verdict: "NOT READY — awaiting live pass + Jason D-003 call"
-    design_pass:
-      chrome_dna: PASS
-      phone_align_absent: PASS
-      snapshot_readonly_api: PASS
-      d003_mutating_apis: PASS
-      decision: "APPROVE WITH TICKETS — not clean unconditional sign-off"
-      clean_honesty_claim: blocked_on_d003_or_jason_accept
-    dod:
-      - "Design consistency pass vs DESIGN_SYSTEM.md (pass or ticket list)"
-      - "QA acceptance on read-only Autonomy surface (live desktop from Chronos/Tailscale)"
-      - "No merge of PR #2 without Design + QA (+ Jason if D-003 ships as stubs)"
-      - "routes.ts quarantine respected"
 
   - id: canon-status
-    title: "ROADMAP 1.0 + project_status owners"
     priority: P0
     status: done
     owners:
@@ -104,95 +73,56 @@ milestones:
       sync: Astra Docs
 
   - id: phase2-posture
-    title: "Phase 2 / cinematic shell — explicit posture"
     priority: P1
     status: pending_restart_qa
-    local_branch: feature/phase2-shell
-    local_tip: "db93051"
-    related_remote: feature/astra-cinematic-shell
     related_remote_tip: "6f7307b"
-    summary: "Cinematic visual QA requires checkout 6f7307b → clean dirty tree → npm run build → restart"
+    local_tip: "db93051"
     owners:
       primary: Astra EM
       systems: Astra Systems
-      design: Astra Design
-      eng: Programmer
-      qa: Astra QA
 
   - id: phone-smoke
-    title: "AstraPhone v0.1.26 smoke (secondary)"
     priority: P2
-    status: pending
+    status: deferred
     version: "0.1.26"
     build: "28"
-    owners:
-      primary: AstraPhone Engineer
-      design: Astra Design
-      qa: Astra QA
 
 quarantine:
   - id: dirty-routes-ts
     path: server/routes.ts
-    reason: "Dirty unrelated local changes — out of Sprint 0 DoD and merge scope"
     status: quarantined
-    owners:
-      gate: Astra EM
-      eng: Programmer
 
 design_tickets:
   - id: D-003
     priority: P1
-    title: "False affordances — Pause/Resume/Command/Approve look operational but are stubs"
-    remediation: "Label, disable, or remove before user-facing honesty claim"
-    owner: Astra Design
-    eng: "not a mutate-path issue; optional UI stub fix if Jason requires before merge"
+    title: "False affordances — stub Pause/Resume/Command/Approve"
     blocks_clean_honesty: true
     blocks_chrome_merge: false
+    jason_call: pending
   - id: D-002
     priority: soft
-    title: "Rename/soften AstraPhoneOrb + Phone-style comments"
-    owner: Astra Design
-    blocks_clean_honesty: false
+    title: "AstraPhoneOrb naming/comments"
   - id: D-001
-    priority: follow-up
-    title: "Signed-in visual screenshot archive incomplete"
+    priority: gate_blocker
+    title: "Signed-in :5173 visual + screenshot archive"
     owner: Astra QA
-    note: "Chronos headless Chrome hangs; box can’t reach 100.x — QA capture signed-in :5173 shots"
-
-ui_in_flight:
-  - id: autonomy-ui
-    branch: feature/autonomy-ui
-    github_tip: "8e0a8a2"
-    pr: "https://github.com/biggyclops/astra-ui/pull/2"
-    milestone: autonomy-honesty
-    summary: "Design APPROVE WITH TICKETS; awaiting QA + Jason D-003 call"
-  - id: astra-cinematic-shell
-    branch: feature/astra-cinematic-shell
-    github_tip: "6f7307b"
-    milestone: phase2-posture
-  - id: phase2-shell-local
-    branch: feature/phase2-shell
-    tip: "db93051"
-    milestone: phase2-posture
+    status: open
 
 blockers:
-  - id: qa-live-gate
-    summary: "SPRINT0_TRACK_A_GATE.md NOT READY until live pass + D-001 screenshots as able"
+  - id: d001-signed-in
+    summary: "QA NOT READY until signed-in live Autonomy pass (login plate blocking headless)"
     owner: Astra QA
+    needs: "Jason session on Chronos/browser or auth help"
     blocks: autonomy-honesty
   - id: d003-jason-call
-    summary: "Jason must accept shipping stub controls OR require D-003 fix before honesty claim / merge policy"
+    summary: "Jason accept stubs for merge vs require fix before merge/honesty"
     owner: Astra EM
     blocks: autonomy-honesty
   - id: cinematic-not-serving
-    summary: "6f7307b not in HEAD; cinematic QA needs checkout+build+restart"
+    summary: "6f7307b not serving; Phase 2 pending_restart_qa"
     owner: Astra EM
     blocks: phase2-posture
 
-handoff_required:
-  - "docs/handoffs/ entry when Autonomy honesty closes"
-  - "docs/handoffs/ entry when Phase 2 posture becomes restart_qa or parked"
-
 docs_standing_by:
-  - "Sync Mini-Beast docs/ to tip including 1.0.4"
-  - "docs/canon-v1 → main PR #1 only when EM/Jason say so"
+  - "Sync Mini-Beast docs/ to tip including 1.0.5"
+  - "PR #1 do-not-merge"
