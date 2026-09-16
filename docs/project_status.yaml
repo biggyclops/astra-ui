@@ -1,12 +1,17 @@
-# Lightweight project status stub — restored 2026-09-16 by Astra Design.
-# Formal roadmap ownership: Astra EM (project_status.yaml milestones TBD).
-# This file exists so Master pointers resolve; do not treat it as the full roadmap.
+# Project status — Sprint 0 Track A (Autonomy honesty first).
+# Formal roadmap ownership: Astra EM (awaiting ROADMAP 1.0 + this file refresh).
+# Docs Manager keeps branch names honest vs GitHub; does not invent milestones.
 
 meta:
-  restored: "2026-09-16"
+  updated: "2026-09-16"
+  sprint: "Sprint 0 Track A"
+  track_focus: "Autonomy honesty first"
   design_system: "docs/DESIGN_SYSTEM.md"
   master_index: "docs/ASTRA_MASTER.md"
   frontend_architecture: "docs/frontend-architecture.md"
+  docs_branch: "docs/canon-v1"
+  docs_commit: "3c9dc6a"
+  note: "EM will replace milestone fields; do not treat ui_in_flight as ROADMAP 1.0."
 
 visual_identity:
   policy: "Jason-approved Astra Visual Identity Policy"
@@ -15,19 +20,34 @@ visual_identity:
   identity_redesign: "requires explicit Jason approval"
 
 ui_in_flight:
-  - id: phase2-shell
-    branch: feature/phase2-shell
-    commit: c42e794
-    summary: "Cinematic atmosphere CSS; no push/restart without approval"
-    design_qa: pending_restart_approval
   - id: autonomy-ui
     branch: feature/autonomy-ui
-    commit: 8e0a8a2
-    summary: "Autonomy hero orb + Phase 1 read-only snapshot"
+    github_tip: 52c96eb
+    minibeast_tip: 8e0a8a2
+    github_vs_local: "Mini-Beast ahead 1 (unpushed): Phase 1 read-only /api/autonomy/snapshot"
+    summary: "Autonomy hero orb + Phone-style lock on GitHub; snapshot commit local-only until pushed"
+    track_a: true
+  - id: astra-cinematic-shell
+    branch: feature/astra-cinematic-shell
+    github_tip: 6f7307b
+    summary: "Cinematic shell on GitHub remote"
+  - id: phase2-shell-local
+    branch: feature/phase2-shell
+    github_tip: null
+    minibeast_tip: local
+    github_vs_local: "Mini-Beast only — not a GitHub branch; related remote is feature/astra-cinematic-shell"
+    summary: "Local cinematic polish + docs restore; no push/restart without approval"
+    design_qa: pending_restart_approval
 
 design_backlog:
   - "Read-only AstraPhone v0.1.14 HUD + Settings consistency pass vs Design System"
-  - "Visual QA Phase 2 shell after restart approval"
-  - "Keep Master docs + DESIGN_SYSTEM.md in sync when chrome ships"
+  - "Visual QA cinematic/Phase 2 shell after restart approval"
+  - "Keep Master + DESIGN_SYSTEM.md in sync when chrome ships"
+  - "Handoff required after every significant Eng session (docs/handoffs/)"
 
-em_note: "Replace/extend this stub when formal milestones land."
+docs_standing_by:
+  - "Sync canon when EM delivers ROADMAP 1.0 + project_status refresh"
+  - "Do not invent PRODUCT north-star"
+  - "docs/canon-v1 → main PR may be prepared; merge only when EM/Jason say so"
+
+em_note: "Replace/extend when ROADMAP 1.0 lands."

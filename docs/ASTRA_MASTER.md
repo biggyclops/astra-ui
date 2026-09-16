@@ -73,10 +73,19 @@ Authoritative rules: **[`DOCUMENTATION_ARCHITECTURE.md`](./DOCUMENTATION_ARCHITE
 | QA | Astra QA | Release readiness notes |
 | Programmer | Programmer | Eng-local accuracy; handoffs after sessions |
 
-## Current UI branches (Mini-Beast `astra-ui`)
+## Current UI branches (honesty — Sprint 0 Track A)
 
-- `feature/phase2-shell` — cinematic atmosphere + Design Bible restore (docs); no push/restart without approval
-- `feature/autonomy-ui` @ `8e0a8a2` — Autonomy Phase 1 snapshot + hero orb
+**On GitHub (`biggyclops/astra-ui`):**
+
+- `docs/canon-v1` @ `3c9dc6a` — institutional docs (this canon line)
+- `feature/autonomy-ui` @ `52c96eb` — Phone-style Autonomy UI lock (**local Mini-Beast tip `8e0a8a2` is ahead 1 and not pushed**: Phase 1 read-only `/api/autonomy/snapshot`)
+- `feature/astra-cinematic-shell` @ `6f7307b` — cinematic shell on remote
+
+**Mini-Beast only (not on GitHub):**
+
+- `feature/phase2-shell` — local cinematic polish + Design Bible restore commits; **do not treat as a remote branch**. Related remote line is `feature/astra-cinematic-shell`. No push/restart without approval.
+
+Docs and status must name GitHub branches when claiming “published,” and label Mini-Beast-only tips explicitly.
 
 ## Working agreements
 
