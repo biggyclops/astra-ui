@@ -3,7 +3,7 @@
 # Canon: astra-ui/docs (docs/canon-v1)
 
 meta:
-  version: "1.0.7"
+  version: "1.0.8"
   sprint: "Sprint 0 Track A"
   track_focus: "Autonomy honesty first"
   updated: "2026-09-16"
@@ -11,38 +11,32 @@ meta:
   docs_branch: "docs/canon-v1"
   docs_pr: "https://github.com/biggyclops/astra-ui/pull/1"
   eng_pr: "https://github.com/biggyclops/astra-ui/pull/2"
-  eng_pr_merge: "blocked — Q-001 + QA READY + Jason D-003"
+  eng_pr_q001: "https://github.com/biggyclops/astra-ui/pull/3"
+  eng_pr_merge: "blocked — QA re-pass after Q-001 + Jason D-003"
 
 live_serving:
   host: "Mini-Beast 100.81.216.117"
-  checkout: "feature/phase2-shell @ db93051"
+  checkout: "feature/phase2-shell @ db93051 (+ live Q-001 registration)"
   vite_5173:
     status: up
-    api_proxy: "Vite /api → localhost:5000 → nginx → astra-ui.service :6001 (no pathRewrite)"
+    api_proxy: "Vite /api → :5000 → astra-ui.service :6001"
   production_6001:
     unit: astra-ui.service
-    status: stale_vs_dist
-    up_since_utc: "2026-09-16 02:06"
-    dist_mtime_utc: "2026-09-16 12:55"
+    status: restarted_for_q001
+    note: "Eng npm run build + systemctl --user restart for Q-001 live fix"
   autonomy_snapshot_unauth: 401
-  autonomy_snapshot_auth: "404 via apiRouter catch-all — production never loaded registerAutonomyRoutes"
+  autonomy_snapshot_auth: "200 JSON (Eng verify; awaiting QA re-pass)"
 
 milestones:
   - id: autonomy-honesty
     priority: P0
-    status: blocked
+    status: in_progress
     design_status: "APPROVE WITH TICKETS"
-    qa_status: "NOT READY — Q-001"
+    qa_status: "NOT READY — re-pass after Q-001"
     pr: "https://github.com/biggyclops/astra-ui/pull/2"
-    github_tip: "8e0a8a2"
-    qa_evidence:
-      A1: PASS
-      A3: PASS
-      A5: PASS
-      A6: PASS
-      A7: PASS
-      A8: PASS
-      A2_snapshot: "FAIL Q-001"
+    q001_pr: "https://github.com/biggyclops/astra-ui/pull/3"
+    github_tip: "1135510 (autonomy-ui + Q-001)"
+    prior_tip: "8e0a8a2"
 
   - id: phase2-posture
     priority: P1
@@ -56,14 +50,14 @@ bugs:
   - id: Q-001
     priority: P0
     title: "Signed-in snapshot 404 on live :5173/api"
-    root_cause: "Vite proxies /api to stale astra-ui.service; process missing app.get(/api/autonomy/snapshot); falls through apiRouter → 404 /autonomy/snapshot"
-    fast_unblock: "Jason-approved systemctl --user restart astra-ui.service (loads current dist; also fixes :5173/api)"
-    durable_fix: "Eng register GET /autonomy/snapshot on apiRouter (and/or ensure app-level route matches)"
+    root_cause: "stale prod + apiRouter registration path"
+    durable_fix: "registerAutonomyRoutes(apiRouter, …, /autonomy/snapshot) — PR #3"
+    live_fix: "build + astra-ui.service restart by Eng"
+    eng_verify: "auth 200 / unauth 401"
+    status: fixed_pending_qa
     owners:
       eng: Programmer
-      systems: Astra Systems
-    status: open
-    jason_bounce: pending
+      qa: Astra QA
 
 design_tickets:
   - id: D-003
@@ -72,12 +66,12 @@ design_tickets:
   - id: D-002
     priority: soft
   - id: D-001
-    status: "signed-in done; blocked on Q-001 snapshot"
+    status: "re-open for QA snapshot visual after Q-001"
 
 blockers:
-  - id: q001-stale-prod
-    summary: "Approve production bounce and/or land Eng durable route fix"
-    owner: Astra EM
+  - id: qa-repass-q001
+    summary: "QA re-pass signed-in snapshot after live fix"
+    owner: Astra QA
     blocks: autonomy-honesty
   - id: d003-jason-call
     summary: "Accept stubs vs require fix before honesty/merge"
@@ -89,6 +83,10 @@ quarantine:
     path: server/routes.ts
     status: quarantined
 
+notes:
+  - "Hades :5050 may still be offline (orb offline) — separate from Q-001"
+  - "Hold merge PR #2/#3 until QA READY"
+
 docs_standing_by:
-  - "Sync Mini-Beast docs/ to 1.0.7"
+  - "Sync Mini-Beast docs/ to 1.0.8"
   - "PR #1 do-not-merge"
