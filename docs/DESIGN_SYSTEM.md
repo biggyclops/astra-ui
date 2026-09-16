@@ -1,12 +1,20 @@
 # Astra Design System
 
-**Status:** Canonical  
-**Owner:** UI/UX Director (Astra Design)  
-**Approved:** Jason Comeau — Astra Visual Identity Policy (2026-09-16)  
-**Location (live Eng tree):** `docs/DESIGN_SYSTEM.md` on Mini-Beast `astra-ui`  
-**Phone implementation reference:** box skill `match-mock-astra-visual-language/ASTRA_DESIGN_SYSTEM.md` (inspected Phone source tokens — not a license to clone Phone chrome onto desktop)
+| Field | Value |
+|---|---|
+| **Version** | 1.0.0 |
+| **Status** | Approved |
+| **Owner** | UI/UX Director (Astra Design) |
+| **Maintained by** | Documentation Manager (publication / sync) |
+| **Last Reviewed** | 2026-09-16 |
+| **Approved By** | Jason Comeau; Steve Jobs (Product); CTO (architecture-impact awareness) |
+
+**Location (live Eng tree):** `docs/DESIGN_SYSTEM.md` in `astra-ui`  
+**Phone implementation reference:** box skill `match-mock-astra-visual-language/ASTRA_DESIGN_SYSTEM.md` (tokens — not a license to clone Phone chrome onto desktop)
 
 This is the single source of truth for Astra’s visual identity. All Astra applications stay faithful to this system. Platform chrome and navigation may differ; identity may not.
+
+> Bump **Version** on material identity guidance changes. Atmosphere-only polish does not require a major bump.
 
 ---
 

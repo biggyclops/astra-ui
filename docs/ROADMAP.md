@@ -1,38 +1,50 @@
 # Astra Roadmap
 
-**Status:** Scaffold (2026-09-16) — formal milestones owned by Engineering Manager  
-**Owner:** Astra EM; maintained by Documentation Manager  
-**See also:** [project_status.yaml](./project_status.yaml) · [ASTRA_MASTER.md](./ASTRA_MASTER.md) · [PRODUCT.md](./PRODUCT.md)
+| Field | Value |
+|---|---|
+| **Version** | 0.1.0 |
+| **Status** | Outline — formal milestones owned by EM |
+| **Owner** | Astra EM |
+| **Maintained by** | Documentation Manager |
+| **Last Reviewed** | 2026-09-16 |
+| **Approved By** | — (outline only) |
 
-## How to read this
+**See also:** [project_status.yaml](./project_status.yaml) · [PRODUCT.md](./PRODUCT.md) · [ASTRA_MASTER.md](./ASTRA_MASTER.md) · [releases/](./releases/)
 
-- **Narrative / phases** live here.
-- **Machine-readable in-flight UI / design backlog** lives in `project_status.yaml` until EM replaces that stub.
-- Do not treat either file as a promise of ship dates without EM update.
+## Purpose
 
-## Current known tracks (from status stub + Master)
+Narrate phases and milestones so humans and agents share one view of where Astra is going. Machine-readable in-flight detail stays in `project_status.yaml` until EM replaces that stub.
 
+## Sections
+
+### 1. How to read this
+- Narrative / phases → this file
+- In-flight UI / design backlog → `project_status.yaml`
+- Neither file is a ship-date promise without EM update
+
+### 2. Now (known tracks)
 | Track | Branch / note | State |
 |---|---|---|
 | Phase 2 cinematic shell | `feature/phase2-shell` | Atmosphere CSS; restart / push need approval |
 | Autonomy UI Phase 1 | `feature/autonomy-ui` | Read-only snapshot + hero orb |
+| Docs canon | `docs/canon-v1` | Institutional docs on GitHub |
 | AstraPhone consistency | Design backlog | HUD + Settings vs Design System |
 
-## Phases (EM to fill)
+### 3. Next
+- _(TODO: EM)_
 
-### Now
-- _EM: replace with accepted current milestone_
+### 4. Later
+- _(TODO: EM)_
 
-### Next
-- _EM: replace_
+### 5. Milestone log
+- Link closed milestones under [`releases/`](./releases/)
 
-### Later
-- _EM: replace_
+### 6. Change control
+- Roadmap substance is EM-owned
+- Docs Manager keeps sync + cross-links
+- Bump **Version** when phase structure or accepted milestones change
 
-## Milestone summary template
-
-When a milestone closes, add a short entry under [`releases/`](./releases/) and link it from here.
-
-## Change control
-
-Roadmap substance is EM-owned. Docs Manager keeps this file synchronized and cross-linked; does not invent dates or priorities.
+## TODOs
+- [ ] EM replaces Now / Next / Later with accepted milestones
+- [ ] EM defines ownership of `project_status.yaml` fields
+- [ ] First EM approval pass → bump to 1.0.0 and fill Approved By

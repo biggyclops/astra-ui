@@ -4,6 +4,20 @@
 
 It brings node health, remote-system metrics, service checks, media access, jobs, and operator controls into one interface. The project is built around modular APIs so new compute nodes, storage systems, AI services, and physical devices can be added without redesigning the frontend.
 
+## Documentation (canonical)
+
+Institutional docs live in **[`docs/`](./docs/)** — start at **[`docs/ASTRA_MASTER.md`](./docs/ASTRA_MASTER.md)**.
+
+| Doc | Notes |
+|---|---|
+| [ASTRA_MASTER.md](./docs/ASTRA_MASTER.md) | Entry index |
+| [DOCUMENTATION_ARCHITECTURE.md](./docs/DOCUMENTATION_ARCHITECTURE.md) | Canon rules (`astra-ui/docs` is SoT) |
+| [DESIGN_SYSTEM.md](./docs/DESIGN_SYSTEM.md) | Visual identity v1.0.0 |
+| [PRODUCT.md](./docs/PRODUCT.md) / [ARCHITECTURE.md](./docs/ARCHITECTURE.md) / [ROADMAP.md](./docs/ROADMAP.md) | Guidance outlines |
+
+Other Astra repositories should **link here** — do not duplicate these files.
+
+
 ## Live interface
 
 ### Node mesh and telemetry

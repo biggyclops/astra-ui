@@ -1,10 +1,36 @@
 # Astra Architecture
 
-**Status:** Canonical systems architecture (imported from Eng `docs/ARCHITECTURE.md` on GitHub main, 2026-09-16)  
-**Owner:** CTO (substance); maintained by Documentation Manager  
-**See also:** [ASTRA_MASTER.md](./ASTRA_MASTER.md) · [frontend-architecture.md](./frontend-architecture.md) · [ARCHITECTURE_SETUP.md](./ARCHITECTURE_SETUP.md) · [DOCUMENTATION_ARCHITECTURE.md](./DOCUMENTATION_ARCHITECTURE.md)
+| Field | Value |
+|---|---|
+| **Version** | 1.0.0 |
+| **Status** | Approved systems architecture (Eng baseline) |
+| **Owner** | CTO (substance) |
+| **Maintained by** | Documentation Manager |
+| **Last Reviewed** | 2026-09-16 |
+| **Approved By** | Eng baseline on `astra-ui` main; CTO re-ack pending for formal 1.0 stamp |
 
-> Platform / systems view for Astra as an operator environment. UI shell details live in `frontend-architecture.md`. Runtime setup live in Eng runbooks. Architecture claim changes need CTO review.
+**See also:** [ASTRA_MASTER.md](./ASTRA_MASTER.md) · [frontend-architecture.md](./frontend-architecture.md) · [ARCHITECTURE_SETUP.md](./ARCHITECTURE_SETUP.md) · [DOCUMENTATION_ARCHITECTURE.md](./DOCUMENTATION_ARCHITECTURE.md) · [adr/](./adr/)
+
+## Purpose
+
+Describe Astra as a systems-integration operator environment: UI, API, diagnostics, media, jobs, data, and robotics extension — so Eng and agents share one architecture picture.
+
+## Sections
+1. Design objective
+2. System view
+3. Frontend
+4. Status and diagnostics subsystem
+5. Hermes media subsystem
+6. Jobs
+7. Data model
+8. Robotics extension model
+9. Engineering principles
+
+## TODOs
+- [ ] CTO formal ack of Version 1.0.0 stamp (Approved By)
+- [ ] Cross-link new ADRs as they are accepted
+- [ ] Keep prototype boundaries honest as jobs/chat deepen
+- [ ] Align Autonomy / BFF contract notes when Architecture freezes them
 
 ---
 
