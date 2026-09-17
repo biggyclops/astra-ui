@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| **Version** | 1.0.0 |
+| **Version** | 1.1.0 |
 | **Status** | Active |
 | **Owner** | Documentation Manager |
 | **Last Reviewed** | 2026-09-17 |
@@ -20,5 +20,6 @@ Same map as [`../ASTRA_MASTER.md`](../ASTRA_MASTER.md). Packets replace long cha
 | EM | [roles/EM.md](./roles/EM.md) | Release recommendation; status YAML; stack | Merge; deploy; implement; invent Product vision |
 | Docs | [roles/DOCS.md](./roles/DOCS.md) | Structure, sync, Master, OS files, release notes | Invent Product, Design, or Architecture substance |
 | Product | [roles/PRODUCT.md](./roles/PRODUCT.md) | Vision and identity approval | Unapproved identity redesign |
+| Chief of Staff | [roles/COS.md](./roles/COS.md) | Coordinate after owner handoff; route one ticket to one next role; track blockers | Own vision/identity; replace EM/Design/QA/CTO; implement; expand scope; merge; deploy; multi-role handoff |
 
-No new roles. If chat names a role that is not in this table, stop and ask.
+Roles are only those listed in this table. If chat names a role that is not in this table, stop and ask.
