@@ -27,6 +27,9 @@ A dedicated `astra-docs` repository is **deferred** until the set is large enoug
 | `handoffs/` | Session handoff records |
 | `templates/` | Shared templates |
 | `releases/` | Milestone / release notes |
+| [`astra-os/`](./astra-os/README.md) | Agent operating layer (extension; `BOOT.md` is the AI entry) |
+
+[`astra-os/`](./astra-os/README.md) is an **extension** of this architecture (ASTRA-OS-001, 2026-09-17): the agent operating layer. It does not replace Master or this file.
 
 Related Eng-local runbooks (`ARCHITECTURE_SETUP.md`, `CHAT_PIPELINE.md`, `HERMES_MOUNT.md`, etc.) stay in `docs/` but are **repo operational docs**, not product-vision canon. They are listed from Master as references.
 
@@ -77,6 +80,18 @@ docs/
   releases/
     TEMPLATE.md
     README.md
+  astra-os/                          # agent OS (extension, not a second canon)
+    README.md
+    BOOT.md                          # single AI entry (via root AGENTS.md)
+    CONSTITUTION.md
+    ROLES.md
+    WORKFLOW.md
+    TICKETS.md
+    GATES.md
+    GLOSSARY.md
+    DECISION_LOG.md
+    roles/
+    tickets/
   # Eng-local runbooks (references, not product vision):
   ARCHITECTURE_SETUP.md
   CHAT_PIPELINE.md
@@ -86,10 +101,11 @@ docs/
 
 ## Cross-linking
 
-- One front door: `ASTRA_MASTER.md`.
+- One front door for product/system docs: `ASTRA_MASTER.md`.
+- One entry point for every AI agent: `docs/astra-os/BOOT.md` (root `AGENTS.md` points only there).
 - Every canon doc carries Status, Owner, Last-updated, and See also.
 - Eng READMEs point at Master, not deep fragile paths alone.
-- Role map for ownership lives in Master.
+- Role map for ownership lives in Master; role packets live in `docs/astra-os/roles/`.
 
 ## Versioning
 
@@ -116,10 +132,11 @@ Bump **Version** when major guidance changes. Git history remains the audit trai
 
 ## Discovery (engineers & agents)
 
-1. Open `docs/ASTRA_MASTER.md` in `astra-ui`.
-2. Follow Master’s doc map.
-3. Other repos’ READMEs → Master.
-4. Documentation Manager + Design treat this tree as authoritative.
+1. Humans / product / system: open `docs/ASTRA_MASTER.md` in `astra-ui`.
+2. Every AI agent: open `AGENTS.md` → `docs/astra-os/BOOT.md`, then follow Boot order.
+3. Follow Master’s doc map for owner-owned canon.
+4. Other repos’ READMEs → Master.
+5. Documentation Manager + Design treat this tree as authoritative.
 
 ## Explicit non-goals (v1)
 

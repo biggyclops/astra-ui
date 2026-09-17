@@ -14,6 +14,7 @@ Institutional docs live in **[`docs/`](./docs/)** — start at **[`docs/ASTRA_MA
 | [DOCUMENTATION_ARCHITECTURE.md](./docs/DOCUMENTATION_ARCHITECTURE.md) | Canon rules (`astra-ui/docs` is SoT) |
 | [DESIGN_SYSTEM.md](./docs/DESIGN_SYSTEM.md) | Visual identity v1.0.0 |
 | [PRODUCT.md](./docs/PRODUCT.md) / [ARCHITECTURE.md](./docs/ARCHITECTURE.md) / [ROADMAP.md](./docs/ROADMAP.md) | Guidance outlines |
+| [astra-os/BOOT.md](./docs/astra-os/BOOT.md) | AI agent entry (Astra OS extension) |
 
 Other Astra repositories should **link here** — do not duplicate these files.
 
