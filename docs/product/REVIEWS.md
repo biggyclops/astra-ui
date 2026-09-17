@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| **Version** | 1.0.5 |
+| **Version** | 1.0.6 |
 | **Status** | Approved — Product Owner |
 | **Owner** | Product |
 | **Last Reviewed** | 2026-09-17 |
@@ -606,3 +606,70 @@ Next Responsible Role: Programmer
 Dependencies: ASTRA-PD-001; ASTRA-PD-004; ASTRA-OS-002; ASTRA-S12  
 Target Sprint: Sprint 0 Track A (OS-line; not Track A merge set)  
 One-line rationale: CoS gets a read-only recommender — one ticket, one role, no dispatch — and S4 stays the parked Phase 2 shell.
+
+---
+
+# ASTRA-R14 — ASTRA-S13 Chief of Staff Dashboard
+
+**Request:** Read-only Chief of Staff dashboard inside `/autonomy`: sprint, ticket, owner, next role, blockers, progress, recent activity, repository status. Consume ASTRA-S12. Must not invoke roles, dispatch, merge, deploy, modify GitHub, control robots, or change Autonomy policy.
+
+## Summary
+
+`/autonomy` is the fleet-intent instrument (Phase 1 snapshot). A CoS dashboard is engineering-process state. Product will not let sprint/GitHub chrome drive the orb or look like dispatch. v1, when unparked, is a labeled read-only panel that displays **S12 output** and shows **unknown** for fields S12 does not emit.
+
+## User Value
+
+Seeing the next ticket and role on the operator screen is useful after the screen is honest. Building it now, or mixing it into snapshot copy, spends fleet trust on a project tracker.
+
+## Scope
+
+**In**
+- ASTRA-S13 parked until live S2 honesty and S12 CLI exist
+- Read-only `/autonomy` panel, separate from orb/snapshot
+- Consume S12 output only
+- Unknown for sprint progress, recent activity, and repository status unless S12 already emits them
+
+## Acceptance Criteria
+
+- Not staffed while operable Autonomy stubs remain.
+- Panel labeled recommendation / read-only engineering process.
+- Orb and Ask First still come only from `GET /api/autonomy/snapshot`.
+- Ticket/role match a local S12 run or show unknown.
+- No operable controls. No GitHub API. No role invocation.
+- Clicking does not change orb copy or Autonomy policy.
+- Identity law holds. Track A PRs untouched.
+
+## Non-Goals
+
+- Invoking AI roles or dispatching work
+- Merge, deploy, GitHub
+- Changing Ask First / Auto / snapshot contract
+- Robotics control
+- Inventing repo status or progress %
+- Unparking S3
+
+## Risks
+
+- Panel looks like live fleet control or Auto.
+- GitHub “repository status” becomes a second product.
+- Staffed before D-003 is live.
+- S12 “no Autonomy UI” lock is ignored without this review’s gates.
+
+## Recommendation
+
+🟡 **APPROVE WITH CHANGES**
+
+Park ASTRA-S13. Read-only S12 panel only. Not the snapshot. No GitHub.
+
+---
+
+Product Decision  
+Decision ID: ASTRA-PD-006  
+Product Version: 1.0.6  
+Priority: Medium  
+Status: Active — ASTRA-S13 parked until Track A honesty + S12  
+Owner: Product Owner  
+Next Responsible Role: Chief of Staff  
+Dependencies: ASTRA-PD-001; ASTRA-PD-005; ASTRA-S12; ASTRA-S2  
+Target Sprint: After Sprint 0 Track A honesty  
+One-line rationale: Show S12 as a labeled recommendation on `/autonomy` only after the page no longer lies — never as fleet control.

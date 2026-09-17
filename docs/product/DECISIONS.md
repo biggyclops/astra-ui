@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| **Version** | 1.0.5 |
+| **Version** | 1.0.6 |
 | **Status** | Active — Product Owner signed decisions |
 | **Owner** | Product Owner |
 | **Last Reviewed** | 2026-09-17 |
@@ -326,6 +326,66 @@ One-line rationale: CoS gets a read-only recommender — one ticket, one role, n
 
 ---
 
+## ASTRA-PD-006 — ASTRA-S13 Chief of Staff Dashboard
+
+**Reviews:** ASTRA-R14 🟡  
+**Story:** [ASTRA-S13](./STORIES.md)
+
+# Summary
+
+Approve a **parked**, read-only CoS panel on `/autonomy` that consumes ASTRA-S12. It must not replace the Phase 1 snapshot, invoke roles, talk to GitHub, or look like dispatch. Unpark only after live Autonomy honesty (S2) and a local S12 run.
+
+# User Value
+
+Process visibility is real value after fleet honesty. A dashboard that invents GitHub status or drives the orb is theater.
+
+# Scope
+
+**In**
+- Read-only labeled panel
+- S12 fields only; unknown otherwise
+- After Track A honesty
+
+**Out**
+- Staffing now
+- GitHub APIs
+- Orb/policy changes
+- Role invocation, merge, deploy, robots
+- Mixing into PRs #2 / #3 / #4
+
+# Acceptance Criteria
+
+1. S13 remains parked until S2 is live and S12 runs locally.
+2. Snapshot/orb stay GET-only fleet state.
+3. No operable CoS controls.
+4. No GitHub. No invented progress.
+
+# Risks
+
+- Treated as Auto.
+- Built before D-003.
+
+# Recommendation
+
+🟡 **APPROVE WITH CHANGES**
+
+Parked. S12 display only. Not the Autonomy instrument.
+
+---
+
+Product Decision  
+Decision ID: ASTRA-PD-006  
+Product Version: 1.0.6  
+Priority: Medium  
+Status: Active — ASTRA-S13 parked until Track A honesty + S12  
+Owner: Product Owner  
+Next Responsible Role: Chief of Staff  
+Dependencies: ASTRA-PD-001; ASTRA-PD-005; ASTRA-S12; ASTRA-S2  
+Target Sprint: After Sprint 0 Track A honesty  
+One-line rationale: Show S12 as a labeled recommendation on `/autonomy` only after the page no longer lies — never as fleet control.
+
+---
+
 ## Decision index
 
 | ID | Subject | Rec | Priority | Status |
@@ -335,6 +395,7 @@ One-line rationale: CoS gets a read-only recommender — one ticket, one role, n
 | ASTRA-PD-003 | ASTRA-S3 remains parked after ASTRA-OS-001 | 🔴 | High | Active |
 | ASTRA-PD-004 | ASTRA-OS-002 Chief of Staff role packet | 🟡 | High | Active |
 | ASTRA-PD-005 | ASTRA-S12 CoS recommendation engine (not S4) | 🟡 | High | Active |
+| ASTRA-PD-006 | ASTRA-S13 CoS dashboard (parked; S12 panel, not orb) | 🟡 | Medium | Active |
 | ASTRA-R4 / S10 | Shared Drive UI | 🔴 | — | Rejected |
 | ASTRA-R5 / S11 | Autonomy Auto / mutating commands | 🔴 | — | Rejected |
 | ASTRA-R6 | Phone chrome on desktop | 🔴 | — | Rejected |

@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| **Version** | 1.0.5 |
+| **Version** | 1.0.6 |
 | **Status** | Approved — Product Owner canon |
 | **Owner** | Product (Astra Product Owner / Jason) |
 | **Maintained by** | Documentation Manager |
@@ -114,9 +114,9 @@ Signed decision: [ASTRA-PD-001](./product/DECISIONS.md).
 | 2 | ASTRA-S2 | D-003 honesty | Ship-blocker; already in #4 |
 | 3 | ASTRA-S3 | Jobs/Chat prototype labels | P1 — remains parked. ASTRA-OS-001 does not unpark it. |
 
-Do not staff S3 or S5–S11, or new **operator** surfaces, while live `/autonomy` still shows operable stubs. ASTRA-S12 (CoS recommender) is OS-line only and must not displace S1/S2. Default for unreviewed ideas: **reject until reviewed**.
+Do not staff S3, S13, or S5–S11, or new **operator** surfaces, while live `/autonomy` still shows operable stubs. ASTRA-S12 is OS-line CLI. ASTRA-S13 is parked. Default for unreviewed ideas: **reject until reviewed**.
 
-Signed handoff: [ASTRA-PD-005](./product/DECISIONS.md).
+Signed handoff: [ASTRA-PD-006](./product/DECISIONS.md).
 
 ## 8. Change control
 
@@ -143,3 +143,4 @@ Signed handoff: [ASTRA-PD-005](./product/DECISIONS.md).
 | Unpark ASTRA-S3 after ASTRA-OS-001 | 🔴 REJECT | OS-001 is agent docs. Live Autonomy stubs remain. S3 stays parked. |
 | ASTRA-OS-002 Chief of Staff role packet | 🟡 APPROVE WITH CHANGES | Docs-only CoS packet. Must not replace Product, EM, Design, QA, or CTO. |
 | ASTRA-S4 CoS Orchestrator (requested ID) | 🟡 APPROVE WITH CHANGES | ID collision. Ship as **ASTRA-S12** recommendation engine only. Do not invoke roles. |
+| ASTRA-S13 CoS Dashboard on `/autonomy` | 🟡 APPROVE WITH CHANGES | Parked. Read-only S12 panel, not the orb. No GitHub. After Track A honesty. |

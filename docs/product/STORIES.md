@@ -2,8 +2,8 @@
 
 | Field | Value |
 |---|---|
-| **Version** | 1.0.5 |
-| **Status** | Approved for Engineering — Sprint 0 Track A + OS-line CoS recommender |
+| **Version** | 1.0.6 |
+| **Status** | Approved for Engineering — Sprint 0 Track A + CoS recommender |
 | **Owner** | Product |
 | **Last Reviewed** | 2026-09-17 |
 
@@ -14,15 +14,16 @@ These stories are **what/why + acceptance**. They are not architecture, visual r
 Acceptance criteria are the contract for whoever picks up the story. Product does not expand a story mid-flight.
 
 **Product lock:** [ASTRA-PD-001](./DECISIONS.md) — Track A = S1 + S2. Do not merge ship-as-is. Product does not approve merge.  
-**Handoff:** [ASTRA-PD-005](./DECISIONS.md) — ASTRA-S12 CoS recommender approved (not ASTRA-S4). Do not displace Track A.
+**Handoff:** [ASTRA-PD-006](./DECISIONS.md) — ASTRA-S13 CoS dashboard parked until Track A honesty + S12 consumer.
 
 | Order | ID | Priority | Vehicle | Product note |
 |---|---|---|---|---|
 | 1 | ASTRA-S1 | P0 | PRs #2 / #3 | Keep in merge set. Do not expand. |
 | 2 | ASTRA-S2 | P0 | PR #4 | Required for Track A. Do not re-enable stubs. |
-| 3 | ASTRA-S3 | P1 | parked | ASTRA-OS-001 does not unpark this. Wait for live Autonomy without operable stubs. |
-| — | ASTRA-S4 | P2 | parked | Phase 2 cinematic shell. ID is taken. Not the CoS orchestrator. |
-| OS-line | ASTRA-S12 | High | not started | CoS recommendation engine. Do not displace S1/S2. Do not mix into Autonomy PRs. |
+| 3 | ASTRA-S3 | P1 | parked | Wait for live Autonomy without operable stubs. |
+| — | ASTRA-S4 | P2 | parked | Phase 2 cinematic shell. Not the CoS orchestrator. |
+| OS-line | ASTRA-S12 | High | PR #9 | CoS recommendation engine (CLI). Do not displace S1/S2. |
+| — | ASTRA-S13 | Medium | parked | CoS dashboard. After Track A honesty + S12. Not the snapshot/orb. |
 | — | S5–S11 | parked / rejected | — | Do not staff. |
 
 ---
@@ -151,6 +152,58 @@ CoS already exists as Product’s handoff target. Without a recommender, routing
 
 ---
 
+### ASTRA-S13 — Chief of Staff Dashboard (read-only)
+
+**Story:** As the operator, I can see a labeled, read-only engineering-process panel that shows the current ASTRA-S12 recommendation, so I know the next ticket and next role without mistaking it for fleet Autonomy control.
+
+**Priority:** Medium — parked until Track A honesty is live (S1+S2) and ASTRA-S12 output exists in the checkout.  
+**Review:** ASTRA-R14 🟡  
+**Depends on:** ASTRA-S12 (`scripts/cos-recommend.ts` / `npm run cos:recommend`); ASTRA-S2 live (no operable Autonomy stubs)
+
+**Summary**
+A read-only panel on `/autonomy` that **displays S12 output**. It is engineering-process state, not Hades/fleet snapshot. It must not drive the orb, change Ask First, or look like dispatch.
+
+**User value**
+The operator already has one instrument for fleet intent (snapshot). A CoS panel is valuable only if it is obviously a recommendation feed. Mixing sprint/GitHub chrome into the orb would teach the operator that Autonomy is a project tracker and that recommendations are commands.
+
+**Scope in**
+- Read-only panel on `/autonomy`, visually separate from the Phase 1 orb/snapshot
+- Consume **only** ASTRA-S12 output (KIND, NEXT_TICKET, NEXT_ROLE, RATIONALE, UNKNOWNS, SOURCES, NOT approval/dispatch)
+- Map requested fields honestly:
+  - Current sprint — from S12/canon if present, else **unknown**
+  - Current ticket — S12 `NEXT_TICKET` labeled as **recommendation**, not in-flight fact
+  - Current owner / next responsible role — S12 `NEXT_ROLE` (one role)
+  - Current blockers — only if present in S12 output; else **unknown**
+  - Sprint progress / recent activity / repository status — **unknown** unless S12 already emits them (no GitHub API)
+- Label: read-only recommendation. Not an approval. Not a dispatch.
+
+**Scope out / Non-goals**
+- Invoking AI roles or dispatching work
+- Merge, deploy, GitHub read/write APIs
+- Changing Autonomy policy (Ask First, Auto, snapshot)
+- Driving orb copy from CoS data
+- New mutating Autonomy endpoints
+- Robotics control
+- Unparking S3 or replacing S4
+- Mixing into Track A PRs #2 / #3 / #4
+- Expanding S12 to invent GitHub “repo status”
+
+**Acceptance criteria**
+1. Staffing starts only after live `/autonomy` has no operable stubs (S2) and S12 can be run locally.
+2. Panel is labeled **recommendation / read-only engineering process**. It is not the fleet snapshot.
+3. Orb, Ask First, and snapshot fields still come only from `GET /api/autonomy/snapshot`.
+4. Displayed ticket and role match a local S12 run, or show **unknown**.
+5. Fields S12 does not emit show **unknown** — no invented progress % or GitHub status.
+6. No control on the panel is operable (no run, assign, merge, deploy, approve).
+7. Clicking the panel does not change orb copy or Autonomy policy.
+8. No GitHub API. No role invocation. No robot control.
+9. Desktop chrome stays Core mark + ASTRA wordmark.
+10. Track A snapshot path and D-003 honesty are unchanged.
+
+**Done when:** the operator can tell snapshot (fleet) from CoS recommendation (process) on `/autonomy` without a wiki. Product does not merge.
+
+---
+
 ## Next — only after Track A
 
 ### ASTRA-S4 — Park Phase 2 cinematic shell until Track A
@@ -205,6 +258,7 @@ CoS already exists as Product’s handoff target. Without a recommender, routing
 - Any enabled control without a real, intended API
 - Agent orchestration that invokes roles, merges, or deploys
 - Reusing ASTRA-S4 for anything other than Phase 2 shell park
+- A CoS dashboard that dispatches work, talks to GitHub, or drives the Autonomy orb
 
 ---
 
