@@ -2,8 +2,8 @@
 
 | Field | Value |
 |---|---|
-| **Version** | 1.0.3 |
-| **Status** | Approved for Engineering — Sprint 0 Track A + immediate honesty |
+| **Version** | 1.0.5 |
+| **Status** | Approved for Engineering — Sprint 0 Track A + OS-line CoS recommender |
 | **Owner** | Product |
 | **Last Reviewed** | 2026-09-17 |
 
@@ -14,14 +14,16 @@ These stories are **what/why + acceptance**. They are not architecture, visual r
 Acceptance criteria are the contract for whoever picks up the story. Product does not expand a story mid-flight.
 
 **Product lock:** [ASTRA-PD-001](./DECISIONS.md) — Track A = S1 + S2. Do not merge ship-as-is. Product does not approve merge.  
-**Handoff:** [ASTRA-PD-003](./DECISIONS.md) — S3 remains parked. Next owner is Chief of Staff.
+**Handoff:** [ASTRA-PD-005](./DECISIONS.md) — ASTRA-S12 CoS recommender approved (not ASTRA-S4). Do not displace Track A.
 
 | Order | ID | Priority | Vehicle | Product note |
 |---|---|---|---|---|
 | 1 | ASTRA-S1 | P0 | PRs #2 / #3 | Keep in merge set. Do not expand. |
 | 2 | ASTRA-S2 | P0 | PR #4 | Required for Track A. Do not re-enable stubs. |
 | 3 | ASTRA-S3 | P1 | parked | ASTRA-OS-001 does not unpark this. Wait for live Autonomy without operable stubs. |
-| — | S4–S11 | parked / rejected | — | Do not staff. |
+| — | ASTRA-S4 | P2 | parked | Phase 2 cinematic shell. ID is taken. Not the CoS orchestrator. |
+| OS-line | ASTRA-S12 | High | not started | CoS recommendation engine. Do not displace S1/S2. Do not mix into Autonomy PRs. |
+| — | S5–S11 | parked / rejected | — | Do not staff. |
 
 ---
 
@@ -101,6 +103,54 @@ Acceptance criteria are the contract for whoever picks up the story. Product doe
 
 ---
 
+### ASTRA-S12 — Chief of Staff recommendation engine (v1)
+
+**Requested as:** ASTRA-S4 — Chief of Staff Orchestrator  
+**Product ID:** **ASTRA-S12** (ASTRA-S4 is already Phase 2 cinematic shell and stays parked)
+
+**Story:** As Chief of Staff, I can run a local read-only recommender over Astra OS canon and get one next ticket and one next role, so routing is explicit and not invented in chat.
+
+**Priority:** High — OS-line. Must not displace Track A (S1/S2).  
+**Review:** ASTRA-R13 🟡  
+**Depends on:** Astra OS BOOT sources in the local checkout. ASTRA-OS-002 packet is not a hard start gate; if `COS.md` is missing, the recommender must say so honestly.
+
+**Summary**
+v1 is a recommendation engine only. It reads local Astra OS state (BOOT order: Constitution, Master, roles, `project_status.yaml`, ROADMAP, latest handoff, Product decisions/stories, OS tickets). It prints the next active ticket, the next responsible role, and a short rationale. It does not invoke roles, merge, deploy, or write GitHub.
+
+**User value**
+CoS already exists as Product’s handoff target. Without a recommender, routing is tribal. A labeled recommendation is honest coordination. Fake dispatch of agents would be theater.
+
+**Scope in**
+- Local, read-only command or script over the checkout
+- Output: next ticket ID, exactly one next role, rationale, unknowns
+- Label: recommendation — not an approval, not a dispatch
+- Honor parked/rejected Product decisions (S3 stays parked; S4 remains Phase 2 park)
+- If state is incomplete, output unknown — do not invent tickets or roles
+
+**Scope out / Non-goals**
+- Invoking AI roles or cloud agents
+- Merge, deploy, GitHub writes (and v1 needs no GitHub API)
+- New Astra UI route, Autonomy controls, or fleet API
+- Replacing Product, EM, Design, QA, CTO, or Jason approvals
+- Unparking S3 or changing Track A scope
+- Agent orchestration software
+- Mixing this work into Autonomy PRs #2 / #3 / #4
+
+**Acceptance criteria**
+1. Running v1 against the local repo prints **one** next ticket ID and **one** next responsible role (or explicit unknown).
+2. Output is labeled a **recommendation**, not an approval or a job dispatch.
+3. v1 reads local canon only (BOOT sources + Product stories/decisions + OS tickets). It does not call role agents.
+4. v1 does not merge, deploy, push, open/close PRs, or otherwise modify GitHub.
+5. Parked and rejected Product IDs are never recommended as Active.
+6. ASTRA-S4 is never used as the CoS orchestrator ID.
+7. No new operator surface: not a `/cos` page, not an enabled Autonomy control.
+8. Track A files (`Autonomy.tsx`, snapshot API) are untouched.
+9. Desktop chrome and identity law are untouched.
+
+**Done when:** a local run produces a recommendation from real canon files without GitHub mutation or role invocation. Product does not merge.
+
+---
+
 ## Next — only after Track A
 
 ### ASTRA-S4 — Park Phase 2 cinematic shell until Track A
@@ -153,6 +203,8 @@ Acceptance criteria are the contract for whoever picks up the story. Product doe
 - Robotics actuation
 - Production Jobs scheduler theater
 - Any enabled control without a real, intended API
+- Agent orchestration that invokes roles, merges, or deploys
+- Reusing ASTRA-S4 for anything other than Phase 2 shell park
 
 ---
 

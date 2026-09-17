@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| **Version** | 1.0.4 |
+| **Version** | 1.0.5 |
 | **Status** | Approved — Product Owner |
 | **Owner** | Product |
 | **Last Reviewed** | 2026-09-17 |
@@ -537,3 +537,72 @@ Next Responsible Role: Documentation Manager
 Dependencies: ASTRA-OS-001; ASTRA-PD-002; ticket ASTRA-OS-002  
 Target Sprint: Sprint 0 Track A  
 One-line rationale: CoS is already Product’s handoff target — give it an OS packet, not Product or EM authority.
+
+---
+
+# ASTRA-R13 — Chief of Staff Orchestrator (requested ASTRA-S4)
+
+**Request:** Create an implementation-ready ticket for a Chief of Staff service that reads Astra OS state, names the next ticket and next role, and produces routing recommendations. Must not invoke AI roles, merge, deploy, modify GitHub, or replace human approvals. Requested ID: ASTRA-S4.
+
+## Summary
+
+BOOT already requires one named role and one named ticket. v1 is a local read-only recommender over that canon. It is not an agent runner and not a new operator surface. Requested ID ASTRA-S4 is already the parked Phase 2 shell story. Product ID is **ASTRA-S12**.
+
+## User Value
+
+CoS can route from repo state instead of chat memory. A labeled recommendation is honest. Dispatching agents or pretending GitHub moved would be theater.
+
+## Scope
+
+**In**
+- ASTRA-S12 local read-only recommender
+- Output: one next ticket, one next role, rationale, unknowns
+- Honor Product parked/rejected IDs
+- OS-line branch only — not Autonomy PRs #2/#3/#4
+
+## Acceptance Criteria
+
+- v1 prints one ticket ID and one role, or explicit unknown.
+- Output is labeled recommendation, not approval or dispatch.
+- Reads local BOOT/Product/OS canon only. Does not invoke roles.
+- Does not merge, deploy, or modify GitHub.
+- Never recommends parked/rejected work as Active.
+- Never uses ASTRA-S4 as the CoS orchestrator ID.
+- No new Astra UI route or Autonomy control.
+- Does not displace Track A S1/S2.
+
+## Non-Goals
+
+- Invoking AI roles or cloud agents
+- Merge, deploy, GitHub writes
+- New operator UI or fleet API
+- Replacing Product / EM / Design / QA / CTO / Jason approvals
+- Unparking ASTRA-S3
+- Replacing ASTRA-S4 Phase 2 park
+- Agent orchestration software
+
+## Risks
+
+- Requested ID S4 overwrites Phase 2 park.
+- Recommender is treated as Auto for agents.
+- Track A Programmer is pulled onto this instead of D-003.
+- GitHub or role invocation creeps in as “helpful.”
+
+## Recommendation
+
+🟡 **APPROVE WITH CHANGES**
+
+Approve v1 as **ASTRA-S12**, recommendation engine only. Do not staff it as ASTRA-S4. Do not displace Track A.
+
+---
+
+Product Decision  
+Decision ID: ASTRA-PD-005  
+Product Version: 1.0.5  
+Priority: High  
+Status: Active — ASTRA-S12 approved (requested S4 rejected as ID)  
+Owner: Product Owner  
+Next Responsible Role: Programmer  
+Dependencies: ASTRA-PD-001; ASTRA-PD-004; ASTRA-OS-002; ASTRA-S12  
+Target Sprint: Sprint 0 Track A (OS-line; not Track A merge set)  
+One-line rationale: CoS gets a read-only recommender — one ticket, one role, no dispatch — and S4 stays the parked Phase 2 shell.

@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| **Version** | 1.0.4 |
+| **Version** | 1.0.5 |
 | **Status** | Active — Product Owner signed decisions |
 | **Owner** | Product Owner |
 | **Last Reviewed** | 2026-09-17 |
@@ -263,6 +263,69 @@ One-line rationale: CoS is already Product’s handoff target — give it an OS 
 
 ---
 
+## ASTRA-PD-005 — ASTRA-S12 Chief of Staff recommendation engine
+
+**Reviews:** ASTRA-R13 🟡  
+**Requested ID:** ASTRA-S4 (rejected as ID — already Phase 2 park)  
+**Story:** [ASTRA-S12](./STORIES.md)
+
+# Summary
+
+Approve v1 of a local, read-only Chief of Staff recommendation engine. It reads Astra OS / Product canon, names one next ticket and one next role, and labels the result a recommendation. It must not invoke roles, merge, deploy, modify GitHub, or replace human approvals. Do not call it ASTRA-S4.
+
+# User Value
+
+Routing from repo state beats routing from chat. Honesty requires a recommender, not an agent dispatcher.
+
+# Scope
+
+**In**
+- ASTRA-S12 local read-only recommender
+- One ticket, one role, rationale, unknowns
+- OS-line only
+
+**Out**
+- ID ASTRA-S4 for this work
+- Role invocation, merge, deploy, GitHub mutation
+- New operator UI
+- Unparking S3
+- Displacing S1/S2
+
+# Acceptance Criteria
+
+1. One next ticket and one next role, or unknown.
+2. Labeled recommendation only.
+3. Local canon reads; no role invocation; no GitHub writes.
+4. Parked/rejected IDs are not recommended Active.
+5. No `/cos` UI and no Autonomy file changes.
+
+# Risks
+
+- Treated as orchestration.
+- S4 ID collision.
+- Track A capacity stolen.
+
+# Recommendation
+
+🟡 **APPROVE WITH CHANGES**
+
+ASTRA-S12 only. Recommendation engine only.
+
+---
+
+Product Decision  
+Decision ID: ASTRA-PD-005  
+Product Version: 1.0.5  
+Priority: High  
+Status: Active — ASTRA-S12 approved (requested S4 rejected as ID)  
+Owner: Product Owner  
+Next Responsible Role: Programmer  
+Dependencies: ASTRA-PD-001; ASTRA-PD-004; ASTRA-OS-002; ASTRA-S12  
+Target Sprint: Sprint 0 Track A (OS-line; not Track A merge set)  
+One-line rationale: CoS gets a read-only recommender — one ticket, one role, no dispatch — and S4 stays the parked Phase 2 shell.
+
+---
+
 ## Decision index
 
 | ID | Subject | Rec | Priority | Status |
@@ -271,6 +334,7 @@ One-line rationale: CoS is already Product’s handoff target — give it an OS 
 | ASTRA-PD-002 | Product Owner handoff lock (one next role: Chief of Staff) | 🟡 | Critical | Active |
 | ASTRA-PD-003 | ASTRA-S3 remains parked after ASTRA-OS-001 | 🔴 | High | Active |
 | ASTRA-PD-004 | ASTRA-OS-002 Chief of Staff role packet | 🟡 | High | Active |
+| ASTRA-PD-005 | ASTRA-S12 CoS recommendation engine (not S4) | 🟡 | High | Active |
 | ASTRA-R4 / S10 | Shared Drive UI | 🔴 | — | Rejected |
 | ASTRA-R5 / S11 | Autonomy Auto / mutating commands | 🔴 | — | Rejected |
 | ASTRA-R6 | Phone chrome on desktop | 🔴 | — | Rejected |
