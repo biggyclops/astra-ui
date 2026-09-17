@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| **State** | In progress |
+| **State** | Implemented — awaiting merge approval |
 | **Owner** | Documentation Manager / Programmer |
 | **Approved** | Jason — 2026-09-17 (proposal + refinements, then implement) |
 | **Branch** | `cursor/astra-os-001-726d` |
@@ -31,7 +31,7 @@ Build the Astra Operating System: a documentation layer so every AI role works f
 
 ## Verify
 
-- [ ] `docs/astra-os/` matches the approved tree
-- [ ] `AGENTS.md` points only at `BOOT.md`
-- [ ] Master and Documentation Architecture link here without dropping existing rows
-- [ ] No product/UI/API files in this ticket
+- [x] `docs/astra-os/` matches the approved tree
+- [x] `AGENTS.md` points only at `BOOT.md`
+- [x] Master and Documentation Architecture link here without dropping existing rows
+- [x] No product/UI/API files in this ticket

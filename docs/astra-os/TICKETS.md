@@ -31,4 +31,4 @@ Do not invent a parallel ticket system for Eng features.
 
 | ID | Title | State |
 |---|---|---|
-| [ASTRA-OS-001](./tickets/ASTRA-OS-001.md) | Astra Operating System (agent docs layer) | In progress |
+| [ASTRA-OS-001](./tickets/ASTRA-OS-001.md) | Astra Operating System (agent docs layer) | Implemented — awaiting merge approval |
