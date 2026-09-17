@@ -2,14 +2,15 @@
 
 | Field | Value |
 |---|---|
-| **State** | Implemented — draft PR open; awaiting EM / Jason merge approval |
+| **State** | Implemented — branch pushed; draft PR #10 open |
 | **Owner** | Documentation Manager |
 | **Approved** | Named in chat after CoS post-merge audit |
 | **Base** | `main` @ `0207e05` |
-| **Branch** | `cursor/astra-doc-001-canon-sync-95bb` (pushed) |
-| **PR** | [#10](https://github.com/biggyclops/astra-ui/pull/10) (draft) |
-| **Commit** | `5c250bdcca8a6f9d9031e54796d2d8e53b1690eb` |
+| **Branch** | `cursor/astra-doc-001-canon-sync-95bb` — **pushed** |
+| **PR** | [#10](https://github.com/biggyclops/astra-ui/pull/10) — **draft** |
+| **Sync commit** | `5c250bdcca8a6f9d9031e54796d2d8e53b1690eb` |
 | **Source of truth for drift** | Chief of Staff audit (2026-09-17) |
+| **Awaiting** | Engineering Manager approval · Jason merge approval |
 
 ## Goal
 

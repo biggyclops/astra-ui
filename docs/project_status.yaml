@@ -156,10 +156,12 @@ quarantine:
 notes:
   - "Hades :5050 offline — not a Track A fail"
   - "ASTRA-DOC-001: Docs synced GitHub merge facts only; did not invent QA/Design/CTO/live READY"
-  - "ASTRA-DOC-001 draft PR #10 (cursor/astra-doc-001-canon-sync-95bb → main) — awaiting EM / Jason merge"
+  - "ASTRA-DOC-001: branch pushed; draft PR #10 vs main"
+  - "ASTRA-DOC-001: awaiting Engineering Manager approval"
+  - "ASTRA-DOC-001: awaiting Jason merge approval"
   - "EM release recommendation still waits on qa_ready + d003_resolved + cto_clear (live closeout)"
   - "Open PRs #8/#9 base docs/canon-v1 — behind main; Product/Eng owner retarget"
 
 docs_standing_by:
-  - "ASTRA-DOC-001 — branch pushed; draft PR #10 vs main; awaiting EM / Jason merge approval"
+  - "ASTRA-DOC-001 — branch pushed; draft PR #10; awaiting Engineering Manager approval; awaiting Jason merge approval"
   - "Mini-Beast docs checkout sync after this tip lands"
