@@ -105,6 +105,22 @@ function SectionLabel({
   );
 }
 
+function PreviewLocalBadge({ className }: { className?: string }) {
+  return (
+    <span
+      className={cn(
+        "rounded-full border border-amber-400/35 bg-amber-500/10 px-2 py-0.5 text-amber-100",
+        hudClass("text-[10px] tracking-[0.16em]"),
+        className,
+      )}
+    >
+      Preview / Local
+    </span>
+  );
+}
+
+const PREVIEW_LOCAL_TITLE = "Preview / Local — not connected in Phase 1";
+
 /** Continuous timebase — ports Swift TimelineView(.animation). */
 function useOrbitalTime() {
   const [t, setT] = useState(0);
@@ -333,11 +349,8 @@ function AstraPhoneOrb({ active, thinking }: { active: boolean; thinking?: boole
 }
 
 export default function Autonomy() {
-  const [mode, setMode] = useState<AutonomyMode>("ask");
-  const [operatorPaused, setOperatorPaused] = useState(false);
-  const [dismissedSuggestions, setDismissedSuggestions] = useState<string[]>([]);
-  const [command, setCommand] = useState("");
-  const [commandPulse, setCommandPulse] = useState(false);
+  // Phase 1 policy is Ask First. Mode chips are display-only until a mutating API exists.
+  const phase1Mode: AutonomyMode = "ask";
   const { data: snapshot, isLoading } = useAutonomySnapshot();
 
   const liveTasks = useMemo(() => {
@@ -373,8 +386,8 @@ export default function Autonomy() {
       if (text === snapshot?.advisor.topRecommendation) return;
       rows.push({ id: `adv-${i}`, title: "Advisory", detail: text });
     });
-    return rows.filter((s) => !dismissedSuggestions.includes(s.id));
-  }, [snapshot, dismissedSuggestions]);
+    return rows;
+  }, [snapshot]);
 
   const primary = useMemo(
     () => liveTasks.find((t) => t.state === "running") ?? null,
@@ -384,32 +397,8 @@ export default function Autonomy() {
   const next = useMemo(() => liveTasks.filter((t) => t.state === "queued"), [liveTasks]);
   const suggestions = liveSuggestions;
 
-  const pauseAll = () => {
-    setOperatorPaused(true);
-  };
-
-  const resumeAll = () => {
-    setOperatorPaused(false);
-  };
-
-  const dismissSuggestion = (id: string) => {
-    setDismissedSuggestions((prev) => [...prev, id]);
-  };
-
-  const approveSuggestion = (id: string) => {
-    setDismissedSuggestions((prev) => [...prev, id]);
-  };
-
-  const sendCommand = () => {
-    if (!command.trim()) return;
-    setCommandPulse(true);
-    setTimeout(() => setCommandPulse(false), 600);
-    setCommand("");
-  };
-
   const hadesReachable = snapshot?.hadesReachable ?? false;
-  const orbWorking = !operatorPaused && mode !== "off" && snapshot?.orbState === "working";
-  const working = orbWorking;
+  const working = snapshot?.orbState === "working";
 
   return (
     <div className="relative min-h-full overflow-hidden bg-[#05070f] text-slate-100">
@@ -432,7 +421,7 @@ export default function Autonomy() {
                 ),
               )}
             >
-              {working ? "Autonomy Active" : operatorPaused || mode === "off" ? "Autonomy Paused" : "Astra Idle"}
+              {working ? "Autonomy Active" : "Astra Idle"}
             </span>
             <span
               className={cn(
@@ -457,7 +446,7 @@ export default function Autonomy() {
 
             <div className="min-w-0 text-center md:text-left">
               <p className={cn(hudClass("text-[#00f2ff] tracking-[0.35em]"))}>
-                {working ? "Astra is working" : !hadesReachable && snapshot ? "Hades unavailable" : operatorPaused || mode === "off" ? "Astra is paused" : "Astra is idle"}
+                {working ? "Astra is working" : !hadesReachable && snapshot ? "Hades unavailable" : "Astra is idle"}
               </p>
 
               {!primary && (
@@ -506,13 +495,16 @@ export default function Autonomy() {
               )}
 
               <div className="mt-5 flex flex-wrap items-center justify-center gap-2 md:justify-start">
+                {/* TODO(autonomy): wire Pause/Resume to a mutating control API when Product + CTO approve beyond read-only. */}
                 {working ? (
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={pauseAll}
+                    disabled
+                    aria-disabled="true"
+                    title={PREVIEW_LOCAL_TITLE}
                     className={cn(
-                      "gap-1.5 rounded-full border-amber-400/35 bg-transparent text-amber-50 hover:bg-amber-500/10",
+                      "gap-1.5 rounded-full border-amber-400/35 bg-transparent text-amber-50",
                       hudClass("normal-case tracking-[0.18em]"),
                     )}
                   >
@@ -522,48 +514,47 @@ export default function Autonomy() {
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={resumeAll}
+                    disabled
+                    aria-disabled="true"
+                    title={PREVIEW_LOCAL_TITLE}
                     className={cn(
-                      "gap-1.5 rounded-full border-[#00f2ff]/40 bg-transparent text-[#00f2ff] hover:bg-[#00f2ff]/10",
+                      "gap-1.5 rounded-full border-[#00f2ff]/40 bg-transparent text-[#00f2ff]",
                       hudClass("normal-case tracking-[0.18em]"),
                     )}
                   >
                     <Play className="h-3.5 w-3.5" /> Resume
                   </Button>
                 )}
+                <PreviewLocalBadge />
               </div>
             </div>
           </div>
         </section>
 
         {/* Command */}
+        {/* TODO(autonomy): wire command dispatch to a mutating Autonomy API when Product + CTO approve beyond read-only. */}
         <section className="rounded-3xl border border-cyan-400/20 bg-gradient-to-br from-cyan-500/10 via-black/50 to-purple-600/10 p-5 shadow-[0_0_40px_rgba(34,211,238,0.1)] md:p-6">
           <SectionLabel icon={<Sparkles className="h-3.5 w-3.5" />}>
             What should I work on?
+            <PreviewLocalBadge />
           </SectionLabel>
 
-          <div
-            className={cn(
-              "flex items-center gap-2 rounded-2xl border bg-black/50 p-2 transition-shadow",
-              commandPulse
-                ? "border-cyan-300/60 shadow-[0_0_28px_rgba(34,211,238,0.35)]"
-                : "border-cyan-400/30 shadow-[0_0_20px_rgba(34,211,238,0.12)]",
-            )}
-          >
+          <div className="flex items-center gap-2 rounded-2xl border border-cyan-400/30 bg-black/50 p-2 shadow-[0_0_20px_rgba(34,211,238,0.12)]">
             <input
-              value={command}
-              onChange={(e) => setCommand(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") sendCommand();
-              }}
+              disabled
+              readOnly
+              aria-disabled="true"
+              title={PREVIEW_LOCAL_TITLE}
               placeholder="Tell Astra what you want accomplished while your computers are idle..."
-              className="min-w-0 flex-1 bg-transparent px-3 py-3 font-sans text-sm text-cyan-50 placeholder:text-slate-500 outline-none"
+              className="min-w-0 flex-1 cursor-not-allowed bg-transparent px-3 py-3 font-sans text-sm text-cyan-50 placeholder:text-slate-500 outline-none disabled:opacity-60"
             />
             <Button
               size="icon"
-              onClick={sendCommand}
-              className="h-11 w-11 shrink-0 rounded-xl border border-cyan-300/40 bg-cyan-500/25 text-cyan-50 hover:bg-cyan-500/40"
-              aria-label="Send to Astra"
+              disabled
+              aria-disabled="true"
+              title={PREVIEW_LOCAL_TITLE}
+              className="h-11 w-11 shrink-0 rounded-xl border border-cyan-300/40 bg-cyan-500/25 text-cyan-50"
+              aria-label="Send to Astra (Preview / Local)"
             >
               <Send className="h-4 w-4" />
             </Button>
@@ -574,9 +565,11 @@ export default function Autonomy() {
               <button
                 key={chip}
                 type="button"
-                onClick={() => setCommand(chip)}
+                disabled
+                aria-disabled="true"
+                title={PREVIEW_LOCAL_TITLE}
                 className={cn(
-                  "rounded-full border border-purple-400/25 bg-purple-500/10 px-3 py-1.5 text-purple-100 transition hover:border-cyan-400/40 hover:bg-cyan-500/10 hover:text-cyan-100",
+                  "cursor-not-allowed rounded-full border border-purple-400/25 bg-purple-500/10 px-3 py-1.5 text-purple-100 opacity-60",
                   hudClass("normal-case tracking-[0.12em] text-[10px]"),
                 )}
               >
@@ -588,7 +581,10 @@ export default function Autonomy() {
 
         {/* Capabilities */}
         <section>
-          <SectionLabel>What I can work on</SectionLabel>
+          <SectionLabel>
+            What I can work on
+            <PreviewLocalBadge />
+          </SectionLabel>
           <div className="grid gap-4 md:grid-cols-3">
             {[
               {
@@ -619,10 +615,11 @@ export default function Autonomy() {
               <motion.button
                 key={card.key}
                 type="button"
-                whileHover={{ y: -2 }}
-                onClick={() => setCommand(card.action)}
+                disabled
+                aria-disabled="true"
+                title={PREVIEW_LOCAL_TITLE}
                 className={cn(
-                  "group rounded-3xl border bg-gradient-to-br p-5 text-left shadow-[0_0_30px_rgba(0,0,0,0.25)] transition",
+                  "group cursor-not-allowed rounded-3xl border bg-gradient-to-br p-5 text-left opacity-70 shadow-[0_0_30px_rgba(0,0,0,0.25)]",
                   card.accent,
                 )}
               >
@@ -712,6 +709,7 @@ export default function Autonomy() {
           <div className="rounded-3xl border border-fuchsia-400/15 bg-black/40 p-5 backdrop-blur-sm">
             <SectionLabel icon={<Sparkles className="h-3.5 w-3.5 text-fuchsia-300" />}>
               What I suggest
+              <PreviewLocalBadge />
             </SectionLabel>
             <div className="space-y-3">
               <AnimatePresence initial={false}>
@@ -727,13 +725,16 @@ export default function Autonomy() {
                     className="rounded-2xl border border-fuchsia-400/20 bg-gradient-to-br from-fuchsia-500/10 to-cyan-500/5 p-3"
                   >
                     <p className="font-sans text-sm leading-relaxed text-slate-100">{s.detail}</p>
+                    {/* TODO(autonomy): wire Approve / Not Now to a mutating advisor API when Product + CTO approve beyond read-only. */}
                     <div className="mt-3 flex gap-2">
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => approveSuggestion(s.id)}
+                        disabled
+                        aria-disabled="true"
+                        title={PREVIEW_LOCAL_TITLE}
                         className={cn(
-                          "flex-1 gap-1 rounded-full border-[#00f2ff]/55 bg-transparent text-[#00f2ff] hover:bg-[#00f2ff]/10",
+                          "flex-1 gap-1 rounded-full border-[#00f2ff]/55 bg-transparent text-[#00f2ff]",
                           hudClass("normal-case tracking-[0.16em]"),
                         )}
                       >
@@ -742,9 +743,11 @@ export default function Autonomy() {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => dismissSuggestion(s.id)}
+                        disabled
+                        aria-disabled="true"
+                        title={PREVIEW_LOCAL_TITLE}
                         className={cn(
-                          "flex-1 gap-1 rounded-full border-white/25 bg-transparent text-slate-200 hover:bg-white/5",
+                          "flex-1 gap-1 rounded-full border-white/25 bg-transparent text-slate-200",
                           hudClass("normal-case tracking-[0.16em]"),
                         )}
                       >
@@ -761,6 +764,7 @@ export default function Autonomy() {
         <section className="rounded-3xl border border-white/10 bg-black/30 p-5">
           <SectionLabel icon={<CheckCircle2 className="h-3.5 w-3.5 text-emerald-300" />}>
             What I&apos;m doing
+            <PreviewLocalBadge />
           </SectionLabel>
           <div className="space-y-2">
             {activity.length === 0 && (
@@ -783,7 +787,10 @@ export default function Autonomy() {
                 <Button
                   size="sm"
                   variant="ghost"
-                  className={cn("gap-1.5 text-cyan-200/80 hover:text-cyan-100", hudClass("normal-case tracking-[0.14em]"))}
+                  disabled
+                  aria-disabled="true"
+                  title={PREVIEW_LOCAL_TITLE}
+                  className={cn("gap-1.5 text-cyan-200/80", hudClass("normal-case tracking-[0.14em]"))}
                 >
                   <Eye className="h-3.5 w-3.5" /> {item.resultLabel}
                 </Button>
@@ -792,26 +799,34 @@ export default function Autonomy() {
           </div>
         </section>
 
+        {/* TODO(autonomy): persist mode via a mutating settings API when Product + CTO approve beyond read-only. Auto remains forbidden until explicitly approved. */}
         <section className="rounded-3xl border border-white/10 bg-black/40 p-5 md:p-6">
-          <SectionLabel>Autonomy settings</SectionLabel>
+          <SectionLabel>
+            Autonomy settings
+            <PreviewLocalBadge />
+          </SectionLabel>
           <p className="mb-4 max-w-2xl font-sans text-sm text-slate-400">
-            How free should I be when your machines are idle? Painted only in Phase 1 —
-            I propose work, you approve. Settings are not persisted.
+            Phase 1 is read-only. Ask First is the displayed policy. Mode controls are
+            Preview / Local and are not connected.
           </p>
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
             {MODE_OPTIONS.map((opt) => (
               <button
                 key={opt.id}
                 type="button"
-                onClick={() => setMode(opt.id)}
+                disabled
+                aria-disabled="true"
+                aria-pressed={opt.id === phase1Mode}
+                title={PREVIEW_LOCAL_TITLE}
                 className={cn(
-                  "rounded-2xl border px-4 py-3 text-left transition",
-                  mode === opt.id
+                  "cursor-not-allowed rounded-2xl border px-4 py-3 text-left opacity-70",
+                  opt.id === phase1Mode
                     ? "border-cyan-400/45 bg-cyan-500/15 shadow-[0_0_24px_rgba(34,211,238,0.18)]"
-                    : "border-white/10 bg-white/[0.02] hover:border-white/20",
+                    : "border-white/10 bg-white/[0.02]",
+                  opt.id === "auto" && "opacity-40",
                 )}
               >
-                <p className={cn(hudClass(mode === opt.id ? "text-cyan-100" : "text-white"))}>
+                <p className={cn(hudClass(opt.id === phase1Mode ? "text-cyan-100" : "text-white"))}>
                   {opt.label}
                 </p>
                 <p className="mt-1 font-sans text-[11px] text-slate-500">{opt.hint}</p>
