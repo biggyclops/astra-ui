@@ -2,10 +2,10 @@
 
 | Field | Value |
 |---|---|
-| **Version** | 1.0.2 |
+| **Version** | 1.0.3 |
 | **Status** | Approved for Engineering — Sprint 0 Track A + immediate honesty |
 | **Owner** | Product |
-| **Last Reviewed** | 2026-09-16 |
+| **Last Reviewed** | 2026-09-17 |
 
 **See also:** [PRODUCT.md](../PRODUCT.md) · [REVIEWS.md](./REVIEWS.md) · [DECISIONS.md](./DECISIONS.md) · [ROADMAP.md](../ROADMAP.md)
 
@@ -14,13 +14,13 @@ These stories are **what/why + acceptance**. They are not architecture, visual r
 Acceptance criteria are the contract for whoever picks up the story. Product does not expand a story mid-flight.
 
 **Product lock:** [ASTRA-PD-001](./DECISIONS.md) — Track A = S1 + S2. Do not merge ship-as-is. Product does not approve merge.  
-**Handoff:** [ASTRA-PD-002](./DECISIONS.md) — next owner is Chief of Staff. Product does not sequence later reviews.
+**Handoff:** [ASTRA-PD-003](./DECISIONS.md) — S3 remains parked. Next owner is Chief of Staff.
 
 | Order | ID | Priority | Vehicle | Product note |
 |---|---|---|---|---|
 | 1 | ASTRA-S1 | P0 | PRs #2 / #3 | Keep in merge set. Do not expand. |
 | 2 | ASTRA-S2 | P0 | PR #4 | Required for Track A. Do not re-enable stubs. |
-| 3 | ASTRA-S3 | P1 | parked | Do not staff while live Autonomy still shows operable stubs. |
+| 3 | ASTRA-S3 | P1 | parked | ASTRA-OS-001 does not unpark this. Wait for live Autonomy without operable stubs. |
 | — | S4–S11 | parked / rejected | — | Do not staff. |
 
 ---
@@ -75,8 +75,8 @@ Acceptance criteria are the contract for whoever picks up the story. Product doe
 
 **Story:** As the operator, I can tell that Jobs and Chat are prototypes, so I do not trust them as a fleet scheduler or production assistant.
 
-**Priority:** P1 — parked until live `/autonomy` no longer shows operable stubs. Do not staff while Track A honesty is open.  
-**Review:** ASTRA-R8 🟡 (Jobs as prototype only)
+**Priority:** P1 — remains parked. ASTRA-OS-001 (agent docs, PR #6) is not the unpark gate. Do not staff while live `/autonomy` still shows operable stubs.  
+**Review:** ASTRA-R8 🟡 (Jobs as prototype only) · ASTRA-R11 🔴 (do not unpark)
 
 **Scope in**
 - Honest labeling on `/jobs` and Chat (`/`)

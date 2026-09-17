@@ -2,10 +2,10 @@
 
 | Field | Value |
 |---|---|
-| **Version** | 1.0.2 |
+| **Version** | 1.0.3 |
 | **Status** | Approved — Product Owner |
 | **Owner** | Product |
-| **Last Reviewed** | 2026-09-16 |
+| **Last Reviewed** | 2026-09-17 |
 
 **See also:** [PRODUCT.md](../PRODUCT.md) · [STORIES.md](./STORIES.md) · [DECISIONS.md](./DECISIONS.md) · [TEMPLATE.md](./TEMPLATE.md) · [ROADMAP.md](../ROADMAP.md)
 
@@ -412,13 +412,64 @@ Keep the Track A lock: S1 + S2 only. Do not staff S3 or later while live Autonom
 
 ---
 
+# ASTRA-R11 — Unpark ASTRA-S3 after ASTRA-OS-001
+
+**Request:** ASTRA-OS-001 is complete (PR [#6](https://github.com/biggyclops/astra-ui/pull/6) merged to `docs/canon-v1`). Move ASTRA-S3 (Jobs/Chat prototype labels) from Parked to Active.
+
+## Summary
+
+ASTRA-OS-001 is the agent operating layer: `docs/astra-os/` so AI roles boot from the repo. It is documentation-only. It does not change the operator UI, and it does not make `/autonomy` honest.
+
+ASTRA-S3 is P1 honesty labeling on Jobs and Chat. Product parked it until live `/autonomy` no longer shows operable stubs. That gate is unchanged.
+
+## User Value
+
+Jobs and Chat still need honest prototype labels — later. Unparking them now would put P1 work ahead of a P0 surface that still lies. Completing an agent-docs ticket does not give the operator a truer control plane.
+
+## Scope
+
+**In**
+- Confirm ASTRA-OS-001 complete does not unpark ASTRA-S3
+- Keep ASTRA-S3 parked
+- Keep Track A NOW as ASTRA-S1 + ASTRA-S2 only
+
+## Acceptance Criteria
+
+- ASTRA-S3 remains Parked, not Active.
+- No Jobs/Chat labeling work is staffed under this decision.
+- Unpark condition stays: live `/autonomy` no longer shows operable stubs (ASTRA-S2 / D-003 on the live operator path).
+- ASTRA-OS-001 is not treated as a Product unpark for S3, S4–S11, or new surfaces.
+
+## Non-Goals
+
+- Merge or deploy of PRs #2, #3, or #4
+- Changing ASTRA-S3 acceptance criteria
+- Building a real scheduler or assistant
+- Phase 2 shell, Phone HUD, Shared Drive, Auto, or robotics control
+- Architecture, UI redesign, or implementation-quality review
+- Sequencing Design, QA, CTO, or EM after this handoff
+
+## Risks
+
+- OS-001 “complete” is misread as Track A complete.
+- S3 starts while live Pause/Resume/Approve/Auto still look operable.
+- PR #4 (D-003) is still open and was not bounced live; treating a stacked tip as live honesty.
+
+## Recommendation
+
+🔴 **REJECT**
+
+Do not move ASTRA-S3 to Active. It remains parked until live Autonomy honesty lands. ASTRA-OS-001 is the wrong gate.
+
+---
+
 Product Decision  
-Decision ID: ASTRA-PD-002  
-Product Version: 1.0.2  
-Priority: Critical  
-Status: Active — Track A locked; Product handoff complete  
+Decision ID: ASTRA-PD-003  
+Product Version: 1.0.3  
+Priority: High  
+Status: Active — ASTRA-S3 remains parked  
 Owner: Product Owner  
 Next Responsible Role: Chief of Staff  
-Dependencies: ASTRA-PD-001; ASTRA-S1; ASTRA-S2; PRs #2, #3, #4  
+Dependencies: ASTRA-PD-001; ASTRA-PD-002; ASTRA-S3; ASTRA-OS-001 (PR #6); PR #4 (D-003 still open)  
 Target Sprint: Sprint 0 Track A  
-One-line rationale: Honesty before atmosphere — S1+S2 are the only NOW work, and Product hands Track A to Chief of Staff rather than running the pipeline.
+One-line rationale: OS-001 is agent docs, not live Autonomy honesty — S3 stays parked until operable stubs are gone.

@@ -9,7 +9,7 @@
 | **Last Reviewed** | 2026-09-16 |
 | **Approved By** | Jason (Sprint 0 Track A via CoS) |
 
-**See also:** [project_status.yaml](./project_status.yaml) · [PRODUCT.md](./PRODUCT.md) (vision + priority ranking, v1.0.2) · [product/STORIES.md](./product/STORIES.md) · [product/DECISIONS.md](./product/DECISIONS.md) · [ASTRA_MASTER.md](./ASTRA_MASTER.md) · [docs/qa/SPRINT0_TRACK_A_GATE.md](./qa/SPRINT0_TRACK_A_GATE.md) · [releases/](./releases/)
+**See also:** [project_status.yaml](./project_status.yaml) · [PRODUCT.md](./PRODUCT.md) (vision + priority ranking, v1.0.3) · [product/STORIES.md](./product/STORIES.md) · [product/DECISIONS.md](./product/DECISIONS.md) · [ASTRA_MASTER.md](./ASTRA_MASTER.md) · [docs/qa/SPRINT0_TRACK_A_GATE.md](./qa/SPRINT0_TRACK_A_GATE.md) · [releases/](./releases/)
 
 Product owns *what/why*. This file remains EM-owned sequencing. If they conflict, stop and reconcile — do not silently expand scope.
 

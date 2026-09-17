@@ -2,11 +2,11 @@
 
 | Field | Value |
 |---|---|
-| **Version** | 1.0.2 |
+| **Version** | 1.0.3 |
 | **Status** | Approved — Product Owner canon |
 | **Owner** | Product (Astra Product Owner / Jason) |
 | **Maintained by** | Documentation Manager |
-| **Last Reviewed** | 2026-09-16 |
+| **Last Reviewed** | 2026-09-17 |
 | **Approved By** | Astra Product Owner |
 
 **See also:** [ASTRA_MASTER.md](./ASTRA_MASTER.md) · [DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md) · [ROADMAP.md](./ROADMAP.md) · [product/REVIEWS.md](./product/REVIEWS.md) · [product/STORIES.md](./product/STORIES.md) · [product/DECISIONS.md](./product/DECISIONS.md) · [DOCUMENTATION_ARCHITECTURE.md](./DOCUMENTATION_ARCHITECTURE.md)
@@ -112,11 +112,11 @@ Signed decision: [ASTRA-PD-001](./product/DECISIONS.md).
 |---|---|---|---|
 | 1 | ASTRA-S1 | Read-only Autonomy snapshot | Live instrument; already in #2/#3 |
 | 2 | ASTRA-S2 | D-003 honesty | Ship-blocker; already in #4 |
-| 3 | ASTRA-S3 | Jobs/Chat prototype labels | P1 — parked until live Autonomy no longer shows operable stubs |
+| 3 | ASTRA-S3 | Jobs/Chat prototype labels | P1 — remains parked. ASTRA-OS-001 does not unpark it. |
 
-Do not staff S3, S4–S11, or new surfaces while Track A honesty is still open. Default for unreviewed ideas: **reject until reviewed**.
+Do not staff S3, S4–S11, or new surfaces while live `/autonomy` still shows operable stubs. Default for unreviewed ideas: **reject until reviewed**.
 
-Signed handoff: [ASTRA-PD-002](./product/DECISIONS.md).
+Signed handoff: [ASTRA-PD-003](./product/DECISIONS.md).
 
 ## 8. Change control
 
@@ -140,3 +140,4 @@ Signed handoff: [ASTRA-PD-002](./product/DECISIONS.md).
 | Phone chrome on desktop | 🔴 REJECT | Identity law. Not negotiable. |
 | Robotics motor/servo control | 🔴 REJECT | Telemetry-first later. Control is not a Sprint 0 or Phase 1 story. |
 | Product Owner charter applied to Track A | 🟡 APPROVE WITH CHANGES | Keep S1+S2 lock. Single handoff to Chief of Staff. Do not staff S3 yet. |
+| Unpark ASTRA-S3 after ASTRA-OS-001 | 🔴 REJECT | OS-001 is agent docs. Live Autonomy stubs remain. S3 stays parked. |

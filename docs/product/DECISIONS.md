@@ -2,10 +2,10 @@
 
 | Field | Value |
 |---|---|
-| **Version** | 1.0.2 |
+| **Version** | 1.0.3 |
 | **Status** | Active — Product Owner signed decisions |
 | **Owner** | Product Owner |
-| **Last Reviewed** | 2026-09-16 |
+| **Last Reviewed** | 2026-09-17 |
 
 **See also:** [PRODUCT.md](../PRODUCT.md) · [REVIEWS.md](./REVIEWS.md) · [STORIES.md](./STORIES.md)
 
@@ -143,15 +143,76 @@ One-line rationale: Honesty before atmosphere — S1+S2 are the only NOW work, a
 
 ---
 
+## ASTRA-PD-003 — ASTRA-S3 remains parked after ASTRA-OS-001
+
+**Reviews:** ASTRA-R11 🔴  
+**Does not change:** ASTRA-PD-001 scope lock · ASTRA-PD-002 one-handoff rule
+
+# Summary
+
+ASTRA-OS-001 is complete (PR #6 merged to `docs/canon-v1`). That ticket is the agent operating layer. It is not live Autonomy honesty. ASTRA-S3 stays Parked. The unpark gate remains: live `/autonomy` no longer shows operable stubs.
+
+# User Value
+
+The operator still cannot trust `/autonomy` while stub controls look live. Jobs/Chat labels are real P1 work, but they are not more valuable than finishing P0 honesty. Staffing S3 now would treat docs-process completion as product honesty.
+
+# Scope
+
+**In (now)**
+- Record that ASTRA-OS-001 does not unpark ASTRA-S3
+- Keep ASTRA-S3 Parked
+- Keep NOW as ASTRA-S1 + ASTRA-S2
+
+**Out (this decision)**
+- Activating ASTRA-S3
+- Merge or deploy of PRs #2 / #3 / #4
+- Changing S3 story acceptance
+- S4–S11 or new surfaces
+
+# Acceptance Criteria
+
+1. ASTRA-S3 status remains Parked.
+2. Product documents do not list S3 as Active or NOW staffed work.
+3. Unpark requires live `/autonomy` without operable stubs, not OS-001 completion.
+4. Product does not approve merge or deploy.
+
+# Risks
+
+- CoS or Programmer staffs S3 because “the last ticket finished.”
+- PR #4 remaining open is ignored.
+- OS-001 is used to justify Phase 2 or Phone work.
+
+# Recommendation
+
+🔴 **REJECT**
+
+Do not activate ASTRA-S3.
+
+---
+
+Product Decision  
+Decision ID: ASTRA-PD-003  
+Product Version: 1.0.3  
+Priority: High  
+Status: Active — ASTRA-S3 remains parked  
+Owner: Product Owner  
+Next Responsible Role: Chief of Staff  
+Dependencies: ASTRA-PD-001; ASTRA-PD-002; ASTRA-S3; ASTRA-OS-001 (PR #6); PR #4  
+Target Sprint: Sprint 0 Track A  
+One-line rationale: OS-001 is agent docs, not live Autonomy honesty — S3 stays parked until operable stubs are gone.
+
+---
+
 ## Decision index
 
 | ID | Subject | Rec | Priority | Status |
 |---|---|---|---|---|
 | ASTRA-PD-001 | Sprint 0 Track A scope lock (S1+S2; no ship-as-is) | 🟡 | Critical | Active |
 | ASTRA-PD-002 | Product Owner handoff lock (one next role: Chief of Staff) | 🟡 | Critical | Active |
+| ASTRA-PD-003 | ASTRA-S3 remains parked after ASTRA-OS-001 | 🔴 | High | Active |
 | ASTRA-R4 / S10 | Shared Drive UI | 🔴 | — | Rejected |
 | ASTRA-R5 / S11 | Autonomy Auto / mutating commands | 🔴 | — | Rejected |
 | ASTRA-R6 | Phone chrome on desktop | 🔴 | — | Rejected |
 | ASTRA-R7 / S9 | Robotics actuation | 🔴 | — | Rejected |
 | ASTRA-R3 / S4 | Phase 2 cinematic shell | 🟡 | P2 | Parked until Track A |
-| ASTRA-R8 / S3 | Jobs/Chat as labeled prototypes | 🟡 | P1 | Parked until live stubs are gone |
+| ASTRA-R8 / S3 | Jobs/Chat as labeled prototypes | 🟡 | P1 | Parked — OS-001 does not unpark |
