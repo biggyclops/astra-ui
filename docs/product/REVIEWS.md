@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| **Version** | 1.0.3 |
+| **Version** | 1.0.4 |
 | **Status** | Approved — Product Owner |
 | **Owner** | Product |
 | **Last Reviewed** | 2026-09-17 |
@@ -473,3 +473,67 @@ Next Responsible Role: Chief of Staff
 Dependencies: ASTRA-PD-001; ASTRA-PD-002; ASTRA-S3; ASTRA-OS-001 (PR #6); PR #4 (D-003 still open)  
 Target Sprint: Sprint 0 Track A  
 One-line rationale: OS-001 is agent docs, not live Autonomy honesty — S3 stays parked until operable stubs are gone.
+
+---
+
+# ASTRA-R12 — ASTRA-OS-002 Chief of Staff role
+
+**Request:** Create documentation ticket ASTRA-OS-002: add an official Chief of Staff AI role to Astra OS (`docs/astra-os/roles/COS.md`, plus ROLES.md, BOOT.md, and Master if required). Docs only.
+
+## Summary
+
+Product already hands work to Chief of Staff. Astra OS has no CoS packet, so agents cannot boot that role. This ticket adds the role as documentation only.
+
+## User Value
+
+Operators and agents get one named coordinator for routing and dependencies, without Product running a department pipeline or CoS taking Product, EM, Design, QA, or CTO authority.
+
+## Scope
+
+**In**
+- `docs/astra-os/tickets/ASTRA-OS-002.md` (this ticket)
+- `docs/astra-os/roles/COS.md`
+- Updates to `ROLES.md`, `BOOT.md`, and `ASTRA_MASTER.md` role map as required to name the role
+
+## Acceptance Criteria
+
+- CoS packet exists in the same shape as other OS roles.
+- May: coordinate after first handoff; route to exactly one next role; track dependencies.
+- Must not: product vision/scope/identity; replace EM/Design/QA/CTO; implement; expand parked Product work; merge; deploy.
+- `ROLES.md` lists Chief of Staff and no longer says “No new roles.”
+- `BOOT.md` names `COS.md`.
+- Master role map includes CoS without dropping existing rows.
+- No code, UI, or architecture files.
+
+## Non-Goals
+
+- Product code, UI, APIs, or architecture
+- Redesigning WORKFLOW.md or GATES.md
+- Unparking ASTRA-S3
+- Merge or deploy
+- Agent orchestration software
+
+## Risks
+
+- CoS absorbs Product or EM.
+- “No new roles” stays in ROLES.md and agents refuse CoS.
+- Ticket is used to change delivery workflow, not just document the role.
+
+## Recommendation
+
+🟡 **APPROVE WITH CHANGES**
+
+Approve the docs-only CoS packet with the authority limits above. Ticket: [ASTRA-OS-002](../astra-os/tickets/ASTRA-OS-002.md).
+
+---
+
+Product Decision  
+Decision ID: ASTRA-PD-004  
+Product Version: 1.0.4  
+Priority: High  
+Status: Active — ASTRA-OS-002 approved  
+Owner: Product Owner  
+Next Responsible Role: Documentation Manager  
+Dependencies: ASTRA-OS-001; ASTRA-PD-002; ticket ASTRA-OS-002  
+Target Sprint: Sprint 0 Track A  
+One-line rationale: CoS is already Product’s handoff target — give it an OS packet, not Product or EM authority.

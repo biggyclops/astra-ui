@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| **Version** | 1.0.3 |
+| **Version** | 1.0.4 |
 | **Status** | Active — Product Owner signed decisions |
 | **Owner** | Product Owner |
 | **Last Reviewed** | 2026-09-17 |
@@ -203,6 +203,66 @@ One-line rationale: OS-001 is agent docs, not live Autonomy honesty — S3 stays
 
 ---
 
+## ASTRA-PD-004 — ASTRA-OS-002 Chief of Staff role packet
+
+**Reviews:** ASTRA-R12 🟡  
+**Ticket:** [ASTRA-OS-002](../astra-os/tickets/ASTRA-OS-002.md)
+
+# Summary
+
+Approve a documentation-only Chief of Staff role in Astra OS. Product already hands to CoS. The OS must name that role. CoS coordinates routing and dependencies. CoS does not take Product, EM, Design, QA, or CTO authority.
+
+# User Value
+
+Agents can boot CoS from the repo. The operator gets one coordinator after Product’s first handoff, without a second product owner.
+
+# Scope
+
+**In**
+- `docs/astra-os/roles/COS.md`
+- `ROLES.md`, `BOOT.md`, Master role map as required
+- Ticket ASTRA-OS-002
+
+**Out**
+- Code, UI, architecture
+- Workflow/gate redesign
+- Unparking ASTRA-S3
+- Merge or deploy
+
+# Acceptance Criteria
+
+1. CoS packet matches existing role shape.
+2. May/Must not match ASTRA-OS-002.
+3. BOOT and ROLES name the role.
+4. Master role map includes CoS.
+5. No product/UI/API/architecture files.
+
+# Risks
+
+- CoS replaces Product or EM.
+- Scope creeps into WORKFLOW.md redesign.
+
+# Recommendation
+
+🟡 **APPROVE WITH CHANGES**
+
+Docs-only. Authority limits are required, not optional.
+
+---
+
+Product Decision  
+Decision ID: ASTRA-PD-004  
+Product Version: 1.0.4  
+Priority: High  
+Status: Active — ASTRA-OS-002 approved  
+Owner: Product Owner  
+Next Responsible Role: Documentation Manager  
+Dependencies: ASTRA-OS-001; ASTRA-PD-002; ticket ASTRA-OS-002  
+Target Sprint: Sprint 0 Track A  
+One-line rationale: CoS is already Product’s handoff target — give it an OS packet, not Product or EM authority.
+
+---
+
 ## Decision index
 
 | ID | Subject | Rec | Priority | Status |
@@ -210,6 +270,7 @@ One-line rationale: OS-001 is agent docs, not live Autonomy honesty — S3 stays
 | ASTRA-PD-001 | Sprint 0 Track A scope lock (S1+S2; no ship-as-is) | 🟡 | Critical | Active |
 | ASTRA-PD-002 | Product Owner handoff lock (one next role: Chief of Staff) | 🟡 | Critical | Active |
 | ASTRA-PD-003 | ASTRA-S3 remains parked after ASTRA-OS-001 | 🔴 | High | Active |
+| ASTRA-PD-004 | ASTRA-OS-002 Chief of Staff role packet | 🟡 | High | Active |
 | ASTRA-R4 / S10 | Shared Drive UI | 🔴 | — | Rejected |
 | ASTRA-R5 / S11 | Autonomy Auto / mutating commands | 🔴 | — | Rejected |
 | ASTRA-R6 | Phone chrome on desktop | 🔴 | — | Rejected |

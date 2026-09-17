@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| **Version** | 1.0.3 |
+| **Version** | 1.0.4 |
 | **Status** | Approved — Product Owner canon |
 | **Owner** | Product (Astra Product Owner / Jason) |
 | **Maintained by** | Documentation Manager |
@@ -141,3 +141,4 @@ Signed handoff: [ASTRA-PD-003](./product/DECISIONS.md).
 | Robotics motor/servo control | 🔴 REJECT | Telemetry-first later. Control is not a Sprint 0 or Phase 1 story. |
 | Product Owner charter applied to Track A | 🟡 APPROVE WITH CHANGES | Keep S1+S2 lock. Single handoff to Chief of Staff. Do not staff S3 yet. |
 | Unpark ASTRA-S3 after ASTRA-OS-001 | 🔴 REJECT | OS-001 is agent docs. Live Autonomy stubs remain. S3 stays parked. |
+| ASTRA-OS-002 Chief of Staff role packet | 🟡 APPROVE WITH CHANGES | Docs-only CoS packet. Must not replace Product, EM, Design, QA, or CTO. |
