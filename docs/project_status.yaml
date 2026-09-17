@@ -1,62 +1,101 @@
 # Sprint 0 Track A — project status
 # Owner: Astra EM | Synced by: Astra Docs
-# Canon: astra-ui/docs (docs/canon-v1)
+# Canon: astra-ui/docs on GitHub `main` (PR #1 merged docs/canon-v1)
+# Sync source: Chief of Staff post-merge audit (2026-09-17) + GitHub PR state
+# Ticket: ASTRA-DOC-001
 
 meta:
-  version: "1.1.0"
+  version: "1.2.0"
   sprint: "Sprint 0 Track A"
   track_focus: "Autonomy honesty first"
-  updated: "2026-09-16"
+  updated: "2026-09-17"
   qa_gate: "docs/qa/SPRINT0_TRACK_A_GATE.md"
-  docs_branch: "docs/canon-v1"
+  github_tip: "0207e05"
+  github_tip_branch: "main"
+  docs_line: "main (institutional canon landed via PR #1)"
+  docs_branch_historical: "docs/canon-v1 @ 3a71cf5 (merged into main)"
   docs_pr: "https://github.com/biggyclops/astra-ui/pull/1"
   eng_pr: "https://github.com/biggyclops/astra-ui/pull/2"
   eng_pr_q001: "https://github.com/biggyclops/astra-ui/pull/3"
-  eng_pr_merge: "HOLD — Jason release gate"
+  eng_pr_d003: "https://github.com/biggyclops/astra-ui/pull/4"
+  product_pr: "https://github.com/biggyclops/astra-ui/pull/5"
+  os_pr_001: "https://github.com/biggyclops/astra-ui/pull/6"
+  os_pr_002: "https://github.com/biggyclops/astra-ui/pull/7"
+  eng_pr_merge: "MERGED 2026-09-17 — GitHub merge complete for #1–#7; live QA + deploy remain separate gates"
+
+github_merges:
+  - { pr: 4, title: "D-003 Preview/Local", merged_at: "2026-09-17T02:27:36Z", merge_commit: "844d60c" }
+  - { pr: 3, title: "Q-001 apiRouter path", merged_at: "2026-09-17T02:27:51Z", merge_commit: "63a970d" }
+  - { pr: 2, title: "Autonomy Phase 1 snapshot", merged_at: "2026-09-17T02:28:04Z", merge_commit: "699badd" }
+  - { pr: 5, title: "Product canon 1.0.4", merged_at: "2026-09-17T02:32:13Z", merge_commit: "3a71cf5" }
+  - { pr: 1, title: "Institutional canon → main", merged_at: "2026-09-17T02:32:28Z", merge_commit: "0207e05" }
+  - { pr: 6, title: "ASTRA-OS-001", merged_at: "2026-09-17T00:23:20Z", merge_commit: "3a4b718" }
+  - { pr: 7, title: "ASTRA-OS-002 CoS role", merged_at: "2026-09-17T01:46:52Z", merge_commit: "190cf73" }
+
+open_prs_not_track_a:
+  - { pr: 8, title: "ASTRA-PD-005 S12 docs", state: open_draft, base: "docs/canon-v1", note: "Product-owned; base behind main — owner retarget" }
+  - { pr: 9, title: "ASTRA-S12 cos-recommend", state: open_draft, base: "docs/canon-v1", note: "Eng feature; not Track A closeout" }
 
 release_gate:
   approved_by: Jason
   approved_at: "2026-09-16"
-  policy: "Maintain current release gate; EM returns release recommendation only when all conditions met"
+  policy: "Merge, live QA, and deploy are three gates. GitHub merge of #1–#7 does not imply live READY or deploy."
   conditions:
-    - id: qa_ready
-      requirement: "QA reports READY"
+    - id: github_merged
+      requirement: "Track A Autonomy + docs stack merged to main"
       status: met
-      evidence: "technical READY after Q-001 re-pass"
+      evidence: "PRs #1–#7 MERGED; tip 0207e05"
+    - id: qa_ready
+      requirement: "QA reports READY on the named live tip"
+      status: open
+      owner: Astra QA
+      evidence: "Prior technical READY was for #2+#3 (8e0a8a2/1135510). Live re-pass of main@0207e05 (includes D-003) not recorded."
     - id: d003_resolved
       requirement: "D-003 resolved (not ship-as-is)"
       status: open
       owner: Astra Design
-      remediation: "label Preview/Local, disable, or remove stub controls"
+      evidence: "Impl on main via PR #4 (5720088 / tip lineage). Design close against merged GitHub SHA still required."
+      remediation: "Design verdict APPROVED / APPROVED WITH NOTES on main tip (Preview/Local)"
     - id: cto_clear
       requirement: "CTO has no remaining architecture concerns"
       status: open
       owner: Astra CTO
+      evidence: "No architecture-clear recorded in status after merge."
   hold:
-    - "PR #2"
-    - "PR #3"
+    - "Live QA re-pass of main@0207e05"
+    - "Design D-003 close on merged SHA"
+    - "CTO architecture clear"
+    - "Mini-Beast bounce/deploy (Jason/Systems) — not implied by merge"
 
 live_serving:
   host: "Mini-Beast 100.81.216.117"
+  note: "Pre-merge evidence only. Docs does not claim Mini-Beast serves 0207e05."
   vite_5173:
-    status: up
+    status: up_pre_merge_evidence
     url: "http://100.81.216.117:5173/autonomy"
   autonomy_snapshot_unauth: 401
-  autonomy_snapshot_auth: "200 JSON (QA PASS)"
+  autonomy_snapshot_auth: "200 JSON (QA PASS on pre-#4 tip)"
   hades_5050: offline_noted_separate
+  owner_action: "QA + Systems — confirm bounce to main@0207e05 before live READY"
 
 milestones:
   - id: autonomy-honesty
     priority: P0
-    status: hold_release_gate
-    design_status: "APPROVE WITH TICKETS — D-003 open"
-    qa_status: "READY (technical)"
-    cto_status: "review requested"
+    status: github_merged_awaiting_live_closeout
+    design_status: "APPROVE WITH TICKETS historically; D-003 close on merged SHA — Design owner"
+    qa_status: "Prior READY (technical) on #2+#3; live re-pass of 0207e05 — QA owner"
+    cto_status: "clear not recorded — CTO owner"
     pr: "https://github.com/biggyclops/astra-ui/pull/2"
     q001_pr: "https://github.com/biggyclops/astra-ui/pull/3"
+    d003_pr: "https://github.com/biggyclops/astra-ui/pull/4"
     tips:
-      pr2: "8e0a8a2"
-      pr3: "1135510"
+      main: "0207e05"
+      pr2_lineage: "699badd (includes #3+#4)"
+      pr3: "63a970d"
+      pr4: "844d60c"
+      phase1_commit: "8e0a8a2"
+      q001_commit: "1135510"
+      d003_commit: "5720088"
 
   - id: phase2-posture
     priority: P1
@@ -65,6 +104,13 @@ milestones:
   - id: phone-smoke
     priority: P2
     status: deferred
+
+  - id: astra-os
+    priority: P0_docs
+    status: merged
+    tips:
+      os001: "PR #6 → 3a4b718"
+      os002: "PR #7 → 190cf73"
 
 bugs:
   - id: Q-001
@@ -75,8 +121,9 @@ design_tickets:
   - id: D-003
     priority: P1
     title: "False affordances — stub Pause/Resume/Command/Approve"
-    status: must_resolve_before_merge
+    status: implemented_on_main_awaiting_design_close
     jason_call: "resolved — require fix (not accept stubs)"
+    github: "PR #4 MERGED — disable + Preview/Local"
     owner: Astra Design
   - id: D-002
     priority: soft
@@ -84,14 +131,22 @@ design_tickets:
     status: closed_via_qa_signed_in_pass
 
 blockers:
-  - id: d003-resolve
-    summary: "Design must resolve D-003 before merge"
+  - id: qa-live-repass
+    summary: "QA live READY on main@0207e05 (includes D-003 Preview/Local) not recorded"
+    owner: Astra QA
+    blocks: autonomy-honesty
+  - id: d003-design-close
+    summary: "Design must close D-003 against merged GitHub SHA"
     owner: Astra Design
     blocks: autonomy-honesty
   - id: cto-arch-clear
-    summary: "CTO architecture review — no remaining concerns"
+    summary: "CTO architecture review — no remaining concerns recorded"
     owner: Astra CTO
     blocks: autonomy-honesty
+  - id: live-deploy-bounce
+    summary: "Mini-Beast bounce to main tip is deploy — not claimed by Docs"
+    owner: Jason / Systems
+    blocks: live_serving
 
 quarantine:
   - id: dirty-routes-ts
@@ -100,8 +155,10 @@ quarantine:
 
 notes:
   - "Hades :5050 offline — not a Track A fail"
-  - "EM will return release recommendation when qa_ready + d003_resolved + cto_clear are all met"
+  - "ASTRA-DOC-001: Docs synced GitHub merge facts only; did not invent QA/Design/CTO/live READY"
+  - "EM release recommendation still waits on qa_ready + d003_resolved + cto_clear (live closeout)"
+  - "Open PRs #8/#9 base docs/canon-v1 — behind main; Product/Eng owner retarget"
 
 docs_standing_by:
-  - "Sync Mini-Beast docs/ to 1.1.0"
-  - "PR #1 do-not-merge"
+  - "ASTRA-DOC-001 local branch — push/PR when EM instructs"
+  - "Mini-Beast docs checkout sync after this tip lands"

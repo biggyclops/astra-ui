@@ -2,11 +2,12 @@
 
 | Field | Value |
 |---|---|
-| **State** | Implemented — awaiting merge approval |
+| **State** | Done — merged |
 | **Owner** | Documentation Manager / Programmer |
 | **Approved** | Jason — 2026-09-17 (proposal + refinements, then implement) |
 | **Branch** | `cursor/astra-os-001-726d` |
-| **Base** | `docs/canon-v1` |
+| **Base (historical)** | `docs/canon-v1` |
+| **PR** | [#6](https://github.com/biggyclops/astra-ui/pull/6) merged 2026-09-17 (`3a4b718`) → canon → `main` via [#1](https://github.com/biggyclops/astra-ui/pull/1) |
 
 ## Goal
 
@@ -24,7 +25,7 @@ Build the Astra Operating System: a documentation layer so every AI role works f
 ## Out of scope
 
 - Filling `PRODUCT.md` substance
-- Merging PRs #1–#4
+- Merging PRs #1–#4 (completed separately 2026-09-17)
 - Deploy
 - Public `astra-docs` repo
 - Agent orchestration
@@ -35,3 +36,4 @@ Build the Astra Operating System: a documentation layer so every AI role works f
 - [x] `AGENTS.md` points only at `BOOT.md`
 - [x] Master and Documentation Architecture link here without dropping existing rows
 - [x] No product/UI/API files in this ticket
+- [x] Merged to GitHub (`main` tip includes this layer)
