@@ -7,6 +7,7 @@ import fs from "node:fs";
 import pathModule from "node:path";
 import crypto from "node:crypto";
 import { log } from "./logger";
+import { registerAutonomyRoutes } from "./autonomy";
 
 const execFileAsync = promisify(execFile);
 
@@ -400,6 +401,10 @@ export async function registerRoutes(app: Express) {
   app.get("/api/status", async (_req: Request, res: Response) => {
     res.json(await getOrRefreshStatus());
   });
+
+  // Public URL: /api/autonomy/snapshot (default path on Express app).
+  // When mounting via apiRouter at "/api", pass "/autonomy/snapshot" instead (Q-001).
+  registerAutonomyRoutes(app, () => getOrRefreshStatus(), "/api/autonomy/snapshot");
 
   app.post("/api/status/check", async (_req: Request, res: Response) => {
     statusCacheTime = 0;
