@@ -11,6 +11,7 @@
     "build": "tsx script/build.ts",
     "start": "NODE_ENV=production node dist/index.cjs",
     "check": "tsc",
+    "cos:recommend": "tsx scripts/cos-recommend.ts",
     "db:push": "drizzle-kit push"
   },
   "dependencies": {
