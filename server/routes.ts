@@ -402,7 +402,9 @@ export async function registerRoutes(app: Express) {
     res.json(await getOrRefreshStatus());
   });
 
-  registerAutonomyRoutes(app, () => getOrRefreshStatus());
+  // Public URL: /api/autonomy/snapshot (default path on Express app).
+  // When mounting via apiRouter at "/api", pass "/autonomy/snapshot" instead (Q-001).
+  registerAutonomyRoutes(app, () => getOrRefreshStatus(), "/api/autonomy/snapshot");
 
   app.post("/api/status/check", async (_req: Request, res: Response) => {
     statusCacheTime = 0;

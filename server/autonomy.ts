@@ -301,11 +301,20 @@ export async function buildAutonomySnapshot(
   };
 }
 
+type AutonomyRouteMount = Pick<Express, "get">;
+
+/**
+ * Register GET snapshot.
+ * - Express app (PR #2 / Phase 1 baseline): path `/api/autonomy/snapshot`
+ * - apiRouter mounted at `/api` (live Mini-Beast shell): path `/autonomy/snapshot`
+ *   so the public URL stays `/api/autonomy/snapshot` and session middleware applies.
+ */
 export function registerAutonomyRoutes(
-  app: Express,
+  mount: AutonomyRouteMount,
   getFleet: () => Promise<FleetSnapshot>,
+  routePath: string = "/api/autonomy/snapshot",
 ) {
-  app.get("/api/autonomy/snapshot", async (_req: Request, res: Response) => {
+  mount.get(routePath, async (_req: Request, res: Response) => {
     try {
       const snapshot = await buildAutonomySnapshot(getFleet);
       res.json(snapshot);
