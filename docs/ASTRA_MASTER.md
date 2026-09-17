@@ -7,7 +7,9 @@
 
 ## What Astra is
 
-Astra is a multi-surface AI operating environment:
+Astra is a multi-surface AI operating environment. Product north star (approved): *the calm, honest operator environment for a private fleet — see what is real, act only when action is real.* See [`PRODUCT.md`](./PRODUCT.md).
+
+Surfaces:
 
 - **Astra UI (desktop)** — control-plane web app on Mini-Beast (ports `:5000` / `:5173`)
 - **AstraPhone** — iOS companion client against the live Astra API
@@ -57,6 +59,9 @@ Root [`../AGENTS.md`](../AGENTS.md) is a minimal bootstrap that points only at B
 | Design System (Bible) | UI/UX Director | [`DESIGN_SYSTEM.md`](./DESIGN_SYSTEM.md) |
 | Motion System | UI/UX Director | [`MOTION_SYSTEM.md`](./MOTION_SYSTEM.md) |
 | Product | Product | [`PRODUCT.md`](./PRODUCT.md) |
+| Product reviews | Product | [`product/REVIEWS.md`](./product/REVIEWS.md) |
+| Product stories | Product | [`product/STORIES.md`](./product/STORIES.md) |
+| Product decisions | Product | [`product/DECISIONS.md`](./product/DECISIONS.md) |
 | Architecture (platform) | CTO | [`ARCHITECTURE.md`](./ARCHITECTURE.md) |
 | Frontend architecture | UI + Eng | [`frontend-architecture.md`](./frontend-architecture.md) |
 | Roadmap | EM | [`ROADMAP.md`](./ROADMAP.md) |
@@ -81,9 +86,9 @@ Root [`../AGENTS.md`](../AGENTS.md) is a minimal bootstrap that points only at B
 ## Role map
 
 | Role | Bot / human | Docs duty | OS packet |
-|---|---|---|
+|---|---|---|---|
 | Documentation Manager | Astra Docs | Structure, sync, Master, handoffs, ADRs index, release notes | [`astra-os/roles/DOCS.md`](./astra-os/roles/DOCS.md) |
-| Product | Steve Jobs / Jason | Product vision; identity approval | [`astra-os/roles/PRODUCT.md`](./astra-os/roles/PRODUCT.md) |
+| Product | Astra Product Owner / Jason | Product vision; feature reviews; stories; identity approval | [`astra-os/roles/PRODUCT.md`](./astra-os/roles/PRODUCT.md) |
 | UI/UX Director | Astra Design | Design System + Motion substance | [`astra-os/roles/DESIGN.md`](./astra-os/roles/DESIGN.md) |
 | CTO | Astra CTO | Architecture impacts; ADR acceptance | [`astra-os/roles/CTO.md`](./astra-os/roles/CTO.md) |
 | Engineering Manager | Astra EM | Roadmap milestones; status YAML | [`astra-os/roles/EM.md`](./astra-os/roles/EM.md) |

@@ -31,4 +31,5 @@ Do not invent a parallel ticket system for Eng features.
 
 | ID | Title | State |
 |---|---|---|
-| [ASTRA-OS-001](./tickets/ASTRA-OS-001.md) | Astra Operating System (agent docs layer) | Implemented — awaiting merge approval |
+| [ASTRA-OS-001](./tickets/ASTRA-OS-001.md) | Astra Operating System (agent docs layer) | Implemented — merged PR #6 |
+| [ASTRA-OS-002](./tickets/ASTRA-OS-002.md) | Add Chief of Staff role to Astra OS | Approved — ASTRA-PD-004 |

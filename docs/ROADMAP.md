@@ -2,14 +2,16 @@
 
 | Field | Value |
 |---|---|
-| **Version** | 1.0.1 |
+| **Version** | 1.0.2 |
 | **Status** | Active — Sprint 0 Track A |
 | **Owner** | Astra EM |
 | **Maintained by** | Documentation Manager |
 | **Last Reviewed** | 2026-09-16 |
 | **Approved By** | Jason (Sprint 0 Track A via CoS) |
 
-**See also:** [project_status.yaml](./project_status.yaml) · [PRODUCT.md](./PRODUCT.md) · [ASTRA_MASTER.md](./ASTRA_MASTER.md) · [docs/qa/SPRINT0_TRACK_A_GATE.md](./qa/SPRINT0_TRACK_A_GATE.md) · [releases/](./releases/)
+**See also:** [project_status.yaml](./project_status.yaml) · [PRODUCT.md](./PRODUCT.md) (vision + priority ranking, v1.0.4) · [product/STORIES.md](./product/STORIES.md) · [product/DECISIONS.md](./product/DECISIONS.md) · [ASTRA_MASTER.md](./ASTRA_MASTER.md) · [docs/qa/SPRINT0_TRACK_A_GATE.md](./qa/SPRINT0_TRACK_A_GATE.md) · [releases/](./releases/)
+
+Product owns *what/why*. This file remains EM-owned sequencing. If they conflict, stop and reconcile — do not silently expand scope.
 
 ## Purpose
 
@@ -35,7 +37,7 @@ Narrate phases and milestones so humans and agents share one view of where Astra
 ### Next
 1. Phase 2 cinematic shell visual QA **only if** Jason/Systems greenlight restart; otherwise remain parked in status.
 2. Close Design drift tickets from Autonomy honesty (and Phone smoke if filed).
-3. Product decision: Shared Drive UI (Chronos stash) vs park.
+3. Shared Drive UI — Product 🔴 REJECT (park indefinitely; ASTRA-R4).
 4. Optional: Phone HUD/Settings full consistency pass vs Design System.
 
 ### Later

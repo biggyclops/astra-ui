@@ -13,7 +13,9 @@ Institutional docs live in **[`docs/`](./docs/)** — start at **[`docs/ASTRA_MA
 | [ASTRA_MASTER.md](./docs/ASTRA_MASTER.md) | Entry index |
 | [DOCUMENTATION_ARCHITECTURE.md](./docs/DOCUMENTATION_ARCHITECTURE.md) | Canon rules (`astra-ui/docs` is SoT) |
 | [DESIGN_SYSTEM.md](./docs/DESIGN_SYSTEM.md) | Visual identity v1.0.0 |
-| [PRODUCT.md](./docs/PRODUCT.md) / [ARCHITECTURE.md](./docs/ARCHITECTURE.md) / [ROADMAP.md](./docs/ROADMAP.md) | Guidance outlines |
+| [PRODUCT.md](./docs/PRODUCT.md) | Product vision, sprint NOW, non-goals |
+| [product/STORIES.md](./docs/product/STORIES.md) | Implementation-ready stories |
+| [ARCHITECTURE.md](./docs/ARCHITECTURE.md) / [ROADMAP.md](./docs/ROADMAP.md) | Architecture + EM sequencing |
 | [astra-os/BOOT.md](./docs/astra-os/BOOT.md) | AI agent entry (Astra OS extension) |
 
 Other Astra repositories should **link here** — do not duplicate these files.
