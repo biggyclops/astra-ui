@@ -2,11 +2,13 @@
 
 | Field | Value |
 |---|---|
-| **State** | In progress — local commit; not pushed |
+| **State** | Implemented — draft PR open; awaiting EM / Jason merge approval |
 | **Owner** | Documentation Manager |
 | **Approved** | Named in chat after CoS post-merge audit |
 | **Base** | `main` @ `0207e05` |
-| **Branch** | `cursor/astra-doc-001-canon-sync-95bb` |
+| **Branch** | `cursor/astra-doc-001-canon-sync-95bb` (pushed) |
+| **PR** | [#10](https://github.com/biggyclops/astra-ui/pull/10) (draft) |
+| **Commit** | `5c250bdcca8a6f9d9031e54796d2d8e53b1690eb` |
 | **Source of truth for drift** | Chief of Staff audit (2026-09-17) |
 
 ## Goal
@@ -41,11 +43,14 @@ Synchronize Astra canon with GitHub after Sprint 0 merges (PRs #1–#7). Stop th
 
 - Product code, UI, APIs, architecture
 - Inventing READY / APPROVED / clear
-- Push, PR, merge, deploy (unless later instructed)
+- Merge or deploy (awaiting EM / Jason)
 
 ## Verify
 
 - [x] No product/UI/API/architecture files in this ticket
 - [x] Status YAML does not invent owner verdicts
 - [x] OS-001 / OS-002 no longer say awaiting merge / Approved-only
-- [ ] Push / PR when EM instructs
+- [x] Branch pushed: `cursor/astra-doc-001-canon-sync-95bb`
+- [x] Draft PR #10 opened against `main`
+- [ ] Merge when EM / Jason approve
+- [ ] Deploy (not implied by merge)
