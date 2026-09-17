@@ -34,7 +34,9 @@ A dedicated `astra-docs` repository is **deferred** until the set is large enoug
 
 [`astra-os/`](./astra-os/README.md) is an **extension** of this architecture (ASTRA-OS-001, 2026-09-17): the agent operating layer. It does not replace Master or this file.
 
-Related Eng-local runbooks (`ARCHITECTURE_SETUP.md`, `CHAT_PIPELINE.md`, `HERMES_MOUNT.md`, etc.) stay in `docs/` but are **repo operational docs**, not product-vision canon. They are listed from Master as references.
+Related Eng-local runbooks stay in `docs/` but are **repo operational docs**, not product-vision canon. They are listed from Master as references.
+
+**Honesty (ASTRA-DOC-001, 2026-09-17):** On GitHub `main` @ `0207e05`, `HERMES_MOUNT.md` is present. `ARCHITECTURE_SETUP.md` and `CHAT_PIPELINE.md` are **missing**. Do not invent them; Eng/Systems restores or Master drops the rows.
 
 ## Repository ownership
 
@@ -101,9 +103,8 @@ docs/
     roles/
     tickets/
   # Eng-local runbooks (references, not product vision):
-  ARCHITECTURE_SETUP.md
-  CHAT_PIPELINE.md
   HERMES_MOUNT.md
+  # MISSING on main tip (do not invent): ARCHITECTURE_SETUP.md, CHAT_PIPELINE.md
   …
 ```
 

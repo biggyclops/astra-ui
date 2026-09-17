@@ -75,13 +75,15 @@ Root [`../AGENTS.md`](../AGENTS.md) is a minimal bootstrap that points only at B
 
 ## Doc map (Eng-local references)
 
-| Doc | Owner focus | Path |
-|---|---|---|
-| Phase 2 cinematic shell | UI | [`PHASE2_SHELL.md`](./PHASE2_SHELL.md) |
-| Runtime / network setup | Systems / Eng | [`ARCHITECTURE_SETUP.md`](./ARCHITECTURE_SETUP.md) |
-| Chat pipeline | Eng | [`CHAT_PIPELINE.md`](./CHAT_PIPELINE.md) |
-| Hermes mount | Systems | [`HERMES_MOUNT.md`](./HERMES_MOUNT.md) |
-| Agent bootstrap → Astra OS BOOT | Eng | [`../AGENTS.md`](../AGENTS.md) → [`astra-os/BOOT.md`](./astra-os/BOOT.md) |
+| Doc | Owner focus | Path | On `main`? |
+|---|---|---|---|
+| Phase 2 cinematic shell | UI | [`PHASE2_SHELL.md`](./PHASE2_SHELL.md) | Yes |
+| Hermes mount | Systems | [`HERMES_MOUNT.md`](./HERMES_MOUNT.md) | Yes |
+| Agent bootstrap → Astra OS BOOT | Eng | [`../AGENTS.md`](../AGENTS.md) → [`astra-os/BOOT.md`](./astra-os/BOOT.md) | Yes |
+| Runtime / network setup | Systems / Eng | `ARCHITECTURE_SETUP.md` | **Missing on `main`** — Eng/Systems to restore or drop |
+| Chat pipeline | Eng | `CHAT_PIPELINE.md` | **Missing on `main`** — Eng to restore or drop |
+
+Do not invent missing Eng-local files. Broken links are honesty debt (ASTRA-DOC-001).
 
 ## Role map
 
@@ -98,17 +100,19 @@ Root [`../AGENTS.md`](../AGENTS.md) is a minimal bootstrap that points only at B
 
 ## Current UI branches (honesty — Sprint 0 Track A)
 
-**On GitHub (`biggyclops/astra-ui`):**
+**On GitHub (`biggyclops/astra-ui`) — post-merge 2026-09-17:**
 
-- `docs/canon-v1` @ `3c9dc6a` — institutional docs (this canon line)
-- `feature/autonomy-ui` @ `52c96eb` — Phone-style Autonomy UI lock (**local Mini-Beast tip `8e0a8a2` is ahead 1 and not pushed**: Phase 1 read-only `/api/autonomy/snapshot`)
-- `feature/astra-cinematic-shell` @ `6f7307b` — cinematic shell on remote
+- **`main` @ `0207e05`** — institutional canon (PR #1) + Autonomy honesty stack (PRs #2←#3←#4) + Product 1.0.4 + Astra OS (PRs #5–#7)
+- `docs/canon-v1` @ `3a71cf5` — historical docs line (**merged into `main`** via PR #1; do not treat as the live tip)
+- `feature/autonomy-ui` @ `63a970d` — merged tip after Q-001 + D-003 (also on `main`)
+- `feature/astra-cinematic-shell` @ `6f7307b` — cinematic shell on remote (not on `main` tip)
+- Open drafts **#8 / #9** still base `docs/canon-v1` (behind `main`) — Product/Eng owner to retarget
 
 **Mini-Beast only (not on GitHub):**
 
 - `feature/phase2-shell` — local cinematic polish + Design Bible restore commits; **do not treat as a remote branch**. Related remote line is `feature/astra-cinematic-shell`. No push/restart without approval.
 
-Docs and status must name GitHub branches when claiming “published,” and label Mini-Beast-only tips explicitly.
+Docs and status must name GitHub branches when claiming “published,” and label Mini-Beast-only tips explicitly. A merged SHA is **not** live until the named host serves it.
 
 ## Working agreements
 
@@ -122,3 +126,5 @@ Docs and status must name GitHub branches when claiming “published,” and lab
 - Design Bible restored 2026-09-16 so Eng stops guessing visual law (`PHASE2_SHELL` docs gap).
 - Documentation Architecture approved 2026-09-16: canon = `astra-ui/docs`.
 - Astra OS (`docs/astra-os/`) added 2026-09-17 as an agent-layer **extension** (ASTRA-OS-001). Master remains the product/system front door.
+- ASTRA-OS-002 (Chief of Staff role) merged PR #7 — 2026-09-17.
+- ASTRA-DOC-001 (2026-09-17): Docs synced status/ROADMAP/gate/Master to GitHub merge reality after CoS audit. Live QA / Design D-003 close / CTO clear remain owner blockers.

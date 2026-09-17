@@ -2,10 +2,13 @@
 
 | Field | Value |
 |---|---|
-| **State** | Approved |
+| **State** | Done — merged |
 | **Owner** | Documentation Manager |
 | **Approved** | Product Owner — ASTRA-PD-004 (2026-09-17) |
-| **Base** | `docs/canon-v1` (includes ASTRA-OS-001) |
+| **Base (historical)** | `docs/canon-v1` (includes ASTRA-OS-001) |
+| **Branch** | `cursor/astra-os-002-cos-role-95bb` |
+| **PR** | [#7](https://github.com/biggyclops/astra-ui/pull/7) merged 2026-09-17 (`190cf73`) → canon → `main` via [#1](https://github.com/biggyclops/astra-ui/pull/1) |
+| **Commit** | `f1ed6abdd6a8d85524b5ab2ad3603b9fbe1d6193` |
 
 ## Goal
 
@@ -47,8 +50,9 @@ Product already hands work to Chief of Staff (ASTRA-PD-002). The OS has no packe
 
 ## Verify
 
-- [ ] `docs/astra-os/roles/COS.md` exists and matches the packet shape
-- [ ] `ROLES.md` and `BOOT.md` name Chief of Staff / `COS.md`
-- [ ] Master role map includes CoS without dropping existing rows
-- [ ] No product/UI/API/architecture files in this ticket
-- [ ] CoS May/Must not match ASTRA-PD-004
+- [x] `docs/astra-os/roles/COS.md` exists and matches the packet shape
+- [x] `ROLES.md` and `BOOT.md` name Chief of Staff / `COS.md`
+- [x] Master role map includes CoS without dropping existing rows
+- [x] No product/UI/API/architecture files in this ticket
+- [x] CoS May/Must not match ASTRA-PD-004
+- [x] Merged to GitHub (`main` tip includes CoS packet)
