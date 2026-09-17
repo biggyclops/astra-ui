@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| **Version** | 1.0.0 |
+| **Version** | 1.1.0 |
 | **Status** | Active |
 | **Owner** | Documentation Manager |
 | **Last Reviewed** | 2026-09-17 |
@@ -17,7 +17,7 @@ Read in this order. Stop if a file is missing and report the gap. Do not invent 
 
 1. [CONSTITUTION.md](./CONSTITUTION.md)
 2. [../ASTRA_MASTER.md](../ASTRA_MASTER.md)
-3. [roles/](./roles/) — the file for your named role (`PROGRAMMER.md`, `QA.md`, `EM.md`, `DESIGN.md`, `CTO.md`, `DOCS.md`, `PRODUCT.md`)
+3. [roles/](./roles/) — the file for your named role (`PROGRAMMER.md`, `QA.md`, `EM.md`, `DESIGN.md`, `CTO.md`, `DOCS.md`, `PRODUCT.md`, `COS.md`)
 4. [../project_status.yaml](../project_status.yaml)
 5. [../ROADMAP.md](../ROADMAP.md)
 6. Latest relevant file in [../handoffs/](../handoffs/)

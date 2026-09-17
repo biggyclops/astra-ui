@@ -89,6 +89,7 @@ Root [`../AGENTS.md`](../AGENTS.md) is a minimal bootstrap that points only at B
 | Engineering Manager | Astra EM | Roadmap milestones; status YAML | [`astra-os/roles/EM.md`](./astra-os/roles/EM.md) |
 | QA | Astra QA | Release readiness notes | [`astra-os/roles/QA.md`](./astra-os/roles/QA.md) |
 | Programmer | Programmer | Eng-local accuracy; handoffs after sessions | [`astra-os/roles/PROGRAMMER.md`](./astra-os/roles/PROGRAMMER.md) |
+| Chief of Staff | Astra CoS | Ticket routing, dependency/blocker tracking, one-next-role handoffs | [`astra-os/roles/COS.md`](./astra-os/roles/COS.md) |
 
 ## Current UI branches (honesty — Sprint 0 Track A)
 
