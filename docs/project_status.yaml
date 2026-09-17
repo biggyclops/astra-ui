@@ -1,0 +1,107 @@
+# Sprint 0 Track A — project status
+# Owner: Astra EM | Synced by: Astra Docs
+# Canon: astra-ui/docs (docs/canon-v1)
+
+meta:
+  version: "1.1.0"
+  sprint: "Sprint 0 Track A"
+  track_focus: "Autonomy honesty first"
+  updated: "2026-09-16"
+  qa_gate: "docs/qa/SPRINT0_TRACK_A_GATE.md"
+  docs_branch: "docs/canon-v1"
+  docs_pr: "https://github.com/biggyclops/astra-ui/pull/1"
+  eng_pr: "https://github.com/biggyclops/astra-ui/pull/2"
+  eng_pr_q001: "https://github.com/biggyclops/astra-ui/pull/3"
+  eng_pr_merge: "HOLD — Jason release gate"
+
+release_gate:
+  approved_by: Jason
+  approved_at: "2026-09-16"
+  policy: "Maintain current release gate; EM returns release recommendation only when all conditions met"
+  conditions:
+    - id: qa_ready
+      requirement: "QA reports READY"
+      status: met
+      evidence: "technical READY after Q-001 re-pass"
+    - id: d003_resolved
+      requirement: "D-003 resolved (not ship-as-is)"
+      status: open
+      owner: Astra Design
+      remediation: "label Preview/Local, disable, or remove stub controls"
+    - id: cto_clear
+      requirement: "CTO has no remaining architecture concerns"
+      status: open
+      owner: Astra CTO
+  hold:
+    - "PR #2"
+    - "PR #3"
+
+live_serving:
+  host: "Mini-Beast 100.81.216.117"
+  vite_5173:
+    status: up
+    url: "http://100.81.216.117:5173/autonomy"
+  autonomy_snapshot_unauth: 401
+  autonomy_snapshot_auth: "200 JSON (QA PASS)"
+  hades_5050: offline_noted_separate
+
+milestones:
+  - id: autonomy-honesty
+    priority: P0
+    status: hold_release_gate
+    design_status: "APPROVE WITH TICKETS — D-003 open"
+    qa_status: "READY (technical)"
+    cto_status: "review requested"
+    pr: "https://github.com/biggyclops/astra-ui/pull/2"
+    q001_pr: "https://github.com/biggyclops/astra-ui/pull/3"
+    tips:
+      pr2: "8e0a8a2"
+      pr3: "1135510"
+
+  - id: phase2-posture
+    priority: P1
+    status: pending_restart_qa
+
+  - id: phone-smoke
+    priority: P2
+    status: deferred
+
+bugs:
+  - id: Q-001
+    status: closed_qa_pass
+    pr: "https://github.com/biggyclops/astra-ui/pull/3"
+
+design_tickets:
+  - id: D-003
+    priority: P1
+    title: "False affordances — stub Pause/Resume/Command/Approve"
+    status: must_resolve_before_merge
+    jason_call: "resolved — require fix (not accept stubs)"
+    owner: Astra Design
+  - id: D-002
+    priority: soft
+  - id: D-001
+    status: closed_via_qa_signed_in_pass
+
+blockers:
+  - id: d003-resolve
+    summary: "Design must resolve D-003 before merge"
+    owner: Astra Design
+    blocks: autonomy-honesty
+  - id: cto-arch-clear
+    summary: "CTO architecture review — no remaining concerns"
+    owner: Astra CTO
+    blocks: autonomy-honesty
+
+quarantine:
+  - id: dirty-routes-ts
+    path: server/routes.ts
+    status: quarantined
+
+notes:
+  - "Hades :5050 offline — not a Track A fail"
+  - "EM will return release recommendation when qa_ready + d003_resolved + cto_clear are all met"
+
+docs_standing_by:
+  - "Sync Mini-Beast docs/ to 1.1.0"
+  - "PR #1 do-not-merge"
