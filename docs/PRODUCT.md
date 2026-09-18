@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| **Version** | 1.0.7 |
+| **Version** | 1.0.8 |
 | **Status** | Approved — Product Owner canon |
 | **Owner** | Product (Astra Product Owner / Jason) |
 | **Maintained by** | Documentation Manager |
@@ -114,9 +114,9 @@ Signed decision: [ASTRA-PD-001](./product/DECISIONS.md).
 | 2 | ASTRA-S2 | D-003 honesty | Ship-blocker; already in #4 |
 | 3 | ASTRA-S3 | Jobs/Chat prototype labels | P1 — remains parked. ASTRA-OS-001 does not unpark it. |
 
-Do not staff S3, S13, S14, or S5–S11, or new **operator** surfaces, while live `/autonomy` still shows operable stubs. ASTRA-S12 is OS-line CLI. ASTRA-S13 and ASTRA-S14 are parked. Default for unreviewed ideas: **reject until reviewed**.
+Do not staff S3, S13, S14, S20, or S5–S11, or new **operator** surfaces, while live `/autonomy` still shows operable stubs. ASTRA-S12 is OS-line CLI. ASTRA-S13, ASTRA-S14, and ASTRA-S20 are parked. Default for unreviewed ideas: **reject until reviewed**.
 
-Signed handoff: [ASTRA-PD-007](./product/DECISIONS.md).
+Signed handoff: [ASTRA-PD-008](./product/DECISIONS.md).
 
 ## 8. Change control
 
@@ -145,3 +145,4 @@ Signed handoff: [ASTRA-PD-007](./product/DECISIONS.md).
 | ASTRA-S4 CoS Orchestrator (requested ID) | 🟡 APPROVE WITH CHANGES | ID collision. Ship as **ASTRA-S12** recommendation engine only. Do not invoke roles. |
 | ASTRA-S13 CoS Dashboard on `/autonomy` | 🟡 APPROVE WITH CHANGES | Parked. Read-only S12 panel, not the orb. No GitHub. After Track A honesty. |
 | ASTRA-S14 Mission Control Foundation | 🟢 APPROVE | Parked aggregator. Not a source of truth. After Track A honesty. CoS next. |
+| ASTRA-S20 Workflow Orchestrator | 🟢 APPROVE | Parked state machine. Never invokes roles. After Track A honesty. CoS next. |
