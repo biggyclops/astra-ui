@@ -2,10 +2,10 @@
 
 | Field | Value |
 |---|---|
-| **Version** | 1.0.6 |
-| **Status** | Approved for Engineering — Sprint 0 Track A + CoS recommender |
+| **Version** | 1.0.7 |
+| **Status** | Approved for Engineering — Sprint 0 Track A + CoS + Mission Control (parked) |
 | **Owner** | Product |
-| **Last Reviewed** | 2026-09-17 |
+| **Last Reviewed** | 2026-09-18 |
 
 **See also:** [PRODUCT.md](../PRODUCT.md) · [REVIEWS.md](./REVIEWS.md) · [DECISIONS.md](./DECISIONS.md) · [ROADMAP.md](../ROADMAP.md)
 
@@ -14,7 +14,7 @@ These stories are **what/why + acceptance**. They are not architecture, visual r
 Acceptance criteria are the contract for whoever picks up the story. Product does not expand a story mid-flight.
 
 **Product lock:** [ASTRA-PD-001](./DECISIONS.md) — Track A = S1 + S2. Do not merge ship-as-is. Product does not approve merge.  
-**Handoff:** [ASTRA-PD-006](./DECISIONS.md) — ASTRA-S13 CoS dashboard parked until Track A honesty + S12 consumer.
+**Handoff:** [ASTRA-PD-007](./DECISIONS.md) — ASTRA-S14 Mission Control approved and parked until Track A honesty.
 
 | Order | ID | Priority | Vehicle | Product note |
 |---|---|---|---|---|
@@ -24,6 +24,7 @@ Acceptance criteria are the contract for whoever picks up the story. Product doe
 | — | ASTRA-S4 | P2 | parked | Phase 2 cinematic shell. Not the CoS orchestrator. |
 | OS-line | ASTRA-S12 | High | PR #9 | CoS recommendation engine (CLI). Do not displace S1/S2. |
 | — | ASTRA-S13 | Medium | parked | CoS dashboard. After Track A honesty + S12. Not the snapshot/orb. |
+| — | ASTRA-S14 | Medium | parked | Mission Control aggregator. After Track A honesty. Not a source of truth. |
 | — | S5–S11 | parked / rejected | — | Do not staff. |
 
 ---
@@ -204,6 +205,66 @@ The operator already has one instrument for fleet intent (snapshot). A CoS panel
 
 ---
 
+### ASTRA-S14 — Mission Control Foundation (read-only aggregator)
+
+**Story:** As the operator, I can view a read-only aggregate of what Astra already reports (nodes, services, health, storage), with timestamps and honest degraded/unknown states, so I have one roll-up without replacing the existing operator sources of truth.
+
+**Priority:** Medium — parked until Track A honesty is live (S1+S2; same gate as S3 / S13).  
+**Review:** ASTRA-R15 🟢  
+**Decision:** [ASTRA-PD-007](./DECISIONS.md)  
+**Depends on:** ASTRA-S1; ASTRA-S2 live (no operable Autonomy stubs)
+
+**Summary**
+Mission Control v1 is a **read-only aggregator**. It is not the single source of truth, not a control plane, not a policy editor, and not an Autonomy replacement. Operator truths remain Nodes, Media / Hermes, and `GET /api/autonomy/snapshot`. Mission Control may only aggregate those existing reads.
+
+**User value**
+Provide a single timestamped roll-up of existing system status while preserving Astra’s honesty rules.
+
+**Scope in (v1)**
+- Aggregate only information already available from existing GET endpoints
+- Nodes, services, health, storage only
+- Existing APIs only (for example `GET /api/status`, `GET /api/nodes`, existing Media / Hermes health, and read-only consume of `GET /api/autonomy/snapshot`)
+- Every payload: timestamp, reachability, and health — reachability and health are separate
+- Unavailable data: **Unknown** or **Degraded** — never invent values
+- Policy display-only: Ask First and signed Product locks — not Auto, not editable
+
+**Scope out / Non-goals**
+- Becoming the single source of truth
+- Replacing Nodes, Media, or Autonomy
+- Changing the orb or `GET /api/autonomy/snapshot`
+- Operator controls, a `/mission-control` page, or redesigning `/autonomy`
+- Jobs or GPUs in v1
+- Invoking AI roles, robot control, GitHub, scheduler, merge, or deploy
+- Unparking or replacing ASTRA-S13
+- Displacing Track A (S1 / S2)
+
+**Honesty rules**
+- Aggregate existing data only
+- Never invent GPU, storage, health, or job information
+- Unknown means Unknown; Degraded means Degraded
+- Every payload includes a timestamp and separates reachability from health
+- Policy is read-only
+- Jobs remain prototype/local when they eventually exist
+- Autonomy remains unchanged
+
+**Acceptance criteria**
+1. Begins only after S1 + S2 honesty are live.
+2. Mission Control is described as an aggregator, never a source of truth.
+3. Uses only existing GET APIs.
+4. Reports only nodes, services, health, and storage.
+5. Unknown or failed reads display Unknown or Degraded.
+6. Every payload contains timestamp, reachability, and health.
+7. Policy is display-only.
+8. Jobs are not part of v1.
+9. GPUs are not part of v1.
+10. No operator UI changes.
+11. Autonomy snapshot remains unchanged.
+12. No AI, GitHub, robots, scheduler, merge, or deploy.
+
+**Done when:** a read-only aggregate of existing live GET data is available without inventing values and without changing Autonomy. Product does not merge.
+
+---
+
 ## Next — only after Track A
 
 ### ASTRA-S4 — Park Phase 2 cinematic shell until Track A
@@ -259,6 +320,8 @@ The operator already has one instrument for fleet intent (snapshot). A CoS panel
 - Agent orchestration that invokes roles, merges, or deploys
 - Reusing ASTRA-S4 for anything other than Phase 2 shell park
 - A CoS dashboard that dispatches work, talks to GitHub, or drives the Autonomy orb
+- Mission Control as a single source of truth, control plane, or Autonomy replacement
+- Mission Control v1 jobs or GPUs without a later Product review
 
 ---
 

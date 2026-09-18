@@ -2,10 +2,10 @@
 
 | Field | Value |
 |---|---|
-| **Version** | 1.0.6 |
+| **Version** | 1.0.7 |
 | **Status** | Approved — Product Owner |
 | **Owner** | Product |
-| **Last Reviewed** | 2026-09-17 |
+| **Last Reviewed** | 2026-09-18 |
 
 **See also:** [PRODUCT.md](../PRODUCT.md) · [STORIES.md](./STORIES.md) · [DECISIONS.md](./DECISIONS.md) · [TEMPLATE.md](./TEMPLATE.md) · [ROADMAP.md](../ROADMAP.md)
 
@@ -673,3 +673,62 @@ Next Responsible Role: Chief of Staff
 Dependencies: ASTRA-PD-001; ASTRA-PD-005; ASTRA-S12; ASTRA-S2  
 Target Sprint: After Sprint 0 Track A honesty  
 One-line rationale: Show S12 as a labeled recommendation on `/autonomy` only after the page no longer lies — never as fleet control.
+
+---
+
+# ASTRA-R15 — ASTRA-S14 Mission Control Foundation
+
+**Request:** Create a read-only Mission Control service as an Astra status roll-up. Revised after Product REQUIRES CHANGES: aggregator only, not a source of truth; parked until Track A honesty; v1 = nodes/services/health/storage only.
+
+## Summary
+
+Mission Control v1 aggregates existing GET reads into one timestamped roll-up. Nodes, Media / Hermes, and `GET /api/autonomy/snapshot` remain the operator truths. Mission Control does not replace them, change Autonomy, or add UI.
+
+## User Value
+
+One honest roll-up of what Astra already knows, without inventing fleet dispatch, GPU theater, or a second control plane.
+
+## Scope
+
+**In**
+- Parked until Track A S1+S2 honesty is live
+- Read-only aggregate of nodes, services, health, storage from existing GETs
+- Timestamp + reachability + health on every payload
+- Display-only Ask First / signed Product locks
+
+## Acceptance Criteria
+
+- Same 12 criteria as ASTRA-S14 in STORIES.md
+- Not a source of truth
+- No jobs/GPUs in v1
+- No operator UI; S13 stays parked
+- Autonomy unchanged
+
+## Non-Goals
+
+- Single source of truth; replacing Nodes/Media/Autonomy; orb or snapshot changes; UI; AI; robots; GitHub; scheduler; merge; deploy
+
+## Risks
+
+- Staffed before D-003
+- Treated as the new SoT
+- Jobs/GPUs sneak into v1 without honesty labels
+
+## Recommendation
+
+🟢 **APPROVE**
+
+Parked. Aggregator only. Next: Chief of Staff.
+
+---
+
+Product Decision  
+Decision ID: ASTRA-PD-007  
+Product Version: 1.0.7  
+Priority: Medium  
+Status: Active — ASTRA-S14 approved and parked until Track A honesty  
+Owner: Product Owner  
+Next Responsible Role: Chief of Staff  
+Dependencies: ASTRA-PD-001; ASTRA-S1; ASTRA-S2; ASTRA-S14  
+Target Sprint: After Sprint 0 Track A honesty  
+One-line rationale: Mission Control may roll up existing truth — it must not invent a second one.

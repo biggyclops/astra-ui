@@ -2,10 +2,10 @@
 
 | Field | Value |
 |---|---|
-| **Version** | 1.0.6 |
+| **Version** | 1.0.7 |
 | **Status** | Active — Product Owner signed decisions |
 | **Owner** | Product Owner |
-| **Last Reviewed** | 2026-09-17 |
+| **Last Reviewed** | 2026-09-18 |
 
 **See also:** [PRODUCT.md](../PRODUCT.md) · [REVIEWS.md](./REVIEWS.md) · [STORIES.md](./STORIES.md)
 
@@ -386,6 +386,70 @@ One-line rationale: Show S12 as a labeled recommendation on `/autonomy` only aft
 
 ---
 
+## ASTRA-PD-007 — ASTRA-S14 Mission Control Foundation
+
+**Reviews:** ASTRA-R15 🟢  
+**Story:** [ASTRA-S14](./STORIES.md)
+
+# Summary
+
+Approve ASTRA-S14 as a **parked**, read-only Mission Control aggregator. It is not the single source of truth. Operator truths remain Nodes, Media / Hermes, and `GET /api/autonomy/snapshot`. v1 reports only nodes, services, health, and storage from existing GETs, with timestamp and reachability-vs-health. Jobs and GPUs are out of v1. No operator UI. Unpark only after Track A honesty (S1+S2).
+
+# User Value
+
+One timestamped roll-up of existing system status without inventing fleet facts or replacing live instruments.
+
+# Scope
+
+**In**
+- Parked until S1+S2 honesty is live
+- Read-only aggregate: nodes, services, health, storage
+- Existing GET APIs only
+- Display-only Ask First / signed Product locks
+
+**Out**
+- Single source of truth claim
+- Jobs / GPUs in v1
+- UI, orb, snapshot contract changes
+- AI, robots, GitHub, scheduler, merge, deploy
+- Displacing Track A
+
+# Acceptance Criteria
+
+1. Begins only after S1 + S2 honesty are live.
+2. Described as aggregator, never a source of truth.
+3. Existing GET APIs only; Unknown/Degraded when unavailable.
+4. Every payload: timestamp, reachability, health.
+5. No jobs/GPUs in v1; no operator UI; Autonomy unchanged.
+6. Product does not approve merge or deploy.
+
+# Risks
+
+- Treated as the new SoT
+- Staffed before D-003
+- Jobs/GPUs added without a later Product review
+
+# Recommendation
+
+🟢 **APPROVE**
+
+Parked. Aggregator only. Hand to Chief of Staff.
+
+---
+
+Product Decision  
+Decision ID: ASTRA-PD-007  
+Product Version: 1.0.7  
+Priority: Medium  
+Status: Active — ASTRA-S14 approved and parked until Track A honesty  
+Owner: Product Owner  
+Next Responsible Role: Chief of Staff  
+Dependencies: ASTRA-PD-001; ASTRA-S1; ASTRA-S2; ASTRA-S14  
+Target Sprint: After Sprint 0 Track A honesty  
+One-line rationale: Mission Control may roll up existing truth — it must not invent a second one.
+
+---
+
 ## Decision index
 
 | ID | Subject | Rec | Priority | Status |
@@ -396,6 +460,7 @@ One-line rationale: Show S12 as a labeled recommendation on `/autonomy` only aft
 | ASTRA-PD-004 | ASTRA-OS-002 Chief of Staff role packet | 🟡 | High | Active |
 | ASTRA-PD-005 | ASTRA-S12 CoS recommendation engine (not S4) | 🟡 | High | Active |
 | ASTRA-PD-006 | ASTRA-S13 CoS dashboard (parked; S12 panel, not orb) | 🟡 | Medium | Active |
+| ASTRA-PD-007 | ASTRA-S14 Mission Control Foundation (parked aggregator) | 🟢 | Medium | Active |
 | ASTRA-R4 / S10 | Shared Drive UI | 🔴 | — | Rejected |
 | ASTRA-R5 / S11 | Autonomy Auto / mutating commands | 🔴 | — | Rejected |
 | ASTRA-R6 | Phone chrome on desktop | 🔴 | — | Rejected |
