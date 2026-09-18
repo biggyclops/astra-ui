@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| **Version** | 1.0.7 |
+| **Version** | 1.0.8 |
 | **Status** | Approved — Product Owner |
 | **Owner** | Product |
 | **Last Reviewed** | 2026-09-18 |
@@ -732,3 +732,58 @@ Next Responsible Role: Chief of Staff
 Dependencies: ASTRA-PD-001; ASTRA-S1; ASTRA-S2; ASTRA-S14  
 Target Sprint: After Sprint 0 Track A honesty  
 One-line rationale: Mission Control may roll up existing truth — it must not invent a second one.
+
+---
+
+# ASTRA-R16 — ASTRA-S20 Workflow Orchestrator
+
+**Request:** Replace manual role handoffs with a governed workflow engine that routes work between Astra roles while preserving human approvals. Revised to a state machine that never invokes roles.
+
+## Summary
+
+ASTRA-S20 is a parked governed workflow **state machine**. It records durable state, history, and timeline. It waits for externally completed role results. It never launches AI roles, invents backlog order, opens PRs, merges, deploys, or mutates GitHub. Next role comes only from Astra OS, signed Product decisions, and CoS sequencing — else Unknown and stop. Jason remains merge and deploy gate.
+
+## User Value
+
+Honest routing and timeline without chat-memory handoffs, without agent orchestration theater.
+
+## Scope
+
+**In**
+- One workflow at a time; durable state, history, timeline
+- Wait for externally completed structured role results
+- Route next role from OS / Product / CoS only
+- BLOCKED / REQUIRES CHANGES / APPROVED-READY rules as approved
+- Parked until Track A honesty
+
+## Acceptance Criteria
+
+- Same 16 criteria as ASTRA-S20 in STORIES.md
+
+## Non-Goals
+
+- AI coding; agent orchestration; auto-merge/deploy; autonomous Product/QA/CTO/sequencing; inventing backlog; GitHub mutation; robots; unparking S3/S13/S14; displacing Track A
+
+## Risks
+
+- Built as an agent launcher under a state-machine name
+- Staffed before Track A honesty
+
+## Recommendation
+
+🟢 **APPROVE**
+
+Parked state machine. Never invokes roles. Next: Chief of Staff.
+
+---
+
+Product Decision  
+Decision ID: ASTRA-PD-008  
+Product Version: 1.0.8  
+Priority: Medium  
+Status: Active — ASTRA-S20 approved and parked until Track A honesty  
+Owner: Product Owner  
+Next Responsible Role: Chief of Staff  
+Dependencies: ASTRA-PD-001; ASTRA-S1; ASTRA-S2; ASTRA-S20  
+Target Sprint: After Sprint 0 Track A honesty  
+One-line rationale: Route workflow state honestly — never launch roles, invent order, or bypass Jason.
