@@ -5,11 +5,15 @@ set -euo pipefail
 # Reusable local verification workflow for Grok and Codex agents.
 # Does NOT commit, push, merge, reset, clean, or deploy.
 
-REPO_ROOT="/home/comea/astra-ui/astra-ui-main-clean"
 EXPECTED_REMOTE="https://github.com/biggyclops/astra-ui.git"
 
-if [[ "$(pwd)" != "$REPO_ROOT" ]]; then
-  cd "$REPO_ROOT" || { echo "FAIL: Cannot cd to $REPO_ROOT"; exit 1; }
+# Derive repository root from the script location when possible,
+# otherwise fall back to the current working directory.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [[ -d "$SCRIPT_DIR/../.git" || -f "$SCRIPT_DIR/../.git" ]]; then
+  REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+else
+  REPO_ROOT="$(pwd)"
 fi
 
 echo "=== Astra Development Gate v1 ==="
@@ -23,7 +27,8 @@ if [[ ! -e .git ]]; then
 fi
 
 REMOTE_URL=$(git remote get-url origin 2>/dev/null || echo "")
-if [[ "$REMOTE_URL" != "$EXPECTED_REMOTE" ]]; then
+# Accept both with and without .git suffix
+if [[ "$REMOTE_URL" != "$EXPECTED_REMOTE" && "$REMOTE_URL" != "${EXPECTED_REMOTE%.git}" ]]; then
   echo "FAIL: Unexpected remote: $REMOTE_URL"
   exit 1
 fi
