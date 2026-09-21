@@ -49,10 +49,10 @@ type Suggestion = {
 };
 
 const MODE_OPTIONS: { id: AutonomyMode; label: string; hint: string }[] = [
-  { id: "off", label: "Off", hint: "Autonomy sleeps" },
-  { id: "suggest", label: "Suggest Only", hint: "Ideas only — never runs" },
-  { id: "ask", label: "Ask First", hint: "Approve each action" },
-  { id: "auto", label: "Auto Run Approved", hint: "Run pre-approved work" },
+  { id: "off", label: "Off", hint: "Preview state only" },
+  { id: "suggest", label: "Suggest Only", hint: "Preview state only" },
+  { id: "ask", label: "Ask First", hint: "Preview state only" },
+  { id: "auto", label: "Auto Run Approved", hint: "Preview state only" },
 ];
 
 const COMMAND_CHIPS = [
@@ -104,22 +104,6 @@ function SectionLabel({
     </div>
   );
 }
-
-function PreviewLocalBadge({ className }: { className?: string }) {
-  return (
-    <span
-      className={cn(
-        "rounded-full border border-amber-400/35 bg-amber-500/10 px-2 py-0.5 text-amber-100",
-        hudClass("text-[10px] tracking-[0.16em]"),
-        className,
-      )}
-    >
-      Preview / Local
-    </span>
-  );
-}
-
-const PREVIEW_LOCAL_TITLE = "Preview / Local — not connected in Phase 1";
 
 /** Continuous timebase — ports Swift TimelineView(.animation). */
 function useOrbitalTime() {
@@ -349,9 +333,10 @@ function AstraPhoneOrb({ active, thinking }: { active: boolean; thinking?: boole
 }
 
 export default function Autonomy() {
-  // Phase 1 policy is Ask First. Mode chips are display-only until a mutating API exists.
-  const phase1Mode: AutonomyMode = "ask";
-  const { data: snapshot, isLoading } = useAutonomySnapshot();
+  const mode: AutonomyMode = "ask";
+  const [dismissedSuggestions, setDismissedSuggestions] = useState<string[]>([]);
+  const [command, setCommand] = useState("");
+  const { data: snapshot, isLoading, isError } = useAutonomySnapshot();
 
   const liveTasks = useMemo(() => {
     const items: QueueItem[] = [];
@@ -386,8 +371,8 @@ export default function Autonomy() {
       if (text === snapshot?.advisor.topRecommendation) return;
       rows.push({ id: `adv-${i}`, title: "Advisory", detail: text });
     });
-    return rows;
-  }, [snapshot]);
+    return rows.filter((s) => !dismissedSuggestions.includes(s.id));
+  }, [snapshot, dismissedSuggestions]);
 
   const primary = useMemo(
     () => liveTasks.find((t) => t.state === "running") ?? null,
@@ -397,8 +382,40 @@ export default function Autonomy() {
   const next = useMemo(() => liveTasks.filter((t) => t.state === "queued"), [liveTasks]);
   const suggestions = liveSuggestions;
 
+  const dismissSuggestion = (id: string) => {
+    setDismissedSuggestions((prev) => [...prev, id]);
+  };
+
   const hadesReachable = snapshot?.hadesReachable ?? false;
-  const working = snapshot?.orbState === "working";
+  const snapshotAvailable = Boolean(snapshot) && !isError;
+  const orbWorking = snapshotAvailable && snapshot?.orbState === "working";
+  const working = orbWorking;
+  const heroStatus = isLoading
+    ? "Snapshot syncing"
+    : !snapshotAvailable
+      ? "Snapshot unavailable"
+      : working
+        ? "Hades job observed"
+        : hadesReachable
+          ? "No active Hades job"
+          : "Hades unavailable";
+  const heroReadout = working
+    ? "Astra is observing work"
+    : !snapshotAvailable
+      ? "Status unknown"
+      : !hadesReachable
+        ? "Hades unavailable"
+        : "Astra is idle";
+  const idleHeadline = !snapshotAvailable
+    ? "STATUS UNKNOWN"
+    : !hadesReachable
+      ? "HADES UNAVAILABLE"
+      : "ASTRA IS IDLE";
+  const idleSubcopy = !snapshotAvailable
+    ? "Snapshot could not be read"
+    : !hadesReachable
+      ? "No live Hades status"
+      : "No active jobs";
 
   return (
     <div className="relative min-h-full overflow-hidden bg-[#05070f] text-slate-100">
@@ -421,7 +438,7 @@ export default function Autonomy() {
                 ),
               )}
             >
-              {working ? "Autonomy Active" : "Astra Idle"}
+              {heroStatus}
             </span>
             <span
               className={cn(
@@ -431,7 +448,7 @@ export default function Autonomy() {
             >
               {isLoading
                 ? "Syncing"
-                : !snapshot
+                : !snapshotAvailable
                   ? "No snapshot"
                   : hadesReachable
                     ? "Hades live"
@@ -446,15 +463,15 @@ export default function Autonomy() {
 
             <div className="min-w-0 text-center md:text-left">
               <p className={cn(hudClass("text-[#00f2ff] tracking-[0.35em]"))}>
-                {working ? "Astra is working" : !hadesReachable && snapshot ? "Hades unavailable" : "Astra is idle"}
+                {heroReadout}
               </p>
 
               {!primary && (
                 <div className="mt-3 space-y-1">
                   <h1 className="font-sans text-2xl font-semibold tracking-tight text-white md:text-[1.85rem]">
-                    ASTRA IS IDLE
+                    {idleHeadline}
                   </h1>
-                  <p className="mt-1 font-sans text-base text-cyan-100/85">No active jobs</p>
+                  <p className="mt-1 font-sans text-base text-cyan-100/85">{idleSubcopy}</p>
                 </div>
               )}
 
@@ -495,66 +512,66 @@ export default function Autonomy() {
               )}
 
               <div className="mt-5 flex flex-wrap items-center justify-center gap-2 md:justify-start">
-                {/* TODO(autonomy): wire Pause/Resume to a mutating control API when Product + CTO approve beyond read-only. */}
                 {working ? (
                   <Button
                     size="sm"
                     variant="outline"
                     disabled
-                    aria-disabled="true"
-                    title={PREVIEW_LOCAL_TITLE}
+                    title="Read-only snapshot: no pause backend action is wired."
                     className={cn(
-                      "gap-1.5 rounded-full border-amber-400/35 bg-transparent text-amber-50",
+                      "gap-1.5 rounded-full border-amber-400/35 bg-transparent text-amber-50 opacity-60",
                       hudClass("normal-case tracking-[0.18em]"),
                     )}
                   >
-                    <Pause className="h-3.5 w-3.5" /> Pause
+                    <Pause className="h-3.5 w-3.5" /> Pause unavailable
                   </Button>
                 ) : (
                   <Button
                     size="sm"
                     variant="outline"
                     disabled
-                    aria-disabled="true"
-                    title={PREVIEW_LOCAL_TITLE}
+                    title="Read-only snapshot: no resume backend action is wired."
                     className={cn(
-                      "gap-1.5 rounded-full border-[#00f2ff]/40 bg-transparent text-[#00f2ff]",
+                      "gap-1.5 rounded-full border-[#00f2ff]/40 bg-transparent text-[#00f2ff] opacity-60",
                       hudClass("normal-case tracking-[0.18em]"),
                     )}
                   >
-                    <Play className="h-3.5 w-3.5" /> Resume
+                    <Play className="h-3.5 w-3.5" /> Resume unavailable
                   </Button>
                 )}
-                <PreviewLocalBadge />
               </div>
             </div>
           </div>
         </section>
 
         {/* Command */}
-        {/* TODO(autonomy): wire command dispatch to a mutating Autonomy API when Product + CTO approve beyond read-only. */}
         <section className="rounded-3xl border border-cyan-400/20 bg-gradient-to-br from-cyan-500/10 via-black/50 to-purple-600/10 p-5 shadow-[0_0_40px_rgba(34,211,238,0.1)] md:p-6">
           <SectionLabel icon={<Sparkles className="h-3.5 w-3.5" />}>
-            What should I work on?
-            <PreviewLocalBadge />
+            Command preview
           </SectionLabel>
+          <p className="mb-3 font-sans text-sm text-slate-400">
+            Read-only Phase 1: commands are shown as UI preview only and are not sent to Astra.
+          </p>
 
-          <div className="flex items-center gap-2 rounded-2xl border border-cyan-400/30 bg-black/50 p-2 shadow-[0_0_20px_rgba(34,211,238,0.12)]">
+          <div
+            className={cn(
+              "flex items-center gap-2 rounded-2xl border bg-black/50 p-2 transition-shadow",
+              "border-cyan-400/30 opacity-75 shadow-[0_0_20px_rgba(34,211,238,0.12)]",
+            )}
+          >
             <input
-              disabled
-              readOnly
-              aria-disabled="true"
-              title={PREVIEW_LOCAL_TITLE}
-              placeholder="Tell Astra what you want accomplished while your computers are idle..."
-              className="min-w-0 flex-1 cursor-not-allowed bg-transparent px-3 py-3 font-sans text-sm text-cyan-50 placeholder:text-slate-500 outline-none disabled:opacity-60"
+              value={command}
+              onChange={(e) => setCommand(e.target.value)}
+              placeholder="Command entry preview — backend action not wired"
+              className="min-w-0 flex-1 bg-transparent px-3 py-3 font-sans text-sm text-cyan-50 placeholder:text-slate-500 outline-none"
+              aria-label="Command preview input"
             />
             <Button
               size="icon"
               disabled
-              aria-disabled="true"
-              title={PREVIEW_LOCAL_TITLE}
-              className="h-11 w-11 shrink-0 rounded-xl border border-cyan-300/40 bg-cyan-500/25 text-cyan-50"
-              aria-label="Send to Astra (Preview / Local)"
+              className="h-11 w-11 shrink-0 rounded-xl border border-cyan-300/40 bg-cyan-500/15 text-cyan-50 opacity-60"
+              aria-label="Send unavailable in read-only preview"
+              title="Read-only snapshot: no command backend action is wired."
             >
               <Send className="h-4 w-4" />
             </Button>
@@ -565,15 +582,13 @@ export default function Autonomy() {
               <button
                 key={chip}
                 type="button"
-                disabled
-                aria-disabled="true"
-                title={PREVIEW_LOCAL_TITLE}
+                onClick={() => setCommand(chip)}
                 className={cn(
-                  "cursor-not-allowed rounded-full border border-purple-400/25 bg-purple-500/10 px-3 py-1.5 text-purple-100 opacity-60",
+                  "rounded-full border border-purple-400/25 bg-purple-500/10 px-3 py-1.5 text-purple-100 transition hover:border-cyan-400/40 hover:bg-cyan-500/10 hover:text-cyan-100",
                   hudClass("normal-case tracking-[0.12em] text-[10px]"),
                 )}
               >
-                {chip}
+                {chip} · preview
               </button>
             ))}
           </div>
@@ -581,10 +596,7 @@ export default function Autonomy() {
 
         {/* Capabilities */}
         <section>
-          <SectionLabel>
-            What I can work on
-            <PreviewLocalBadge />
-          </SectionLabel>
+          <SectionLabel>Capability previews</SectionLabel>
           <div className="grid gap-4 md:grid-cols-3">
             {[
               {
@@ -615,11 +627,11 @@ export default function Autonomy() {
               <motion.button
                 key={card.key}
                 type="button"
+                whileHover={{ y: -2 }}
                 disabled
-                aria-disabled="true"
-                title={PREVIEW_LOCAL_TITLE}
+                title="Preview only: no autonomy command backend action is wired."
                 className={cn(
-                  "group cursor-not-allowed rounded-3xl border bg-gradient-to-br p-5 text-left opacity-70 shadow-[0_0_30px_rgba(0,0,0,0.25)]",
+                  "group rounded-3xl border bg-gradient-to-br p-5 text-left opacity-70 shadow-[0_0_30px_rgba(0,0,0,0.25)] transition",
                   card.accent,
                 )}
               >
@@ -629,7 +641,9 @@ export default function Autonomy() {
                 </div>
                 <h3 className={hudClass("text-sm text-white tracking-[0.16em]")}>{card.title}</h3>
                 <p className="mt-1 font-sans text-sm text-slate-300/90">{card.blurb}</p>
-                <p className={cn(hudClass("mt-4 text-cyan-200/90 tracking-[0.16em]"))}>{card.action}</p>
+                <p className={cn(hudClass("mt-4 text-cyan-200/90 tracking-[0.16em]"))}>
+                  {card.action} · preview only
+                </p>
               </motion.button>
             ))}
           </div>
@@ -709,7 +723,6 @@ export default function Autonomy() {
           <div className="rounded-3xl border border-fuchsia-400/15 bg-black/40 p-5 backdrop-blur-sm">
             <SectionLabel icon={<Sparkles className="h-3.5 w-3.5 text-fuchsia-300" />}>
               What I suggest
-              <PreviewLocalBadge />
             </SectionLabel>
             <div className="space-y-3">
               <AnimatePresence initial={false}>
@@ -725,33 +738,29 @@ export default function Autonomy() {
                     className="rounded-2xl border border-fuchsia-400/20 bg-gradient-to-br from-fuchsia-500/10 to-cyan-500/5 p-3"
                   >
                     <p className="font-sans text-sm leading-relaxed text-slate-100">{s.detail}</p>
-                    {/* TODO(autonomy): wire Approve / Not Now to a mutating advisor API when Product + CTO approve beyond read-only. */}
                     <div className="mt-3 flex gap-2">
                       <Button
                         size="sm"
                         variant="outline"
                         disabled
-                        aria-disabled="true"
-                        title={PREVIEW_LOCAL_TITLE}
+                        title="Read-only snapshot: no approval backend action is wired."
                         className={cn(
-                          "flex-1 gap-1 rounded-full border-[#00f2ff]/55 bg-transparent text-[#00f2ff]",
+                          "flex-1 gap-1 rounded-full border-[#00f2ff]/55 bg-transparent text-[#00f2ff] opacity-60",
                           hudClass("normal-case tracking-[0.16em]"),
                         )}
                       >
-                        <Check className="h-3.5 w-3.5" /> Approve
+                        <Check className="h-3.5 w-3.5" /> Approval unavailable
                       </Button>
                       <Button
                         size="sm"
                         variant="outline"
-                        disabled
-                        aria-disabled="true"
-                        title={PREVIEW_LOCAL_TITLE}
+                        onClick={() => dismissSuggestion(s.id)}
                         className={cn(
-                          "flex-1 gap-1 rounded-full border-white/25 bg-transparent text-slate-200",
+                          "flex-1 gap-1 rounded-full border-white/25 bg-transparent text-slate-200 hover:bg-white/5",
                           hudClass("normal-case tracking-[0.16em]"),
                         )}
                       >
-                        <X className="h-3.5 w-3.5" /> Not Now
+                        <X className="h-3.5 w-3.5" /> Hide locally
                       </Button>
                     </div>
                   </motion.div>
@@ -764,7 +773,6 @@ export default function Autonomy() {
         <section className="rounded-3xl border border-white/10 bg-black/30 p-5">
           <SectionLabel icon={<CheckCircle2 className="h-3.5 w-3.5 text-emerald-300" />}>
             What I&apos;m doing
-            <PreviewLocalBadge />
           </SectionLabel>
           <div className="space-y-2">
             {activity.length === 0 && (
@@ -788,26 +796,20 @@ export default function Autonomy() {
                   size="sm"
                   variant="ghost"
                   disabled
-                  aria-disabled="true"
-                  title={PREVIEW_LOCAL_TITLE}
-                  className={cn("gap-1.5 text-cyan-200/80", hudClass("normal-case tracking-[0.14em]"))}
+                  title="Preview only: result viewing is not wired to an Astra backend action."
+                  className={cn("gap-1.5 text-cyan-200/80 hover:text-cyan-100", hudClass("normal-case tracking-[0.14em]"))}
                 >
-                  <Eye className="h-3.5 w-3.5" /> {item.resultLabel}
+                  <Eye className="h-3.5 w-3.5" /> {item.resultLabel} unavailable
                 </Button>
               </div>
             ))}
           </div>
         </section>
 
-        {/* TODO(autonomy): persist mode via a mutating settings API when Product + CTO approve beyond read-only. Auto remains forbidden until explicitly approved. */}
         <section className="rounded-3xl border border-white/10 bg-black/40 p-5 md:p-6">
-          <SectionLabel>
-            Autonomy settings
-            <PreviewLocalBadge />
-          </SectionLabel>
+          <SectionLabel>Autonomy settings</SectionLabel>
           <p className="mb-4 max-w-2xl font-sans text-sm text-slate-400">
-            Phase 1 is read-only. Ask First is the displayed policy. Mode controls are
-            Preview / Local and are not connected.
+            Preview-only controls for the future autonomy contract. They are not persisted and do not change Astra backend behavior.
           </p>
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
             {MODE_OPTIONS.map((opt) => (
@@ -815,19 +817,16 @@ export default function Autonomy() {
                 key={opt.id}
                 type="button"
                 disabled
-                aria-disabled="true"
-                aria-pressed={opt.id === phase1Mode}
-                title={PREVIEW_LOCAL_TITLE}
+                title="Preview only: mode changes are not wired to an Astra backend action."
                 className={cn(
-                  "cursor-not-allowed rounded-2xl border px-4 py-3 text-left opacity-70",
-                  opt.id === phase1Mode
+                  "rounded-2xl border px-4 py-3 text-left opacity-70 transition",
+                  mode === opt.id
                     ? "border-cyan-400/45 bg-cyan-500/15 shadow-[0_0_24px_rgba(34,211,238,0.18)]"
-                    : "border-white/10 bg-white/[0.02]",
-                  opt.id === "auto" && "opacity-40",
+                    : "border-white/10 bg-white/[0.02] hover:border-white/20",
                 )}
               >
-                <p className={cn(hudClass(opt.id === phase1Mode ? "text-cyan-100" : "text-white"))}>
-                  {opt.label}
+                <p className={cn(hudClass(mode === opt.id ? "text-cyan-100" : "text-white"))}>
+                  {opt.label} · preview
                 </p>
                 <p className="mt-1 font-sans text-[11px] text-slate-500">{opt.hint}</p>
               </button>
