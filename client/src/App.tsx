@@ -13,6 +13,7 @@ import Nodes from "@/pages/Nodes";
 import Jobs from "@/pages/Jobs";
 import Settings from "@/pages/Settings";
 import Autonomy from "@/pages/Autonomy";
+import AstraBrainLab from "@/pages/AstraBrainLab";
 
 function Router() {
   return (
@@ -26,6 +27,7 @@ function Router() {
           <Route path="/jobs" component={Jobs} />
           <Route path="/settings" component={Settings} />
           <Route path="/autonomy" component={Autonomy} />
+          <Route path="/brain-lab" component={AstraBrainLab} />
           <Route component={NotFound} />
         </Switch>
       </main>
