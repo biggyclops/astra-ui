@@ -18,9 +18,21 @@ fi
 
 # Explicitly enter the validated repository root before any Git or npm commands
 if [[ -d "$REPO_ROOT/.git" || -f "$REPO_ROOT/.git" ]]; then
-  if [[ "$REPO_ROOT" == "/home/comea/astra-ui/astra-ui" ]]; then
-    echo "FAIL: Unauthorized repository path: $REPO_ROOT"
-    exit 1
+  if [[ -n "${GITHUB_ACTIONS:-}" ]]; then
+    if [[ "${GITHUB_ACTIONS}" != "true" || "${GITHUB_REPOSITORY:-}" != "biggyclops/astra-ui" || "${GITHUB_WORKSPACE:-}" != "$REPO_ROOT" ]]; then
+      echo "FAIL: GitHub Actions identity validation failed"
+      exit 1
+    fi
+    REMOTE_URL=$(git -C "$REPO_ROOT" remote get-url origin 2>/dev/null || echo "")
+    if [[ "$REMOTE_URL" != "$EXPECTED_REMOTE" && "$REMOTE_URL" != "${EXPECTED_REMOTE%.git}" ]]; then
+      echo "FAIL: Unexpected remote in GitHub Actions: $REMOTE_URL"
+      exit 1
+    fi
+  else
+    if [[ "$REPO_ROOT" != "/home/comea/astra-ui/astra-ui-main-clean" ]]; then
+      echo "FAIL: Unauthorized repository path: $REPO_ROOT"
+      exit 1
+    fi
   fi
   cd "$REPO_ROOT" || { echo "FAIL: Cannot cd to validated REPO_ROOT"; exit 1; }
 else
