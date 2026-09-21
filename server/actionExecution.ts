@@ -13,7 +13,9 @@ export type ActionState =
   | "cancelled"
   | "expired";
 
-export type ActionType = "validate_execution_framework";
+export type ActionType =
+  | "validate_execution_framework"
+  | "force_refresh_node_status";
 
 export type AuditEvent = {
   timestamp: string;
@@ -41,7 +43,10 @@ export type Action = {
 
 const store = new Map<string, Action>();
 
-const SUPPORTED_TYPES: ActionType[] = ["validate_execution_framework"];
+const SUPPORTED_TYPES: ActionType[] = [
+  "validate_execution_framework",
+  "force_refresh_node_status",
+];
 
 function nowIso(): string {
   return new Date().toISOString();
@@ -153,7 +158,53 @@ export function getAuditEvents(actionId: string): AuditEvent[] {
   return action ? action.auditEvents : [];
 }
 
+// Real execution handler for force_refresh_node_status
+// Reuses the existing status refresh mechanism (statusCacheTime reset + getOrRefreshStatus)
+let refreshFn: (() => Promise<{ nodes: any[]; checkedAt: string }>) | null = null;
+
+export function registerRefreshHandler(fn: () => Promise<{ nodes: any[]; checkedAt: string }>): void {
+  refreshFn = fn;
+}
+
+export async function executeAction(actionId: string, actor: string): Promise<{ action: Action | null; error?: string }> {
+  const action = store.get(actionId);
+  if (!action) return { action: null, error: "Action not found" };
+  if (action.state !== "approved") {
+    return { action: null, error: `Invalid transition from ${action.state}` };
+  }
+
+  recordTransition(action, "running", actor, "Execution started");
+
+  if (action.actionType === "force_refresh_node_status") {
+    if (!refreshFn) {
+      recordTransition(action, "failed", actor, "No refresh handler registered");
+      action.error = "Refresh handler not available";
+      return { action, error: "Refresh handler not registered" };
+    }
+    try {
+      const result = await Promise.race([
+        refreshFn(),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error("Timeout")), 8000)
+        ),
+      ]);
+      recordTransition(action, "succeeded", actor, "Node status refreshed");
+      action.result = { refreshedAt: result.checkedAt, nodeCount: result.nodes.length };
+      return { action };
+    } catch (e: any) {
+      recordTransition(action, "failed", actor, e?.message || "Refresh failed");
+      action.error = e?.message || "Refresh failed";
+      return { action, error: action.error };
+    }
+  }
+
+  recordTransition(action, "failed", actor, "Unsupported executable action");
+  action.error = "Unsupported action type for execution";
+  return { action, error: action.error };
+}
+
 // For testing only
 export function _resetStore(): void {
   store.clear();
+  refreshFn = null;
 }

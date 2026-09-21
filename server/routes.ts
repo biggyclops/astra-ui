@@ -414,6 +414,13 @@ export async function registerRoutes(app: Express) {
   // When mounting via apiRouter at "/api", pass "/autonomy/snapshot" instead (Q-001).
   registerAutonomyRoutes(app, () => getOrRefreshStatus(), "/api/autonomy/snapshot");
 
+  // Wire the real status refresh handler into the action execution framework (AUTO-003B)
+  import("./actionExecution").then((mod) => {
+    if (mod.registerRefreshHandler) {
+      mod.registerRefreshHandler(getOrRefreshStatus);
+    }
+  }).catch(() => {});
+
   app.post("/api/status/check", async (_req: Request, res: Response) => {
     statusCacheTime = 0;
     res.json(await getOrRefreshStatus());
