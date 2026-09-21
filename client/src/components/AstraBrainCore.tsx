@@ -44,22 +44,22 @@ const EDGES: Edge[] = [
 // Generate dense micro-nodes in circular brain field
 const generateMicroNodes = (count: number): MicroNode[] => {
   const nodes: MicroNode[] = [];
-  const centerR = 280;
+  const centerR = 295;
   
   for (let i = 0; i < count; i++) {
-    // Bias toward circular distribution with some clustering
-    const angle = (i / count) * Math.PI * 2 + (Math.random() - 0.5) * 0.8;
-    const radius = Math.pow(Math.random(), 0.6) * centerR;
-    const x = Math.cos(angle) * radius + (Math.random() - 0.5) * 40;
-    const y = Math.sin(angle) * radius + (Math.random() - 0.5) * 40;
-    const r = 1.2 + Math.random() * 2.2;
-    const alpha = 0.25 + Math.random() * 0.55;
+    // Much denser, more organic clustering like the reference
+    const angle = (i / count) * Math.PI * 2 + (Math.random() - 0.5) * 1.4;
+    const radius = Math.pow(Math.random(), 0.45) * centerR;
+    const x = Math.cos(angle) * radius + (Math.random() - 0.5) * 55;
+    const y = Math.sin(angle) * radius + (Math.random() - 0.5) * 55;
+    const r = 0.9 + Math.random() * 2.6;
+    const alpha = 0.22 + Math.random() * 0.62;
     nodes.push({ x, y, r, alpha });
   }
   return nodes;
 };
 
-const MICRO_NODES: MicroNode[] = generateMicroNodes(118);
+const MICRO_NODES: MicroNode[] = generateMicroNodes(162);
 
 const CENTER = { x: 0, y: 0 };
 
