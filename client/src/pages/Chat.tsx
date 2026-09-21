@@ -4,6 +4,7 @@ import { MessageCard } from "@/components/MessageCard";
 import { Send, Paperclip, Mic, Bot, User, Sparkles, Command, X, RefreshCw, Radio } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import AstraBrainCore from "@/components/AstraBrainCore";
 
 export default function Chat() {
   const { data: messages, isLoading, live, setLive, refresh } = useMessages(2000);
@@ -118,6 +119,11 @@ export default function Chat() {
           <div className="px-2 py-1 rounded bg-white/5 border border-white/5">v2.4.0</div>
         </div>
       </header>
+
+      {/* Astra Brain Core - Phase 1 Preview */}
+      <div className="px-8 pt-6 pb-2">
+        <AstraBrainCore />
+      </div>
 
       {/* Messages Area */}
       <div 
