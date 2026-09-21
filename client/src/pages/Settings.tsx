@@ -67,7 +67,7 @@ function IdentitySection() {
             data-testid="input-identity-name"
           />
         </SettingRow>
-        <SettingRow label="Tone" description="Affects UI copy and response style.">
+        <SettingRow label="Tone" description="UI preference only (no backend effect yet).">
           <Select value={identity.tone} onValueChange={(v) => updateSection("identity", { tone: v as Tone })}>
             <SelectTrigger className="w-36 h-8 text-sm bg-white/5 border-white/10" data-testid="select-tone">
               <SelectValue />
@@ -80,7 +80,7 @@ function IdentitySection() {
             </SelectContent>
           </Select>
         </SettingRow>
-        <SettingRow label="Lore Mode" description="Operator-style responses: brief summaries, checklists, commands.">
+        <SettingRow label="Lore Mode" description="UI preference only (no backend effect yet).">
           <Switch
             checked={identity.loreMode}
             onCheckedChange={(v) => updateSection("identity", { loreMode: v })}
@@ -141,11 +141,12 @@ function NodesSection() {
 
   const runConnectivityTest = async () => {
     setTesting(true);
+    await new Promise(r => setTimeout(r, 400));
+    // Connectivity test is currently a local-only simulation.
+    // Real backend health checks are not yet wired.
     const results: Record<string, "online" | "offline" | "unknown"> = {};
-    await new Promise(r => setTimeout(r, 800));
     for (const node of nodesNetwork.registry) {
-      const rand = Math.random();
-      results[node.id] = rand > 0.2 ? "online" : rand > 0.1 ? "unknown" : "offline";
+      results[node.id] = "unknown";
     }
     setTestResults(results);
     setTesting(false);
@@ -153,7 +154,7 @@ function NodesSection() {
 
   return (
     <div>
-      <SectionHeader title="Nodes & Network" description="Manage node registry and connectivity." />
+      <SectionHeader title="Nodes & Network" description="Manage local node registry (edits are client-only until backend persistence is implemented)." />
 
       <div className="mb-6">
         <div className="flex items-center justify-between mb-3">
@@ -357,7 +358,7 @@ function JobsSection() {
 
   return (
     <div>
-      <SectionHeader title="Jobs" description="Control job execution and history." />
+      <SectionHeader title="Jobs" description="Prototype job preferences (local UI state only; backend enforcement not yet implemented)." />
       <div className="space-y-1 divide-y divide-white/5">
         <SettingRow label="Max Concurrent Jobs" description={`Currently: ${jobs.maxConcurrentJobs}`}>
           <div className="w-32">
@@ -371,7 +372,7 @@ function JobsSection() {
             />
           </div>
         </SettingRow>
-        <SettingRow label="Auto-open Output" description="Open completed job output in Media Wall.">
+        <SettingRow label="Auto-open Output" description="Local UI preference (prototype only).">
           <Switch
             checked={jobs.autoOpenOutput}
             onCheckedChange={(v) => updateSection("jobs", { autoOpenOutput: v })}
