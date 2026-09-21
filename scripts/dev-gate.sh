@@ -16,6 +16,14 @@ else
   REPO_ROOT="$(pwd)"
 fi
 
+# Explicitly enter the validated repository root before any Git or npm commands
+if [[ -d "$REPO_ROOT/.git" || -f "$REPO_ROOT/.git" ]]; then
+  cd "$REPO_ROOT" || { echo "FAIL: Cannot cd to validated REPO_ROOT"; exit 1; }
+else
+  echo "FAIL: Validated REPO_ROOT does not contain a git repository"
+  exit 1
+fi
+
 echo "=== Astra Development Gate v1 ==="
 echo "Timestamp: $(date -Iseconds)"
 echo
