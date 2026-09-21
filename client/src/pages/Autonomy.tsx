@@ -807,6 +807,9 @@ export default function Autonomy() {
           </div>
         </section>
 
+        {/* AUTO-003B: Force Refresh Node Status (operator UI) */}
+        <ForceRefreshNodeStatus />
+
         <section className="rounded-3xl border border-white/10 bg-black/40 p-5 md:p-6">
           <SectionLabel>Autonomy settings</SectionLabel>
           <p className="mb-4 max-w-2xl font-sans text-sm text-slate-400">
@@ -929,6 +932,169 @@ export function ActionExecutionValidation() {
       )}
 
       {error && <p className="text-red-400 text-xs mt-2">{error}</p>}
+    </section>
+  );
+}
+
+// AUTO-003B: Force Refresh Node Status operator UI
+function ForceRefreshNodeStatus() {
+  const [action, setAction] = useState<any>(null);
+  const [audit, setAudit] = useState<any[]>([]);
+  const [recent, setRecent] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string>("");
+
+  async function loadRecent() {
+    try {
+      const res = await apiRequest("GET", "/api/actions?limit=5");
+      setRecent(await res.json());
+    } catch {}
+  }
+
+  async function loadAudit(id: string) {
+    const res = await apiRequest("GET", `/api/actions/${id}/audit`);
+    setAudit(await res.json());
+  }
+
+  async function propose() {
+    setError("");
+    setLoading(true);
+    try {
+      const res = await apiRequest("POST", "/api/actions", {
+        actionType: "force_refresh_node_status",
+        requester: "ui-operator",
+        parameters: {},
+      });
+      const data = await res.json();
+      setAction(data);
+      await loadAudit(data.actionId);
+      await loadRecent();
+    } catch (e: any) {
+      setError(e.message || "Failed to request refresh");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function act(endpoint: string, body: any) {
+    if (!action) return;
+    setError("");
+    try {
+      const res = await apiRequest("POST", `/api/actions/${action.actionId}${endpoint}`, body);
+      const data = await res.json();
+      setAction(data);
+      await loadAudit(action.actionId);
+      await loadRecent();
+    } catch (e: any) {
+      setError(e.message || "Action failed");
+    }
+  }
+
+  const canApprove = action?.state === "awaiting_approval";
+  const canReject = action?.state === "awaiting_approval";
+  const canCancel = ["proposed", "awaiting_approval", "approved"].includes(action?.state);
+
+  const stateColor =
+    action?.state === "awaiting_approval" ? "text-amber-400" :
+    action?.state === "running" ? "text-cyan-400" :
+    action?.state === "succeeded" ? "text-emerald-400" :
+    action?.state === "failed" || action?.state === "rejected" ? "text-red-400" : "text-slate-400";
+
+  useEffect(() => { loadRecent(); }, []);
+
+  return (
+    <section className="rounded-3xl border border-white/10 bg-black/40 p-5 md:p-6">
+      <div className="mb-4 flex items-center justify-between">
+        <div>
+          <div className="font-mono text-xs uppercase tracking-[0.2em] text-cyan-400/80">AUTO-003B</div>
+          <h3 className="font-mono text-xl tracking-[0.1em] text-white">Force Refresh Node Status</h3>
+        </div>
+        <div className="text-right text-[10px] font-mono text-slate-500">
+          Target: local node-status service<br />Risk: LOW · Approval: REQUIRED
+        </div>
+      </div>
+
+      <p className="mb-4 max-w-3xl font-sans text-sm text-slate-400">
+        Requests an immediate refresh of the local node status cache. The action is proposed,
+        requires approval, then executes against the node-status service.
+      </p>
+
+      <div className="flex flex-wrap gap-3">
+        <button
+          onClick={propose}
+          disabled={loading || (action && !["succeeded","failed","rejected","cancelled"].includes(action.state))}
+          className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 font-mono text-sm tracking-[0.14em] hover:bg-white/10 disabled:opacity-50"
+        >
+          {loading ? "REQUESTING..." : "REQUEST REFRESH"}
+        </button>
+
+        {canApprove && (
+          <button onClick={() => act("/approve", { approver: "ui-approver" })} className="rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-2 font-mono text-sm text-emerald-300 hover:bg-emerald-500/20">
+            APPROVE
+          </button>
+        )}
+        {canReject && (
+          <button onClick={() => act("/reject", { approver: "ui-approver", reason: "operator" })} className="rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-2 font-mono text-sm text-red-300 hover:bg-red-500/20">
+            REJECT
+          </button>
+        )}
+        {canCancel && (
+          <button onClick={() => act("/cancel", { actor: "ui-operator" })} className="rounded-xl border border-slate-500/40 bg-slate-500/10 px-4 py-2 font-mono text-sm text-slate-300 hover:bg-slate-500/20">
+            CANCEL
+          </button>
+        )}
+      </div>
+
+      {action && (
+        <div className="mt-4 space-y-2 rounded-2xl border border-white/10 bg-black/60 p-4 font-mono text-sm">
+          <div>State: <span className={stateColor}>{action.state}</span></div>
+          <div>ActionId: {action.actionId}</div>
+          {action.result?.refreshedAt && (
+            <div className="text-emerald-400">refreshedAt: {action.result.refreshedAt} · nodeCount: {action.result.nodeCount}</div>
+          )}
+        </div>
+      )}
+
+      {recent.length > 0 && (
+        <div className="mt-4">
+          <div className="mb-1 text-xs uppercase tracking-[0.14em] text-slate-500">Recent Actions</div>
+          <div className="space-y-1 text-xs font-mono">
+            {recent.slice(0,5).map((a,i) => (
+              <div key={i} className="flex justify-between border-b border-white/5 py-0.5">
+                <span>{a.actionId}</span>
+                <span className={a.state==="succeeded"?"text-emerald-400":a.state==="failed"?"text-red-400":"text-amber-400"}>{a.state}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {audit.length > 0 && (
+        <div className="mt-4">
+          <div className="mb-1 text-xs uppercase tracking-[0.14em] text-slate-500">Audit Timeline</div>
+          <pre className="max-h-40 overflow-auto rounded bg-black/60 p-2 text-[10px]">{JSON.stringify(audit, null, 2)}</pre>
+        </div>
+      )}
+
+      <div className="mt-4 grid gap-4 text-xs text-slate-400 md:grid-cols-2">
+        <div>
+          <div className="font-mono text-emerald-400/80">CAN DO</div>
+          <ul className="mt-1 list-disc pl-4">
+            <li>Trigger node-status service refresh</li>
+            <li>Return refreshedAt + nodeCount on success</li>
+          </ul>
+        </div>
+        <div>
+          <div className="font-mono text-red-400/80">CANNOT DO</div>
+          <ul className="mt-1 list-disc pl-4">
+            <li>Modify node configuration</li>
+            <li>Restart or re-provision nodes</li>
+            <li>Affect consensus or chain state</li>
+          </ul>
+        </div>
+      </div>
+
+      {error && <p className="mt-2 text-xs text-red-400">{error}</p>}
     </section>
   );
 }
