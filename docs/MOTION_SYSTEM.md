@@ -1,5 +1,14 @@
 # Astra Motion System
 
+| Field | Value |
+|---|---|
+| **Version** | 0.1.0 |
+| **Status** | Outline |
+| **Owner** | UI/UX Director |
+| **Maintained by** | Documentation Manager |
+| **Last Reviewed** | 2026-09-16 |
+| **Approved By** | — (outline only) |
+
 **Status:** Scaffold (2026-09-16)  
 **Owner:** UI/UX Director; maintained by Documentation Manager  
 **See also:** [DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md) · [COMPONENT_LIBRARY.md](./COMPONENT_LIBRARY.md) · Phone token reference (`ASTRA_DESIGN_SYSTEM.md` beside visual-language skill)

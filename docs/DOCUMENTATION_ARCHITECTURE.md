@@ -93,6 +93,21 @@ docs/
 
 ## Versioning
 
+### Versioning of guidance docs
+
+Canon guidance docs carry a metadata table:
+
+- **Version** (SemVer)
+- **Status**
+- **Owner**
+- **Last Reviewed**
+- **Approved By**
+
+Required from v1 for: `DESIGN_SYSTEM.md`, `PRODUCT.md`, `ARCHITECTURE.md`, `ROADMAP.md` (and recommended for `COMPONENT_LIBRARY.md`, `MOTION_SYSTEM.md`).
+Bump **Version** when major guidance changes. Git history remains the audit trail.
+
+## Versioning (git)
+
 - Git history on `astra-ui` is the audit trail for docs.
 - Prefer docs-only commits with clear messages (`docs: …`).
 - Optional tags: `docs-YYYY.MM.DD` when a milestone summary ships.

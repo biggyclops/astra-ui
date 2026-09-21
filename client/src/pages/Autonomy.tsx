@@ -49,10 +49,10 @@ type Suggestion = {
 };
 
 const MODE_OPTIONS: { id: AutonomyMode; label: string; hint: string }[] = [
-  { id: "off", label: "Off", hint: "Autonomy sleeps" },
-  { id: "suggest", label: "Suggest Only", hint: "Ideas only — never runs" },
-  { id: "ask", label: "Ask First", hint: "Approve each action" },
-  { id: "auto", label: "Auto Run Approved", hint: "Run pre-approved work" },
+  { id: "off", label: "Off", hint: "Preview state only" },
+  { id: "suggest", label: "Suggest Only", hint: "Preview state only" },
+  { id: "ask", label: "Ask First", hint: "Preview state only" },
+  { id: "auto", label: "Auto Run Approved", hint: "Preview state only" },
 ];
 
 const COMMAND_CHIPS = [
@@ -333,12 +333,10 @@ function AstraPhoneOrb({ active, thinking }: { active: boolean; thinking?: boole
 }
 
 export default function Autonomy() {
-  const [mode, setMode] = useState<AutonomyMode>("ask");
-  const [operatorPaused, setOperatorPaused] = useState(false);
+  const mode: AutonomyMode = "ask";
   const [dismissedSuggestions, setDismissedSuggestions] = useState<string[]>([]);
   const [command, setCommand] = useState("");
-  const [commandPulse, setCommandPulse] = useState(false);
-  const { data: snapshot, isLoading } = useAutonomySnapshot();
+  const { data: snapshot, isLoading, isError } = useAutonomySnapshot();
 
   const liveTasks = useMemo(() => {
     const items: QueueItem[] = [];
@@ -384,32 +382,40 @@ export default function Autonomy() {
   const next = useMemo(() => liveTasks.filter((t) => t.state === "queued"), [liveTasks]);
   const suggestions = liveSuggestions;
 
-  const pauseAll = () => {
-    setOperatorPaused(true);
-  };
-
-  const resumeAll = () => {
-    setOperatorPaused(false);
-  };
-
   const dismissSuggestion = (id: string) => {
     setDismissedSuggestions((prev) => [...prev, id]);
   };
 
-  const approveSuggestion = (id: string) => {
-    setDismissedSuggestions((prev) => [...prev, id]);
-  };
-
-  const sendCommand = () => {
-    if (!command.trim()) return;
-    setCommandPulse(true);
-    setTimeout(() => setCommandPulse(false), 600);
-    setCommand("");
-  };
-
   const hadesReachable = snapshot?.hadesReachable ?? false;
-  const orbWorking = !operatorPaused && mode !== "off" && snapshot?.orbState === "working";
+  const snapshotAvailable = Boolean(snapshot) && !isError;
+  const orbWorking = snapshotAvailable && snapshot?.orbState === "working";
   const working = orbWorking;
+  const heroStatus = isLoading
+    ? "Snapshot syncing"
+    : !snapshotAvailable
+      ? "Snapshot unavailable"
+      : working
+        ? "Hades job observed"
+        : hadesReachable
+          ? "No active Hades job"
+          : "Hades unavailable";
+  const heroReadout = working
+    ? "Astra is observing work"
+    : !snapshotAvailable
+      ? "Status unknown"
+      : !hadesReachable
+        ? "Hades unavailable"
+        : "Astra is idle";
+  const idleHeadline = !snapshotAvailable
+    ? "STATUS UNKNOWN"
+    : !hadesReachable
+      ? "HADES UNAVAILABLE"
+      : "ASTRA IS IDLE";
+  const idleSubcopy = !snapshotAvailable
+    ? "Snapshot could not be read"
+    : !hadesReachable
+      ? "No live Hades status"
+      : "No active jobs";
 
   return (
     <div className="relative min-h-full overflow-hidden bg-[#05070f] text-slate-100">
@@ -432,7 +438,7 @@ export default function Autonomy() {
                 ),
               )}
             >
-              {working ? "Autonomy Active" : operatorPaused || mode === "off" ? "Autonomy Paused" : "Astra Idle"}
+              {heroStatus}
             </span>
             <span
               className={cn(
@@ -442,7 +448,7 @@ export default function Autonomy() {
             >
               {isLoading
                 ? "Syncing"
-                : !snapshot
+                : !snapshotAvailable
                   ? "No snapshot"
                   : hadesReachable
                     ? "Hades live"
@@ -457,15 +463,15 @@ export default function Autonomy() {
 
             <div className="min-w-0 text-center md:text-left">
               <p className={cn(hudClass("text-[#00f2ff] tracking-[0.35em]"))}>
-                {working ? "Astra is working" : !hadesReachable && snapshot ? "Hades unavailable" : operatorPaused || mode === "off" ? "Astra is paused" : "Astra is idle"}
+                {heroReadout}
               </p>
 
               {!primary && (
                 <div className="mt-3 space-y-1">
                   <h1 className="font-sans text-2xl font-semibold tracking-tight text-white md:text-[1.85rem]">
-                    ASTRA IS IDLE
+                    {idleHeadline}
                   </h1>
-                  <p className="mt-1 font-sans text-base text-cyan-100/85">No active jobs</p>
+                  <p className="mt-1 font-sans text-base text-cyan-100/85">{idleSubcopy}</p>
                 </div>
               )}
 
@@ -510,25 +516,27 @@ export default function Autonomy() {
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={pauseAll}
+                    disabled
+                    title="Read-only snapshot: no pause backend action is wired."
                     className={cn(
-                      "gap-1.5 rounded-full border-amber-400/35 bg-transparent text-amber-50 hover:bg-amber-500/10",
+                      "gap-1.5 rounded-full border-amber-400/35 bg-transparent text-amber-50 opacity-60",
                       hudClass("normal-case tracking-[0.18em]"),
                     )}
                   >
-                    <Pause className="h-3.5 w-3.5" /> Pause
+                    <Pause className="h-3.5 w-3.5" /> Pause unavailable
                   </Button>
                 ) : (
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={resumeAll}
+                    disabled
+                    title="Read-only snapshot: no resume backend action is wired."
                     className={cn(
-                      "gap-1.5 rounded-full border-[#00f2ff]/40 bg-transparent text-[#00f2ff] hover:bg-[#00f2ff]/10",
+                      "gap-1.5 rounded-full border-[#00f2ff]/40 bg-transparent text-[#00f2ff] opacity-60",
                       hudClass("normal-case tracking-[0.18em]"),
                     )}
                   >
-                    <Play className="h-3.5 w-3.5" /> Resume
+                    <Play className="h-3.5 w-3.5" /> Resume unavailable
                   </Button>
                 )}
               </div>
@@ -539,31 +547,31 @@ export default function Autonomy() {
         {/* Command */}
         <section className="rounded-3xl border border-cyan-400/20 bg-gradient-to-br from-cyan-500/10 via-black/50 to-purple-600/10 p-5 shadow-[0_0_40px_rgba(34,211,238,0.1)] md:p-6">
           <SectionLabel icon={<Sparkles className="h-3.5 w-3.5" />}>
-            What should I work on?
+            Command preview
           </SectionLabel>
+          <p className="mb-3 font-sans text-sm text-slate-400">
+            Read-only Phase 1: commands are shown as UI preview only and are not sent to Astra.
+          </p>
 
           <div
             className={cn(
               "flex items-center gap-2 rounded-2xl border bg-black/50 p-2 transition-shadow",
-              commandPulse
-                ? "border-cyan-300/60 shadow-[0_0_28px_rgba(34,211,238,0.35)]"
-                : "border-cyan-400/30 shadow-[0_0_20px_rgba(34,211,238,0.12)]",
+              "border-cyan-400/30 opacity-75 shadow-[0_0_20px_rgba(34,211,238,0.12)]",
             )}
           >
             <input
               value={command}
               onChange={(e) => setCommand(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") sendCommand();
-              }}
-              placeholder="Tell Astra what you want accomplished while your computers are idle..."
+              placeholder="Command entry preview — backend action not wired"
               className="min-w-0 flex-1 bg-transparent px-3 py-3 font-sans text-sm text-cyan-50 placeholder:text-slate-500 outline-none"
+              aria-label="Command preview input"
             />
             <Button
               size="icon"
-              onClick={sendCommand}
-              className="h-11 w-11 shrink-0 rounded-xl border border-cyan-300/40 bg-cyan-500/25 text-cyan-50 hover:bg-cyan-500/40"
-              aria-label="Send to Astra"
+              disabled
+              className="h-11 w-11 shrink-0 rounded-xl border border-cyan-300/40 bg-cyan-500/15 text-cyan-50 opacity-60"
+              aria-label="Send unavailable in read-only preview"
+              title="Read-only snapshot: no command backend action is wired."
             >
               <Send className="h-4 w-4" />
             </Button>
@@ -580,7 +588,7 @@ export default function Autonomy() {
                   hudClass("normal-case tracking-[0.12em] text-[10px]"),
                 )}
               >
-                {chip}
+                {chip} · preview
               </button>
             ))}
           </div>
@@ -588,7 +596,7 @@ export default function Autonomy() {
 
         {/* Capabilities */}
         <section>
-          <SectionLabel>What I can work on</SectionLabel>
+          <SectionLabel>Capability previews</SectionLabel>
           <div className="grid gap-4 md:grid-cols-3">
             {[
               {
@@ -620,9 +628,10 @@ export default function Autonomy() {
                 key={card.key}
                 type="button"
                 whileHover={{ y: -2 }}
-                onClick={() => setCommand(card.action)}
+                disabled
+                title="Preview only: no autonomy command backend action is wired."
                 className={cn(
-                  "group rounded-3xl border bg-gradient-to-br p-5 text-left shadow-[0_0_30px_rgba(0,0,0,0.25)] transition",
+                  "group rounded-3xl border bg-gradient-to-br p-5 text-left opacity-70 shadow-[0_0_30px_rgba(0,0,0,0.25)] transition",
                   card.accent,
                 )}
               >
@@ -632,7 +641,9 @@ export default function Autonomy() {
                 </div>
                 <h3 className={hudClass("text-sm text-white tracking-[0.16em]")}>{card.title}</h3>
                 <p className="mt-1 font-sans text-sm text-slate-300/90">{card.blurb}</p>
-                <p className={cn(hudClass("mt-4 text-cyan-200/90 tracking-[0.16em]"))}>{card.action}</p>
+                <p className={cn(hudClass("mt-4 text-cyan-200/90 tracking-[0.16em]"))}>
+                  {card.action} · preview only
+                </p>
               </motion.button>
             ))}
           </div>
@@ -731,13 +742,14 @@ export default function Autonomy() {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => approveSuggestion(s.id)}
+                        disabled
+                        title="Read-only snapshot: no approval backend action is wired."
                         className={cn(
-                          "flex-1 gap-1 rounded-full border-[#00f2ff]/55 bg-transparent text-[#00f2ff] hover:bg-[#00f2ff]/10",
+                          "flex-1 gap-1 rounded-full border-[#00f2ff]/55 bg-transparent text-[#00f2ff] opacity-60",
                           hudClass("normal-case tracking-[0.16em]"),
                         )}
                       >
-                        <Check className="h-3.5 w-3.5" /> Approve
+                        <Check className="h-3.5 w-3.5" /> Approval unavailable
                       </Button>
                       <Button
                         size="sm"
@@ -748,7 +760,7 @@ export default function Autonomy() {
                           hudClass("normal-case tracking-[0.16em]"),
                         )}
                       >
-                        <X className="h-3.5 w-3.5" /> Not Now
+                        <X className="h-3.5 w-3.5" /> Hide locally
                       </Button>
                     </div>
                   </motion.div>
@@ -783,9 +795,11 @@ export default function Autonomy() {
                 <Button
                   size="sm"
                   variant="ghost"
+                  disabled
+                  title="Preview only: result viewing is not wired to an Astra backend action."
                   className={cn("gap-1.5 text-cyan-200/80 hover:text-cyan-100", hudClass("normal-case tracking-[0.14em]"))}
                 >
-                  <Eye className="h-3.5 w-3.5" /> {item.resultLabel}
+                  <Eye className="h-3.5 w-3.5" /> {item.resultLabel} unavailable
                 </Button>
               </div>
             ))}
@@ -795,24 +809,24 @@ export default function Autonomy() {
         <section className="rounded-3xl border border-white/10 bg-black/40 p-5 md:p-6">
           <SectionLabel>Autonomy settings</SectionLabel>
           <p className="mb-4 max-w-2xl font-sans text-sm text-slate-400">
-            How free should I be when your machines are idle? Painted only in Phase 1 —
-            I propose work, you approve. Settings are not persisted.
+            Preview-only controls for the future autonomy contract. They are not persisted and do not change Astra backend behavior.
           </p>
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
             {MODE_OPTIONS.map((opt) => (
               <button
                 key={opt.id}
                 type="button"
-                onClick={() => setMode(opt.id)}
+                disabled
+                title="Preview only: mode changes are not wired to an Astra backend action."
                 className={cn(
-                  "rounded-2xl border px-4 py-3 text-left transition",
+                  "rounded-2xl border px-4 py-3 text-left opacity-70 transition",
                   mode === opt.id
                     ? "border-cyan-400/45 bg-cyan-500/15 shadow-[0_0_24px_rgba(34,211,238,0.18)]"
                     : "border-white/10 bg-white/[0.02] hover:border-white/20",
                 )}
               >
                 <p className={cn(hudClass(mode === opt.id ? "text-cyan-100" : "text-white"))}>
-                  {opt.label}
+                  {opt.label} · preview
                 </p>
                 <p className="mt-1 font-sans text-[11px] text-slate-500">{opt.hint}</p>
               </button>
