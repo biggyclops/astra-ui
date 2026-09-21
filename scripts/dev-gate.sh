@@ -18,6 +18,10 @@ fi
 
 # Explicitly enter the validated repository root before any Git or npm commands
 if [[ -d "$REPO_ROOT/.git" || -f "$REPO_ROOT/.git" ]]; then
+  if [[ "$REPO_ROOT" == "/home/comea/astra-ui/astra-ui" ]]; then
+    echo "FAIL: Unauthorized repository path: $REPO_ROOT"
+    exit 1
+  fi
   cd "$REPO_ROOT" || { echo "FAIL: Cannot cd to validated REPO_ROOT"; exit 1; }
 else
   echo "FAIL: Validated REPO_ROOT does not contain a git repository"
