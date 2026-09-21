@@ -8,6 +8,14 @@ import pathModule from "node:path";
 import crypto from "node:crypto";
 import { log } from "./logger";
 import { registerAutonomyRoutes } from "./autonomy";
+import {
+  createAction,
+  getAction,
+  approveAction,
+  rejectAction,
+  cancelAction,
+  getAuditEvents,
+} from "./actionExecution";
 
 const execFileAsync = promisify(execFile);
 
@@ -1303,4 +1311,60 @@ export async function registerRoutes(app: Express) {
         });
     }
   });
+
+  // AUTO-003A action execution routes (minimal, in-memory, validation only)
+  app.post("/api/actions", (req: Request, res: Response) => {
+    const { actionType, requester, parameters, correlationId } = req.body || {};
+    if (!actionType || !requester) {
+      return res.status(400).json({ error: "actionType and requester required" });
+    }
+    const result = createAction(actionType, requester, parameters || {}, correlationId);
+    if (result.error) return res.status(400).json({ error: result.error });
+    res.status(201).json(result.action);
+  });
+
+  app.get("/api/actions/:id", (req: Request, res: Response) => {
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const action = getAction(id);
+    if (!action) return res.status(404).json({ error: "Not found" });
+    res.json(action);
+  });
+
+  app.post("/api/actions/:id/approve", (req: Request, res: Response) => {
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const { approver } = req.body || {};
+    if (!approver) return res.status(400).json({ error: "approver required" });
+    const result = approveAction(id, approver);
+    if (result.error) return res.status(400).json({ error: result.error });
+    res.json(result.action);
+  });
+
+  app.post("/api/actions/:id/reject", (req: Request, res: Response) => {
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const { approver, reason } = req.body || {};
+    if (!approver) return res.status(400).json({ error: "approver required" });
+    const result = rejectAction(id, approver, reason);
+    if (result.error) return res.status(400).json({ error: result.error });
+    res.json(result.action);
+  });
+
+  app.post("/api/actions/:id/cancel", (req: Request, res: Response) => {
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const { actor } = req.body || {};
+    if (!actor) return res.status(400).json({ error: "actor required" });
+    const result = cancelAction(id, actor);
+    if (result.error) return res.status(400).json({ error: result.error });
+    res.json(result.action);
+  });
+
+  app.get("/api/actions/:id/audit", (req: Request, res: Response) => {
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const events = getAuditEvents(id);
+    if (!events.length && !getAction(id)) {
+      return res.status(404).json({ error: "Not found" });
+    }
+    res.json(events);
+  });
 }
+
+

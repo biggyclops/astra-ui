@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { apiRequest } from "@/lib/queryClient";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Activity,
@@ -839,5 +840,95 @@ export default function Autonomy() {
         </p>
       </div>
     </div>
+  );
+}
+
+// AUTO-003A: Execution Framework Validation (minimal, no real actions)
+export function ActionExecutionValidation() {
+  const [action, setAction] = useState<any>(null);
+  const [audit, setAudit] = useState<any[]>([]);
+  const [error, setError] = useState<string>("");
+
+  async function propose() {
+    setError("");
+    try {
+      const res = await apiRequest("POST", "/api/actions", {
+        actionType: "validate_execution_framework",
+        requester: "ui-validation",
+        parameters: { purpose: "AUTO-003A" },
+      });
+      const data = await res.json();
+      setAction(data);
+      await loadAudit(data.actionId);
+    } catch (e: any) {
+      setError(e.message || "Failed to propose");
+    }
+  }
+
+  async function loadAudit(id: string) {
+    const res = await apiRequest("GET", `/api/actions/${id}/audit`);
+    setAudit(await res.json());
+  }
+
+  async function act(endpoint: string, body: any) {
+    if (!action) return;
+    setError("");
+    try {
+      const res = await apiRequest("POST", `/api/actions/${action.actionId}${endpoint}`, body);
+      const data = await res.json();
+      setAction(data);
+      await loadAudit(action.actionId);
+    } catch (e: any) {
+      setError(e.message || "Action failed");
+    }
+  }
+
+  const canApprove = action?.state === "awaiting_approval";
+  const canReject = action?.state === "awaiting_approval";
+  const canCancel = ["proposed", "awaiting_approval", "approved"].includes(action?.state);
+
+  return (
+    <section className="mt-8 border border-white/10 rounded-2xl p-6 bg-black/40">
+      <h3 className="text-lg font-mono tracking-[0.2em] text-cyan-400 mb-2">
+        ACTION EXECUTION FRAMEWORK VALIDATION
+      </h3>
+      <p className="text-xs text-amber-400 mb-4">
+        EXECUTION FRAMEWORK VALIDATION — NO REAL ACTIONS PERFORMED. IN-MEMORY ONLY.
+      </p>
+
+      {!action && (
+        <button onClick={propose} className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded">
+          Propose validate_execution_framework
+        </button>
+      )}
+
+      {action && (
+        <div className="space-y-3 text-sm font-mono">
+          <div>State: <span className="text-cyan-400">{action.state}</span></div>
+          <div>ActionId: {action.actionId}</div>
+          <div>Requester: {action.requester}</div>
+          {action.approver && <div>Approver: {action.approver}</div>}
+
+          <div className="flex gap-2 pt-2">
+            {canApprove && (
+              <button onClick={() => act("/approve", { approver: "ui-approver" })} className="px-3 py-1 bg-emerald-600/60 rounded">Approve</button>
+            )}
+            {canReject && (
+              <button onClick={() => act("/reject", { approver: "ui-approver", reason: "validation" })} className="px-3 py-1 bg-red-600/60 rounded">Reject</button>
+            )}
+            {canCancel && (
+              <button onClick={() => act("/cancel", { actor: "ui-operator" })} className="px-3 py-1 bg-slate-600/60 rounded">Cancel</button>
+            )}
+          </div>
+
+          <div>
+            <div className="text-xs text-slate-500 mt-3 mb-1">AUDIT TRAIL</div>
+            <pre className="text-[10px] bg-black/60 p-2 rounded overflow-auto max-h-40">{JSON.stringify(audit, null, 2)}</pre>
+          </div>
+        </div>
+      )}
+
+      {error && <p className="text-red-400 text-xs mt-2">{error}</p>}
+    </section>
   );
 }
