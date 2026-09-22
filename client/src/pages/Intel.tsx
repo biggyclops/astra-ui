@@ -18,17 +18,17 @@ import "./intel.css";
 type Tone = "cyan" | "blue" | "violet" | "amber" | "mint" | "pink";
 
 const systems = [
-  ["Core", "Online"],
-  ["Agents", "7 / 7"],
-  ["Knowledge graph", "Live"],
-  ["Autonomy", "Operational"],
-  ["Global sync", "Healthy"],
+  ["Core", "Preview"],
+  ["Agents", "Example 7 / 7"],
+  ["Knowledge graph", "Example"],
+  ["Autonomy", "Preview"],
+  ["Global sync", "Example"],
 ];
 
 const tasks = [
-  ["Index new research papers", "Running", "cyan"],
-  ["Generate media assets", "Queued", "blue"],
-  ["Plan autonomous run", "Scheduled", "violet"],
+  ["Index new research papers", "Example · running", "cyan"],
+  ["Generate media assets", "Example · queued", "blue"],
+  ["Plan autonomous run", "Example · scheduled", "violet"],
 ] as const;
 
 const activity = [
@@ -76,7 +76,7 @@ const graphNodes = Array.from({ length: 76 }, (_, index) => {
     x: 50 + Math.cos(angle) * radius * 0.96,
     y: 50 + Math.sin(angle) * radius,
     r: index % 11 === 0 ? 1.35 : index % 4 === 0 ? 0.82 : 0.48,
-    tone: (["cyan", "blue", "cyan", "mint", "amber", "violet"] as Tone[])[index % 6],
+    tone: (["cyan", "cyan", "cyan", "cyan", "cyan", "blue"] as Tone[])[index % 6],
   };
 });
 
@@ -174,9 +174,9 @@ export default function Intel() {
   return (
     <div className="intel-shell">
       <header className="intel-header">
-        <Link href="/intel" className="intel-brand" aria-label="Astra Intelligence home">
+        <Link href="/" className="intel-brand" aria-label="Back to Astra home" title="Back to Astra">
           <span className="intel-brand__mark"><img src="/astra-core-logo.png" alt="" /></span>
-          <span><strong>ASTRA</strong><small>INTELLIGENCE IN MOTION</small></span>
+          <span className="intel-brand__wordmark"><img src="/astra-wordmark.png" alt="ASTRA" /><small>INTELLIGENCE IN MOTION</small></span>
         </Link>
         <div className="intel-search" aria-label="Read-only prototype search">
           <Search size={15} />
@@ -184,9 +184,9 @@ export default function Intel() {
           <kbd>⌘ K</kbd>
         </div>
         <div className="intel-presence">
-          <span className="intel-example-chip">EXAMPLE DATA</span>
-          <span className="intel-live-dot" /> Live
-          <time>22:14</time>
+          <span className="intel-example-chip">PROTOTYPE · EXAMPLE DATA</span>
+          <span className="intel-preview-dot" /> Preview
+          <time aria-label="Example time">22:14</time>
         </div>
       </header>
 
@@ -241,7 +241,7 @@ export default function Intel() {
               {agents.map(([name, tone], index) => (
                 <div className="intel-health" key={name}>
                   <span className={`intel-dot intel-tone-bg--${tone}`} /><strong>{name}</strong><i />
-                  <small><span /> Online</small>
+                  <small><span /> Preview</small>
                   <div className="intel-health__bars">{[0, 1, 2, 3, 4].map((bar) => <b key={bar} className={bar < 3 + (index % 2) ? "is-on" : ""} />)}</div>
                 </div>
               ))}
@@ -260,7 +260,7 @@ export default function Intel() {
       </div>
 
       <footer className="intel-footer">
-        <div className="intel-version"><span>Astra OS v0.9.2</span><small><i /> Example data · systems nominal</small></div>
+        <div className="intel-version"><span>Astra Intel prototype</span><small><i /> Example data · not live telemetry</small></div>
         <div className="intel-command" aria-label="Read-only command preview">
           <Command size={16} /><span>Command Astra…</span><small>PROTOTYPE · READ ONLY</small><button type="button" disabled aria-label="Command execution unavailable"><Zap size={14} /></button>
         </div>

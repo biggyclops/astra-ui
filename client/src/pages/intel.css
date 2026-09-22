@@ -33,8 +33,8 @@
 .intel-brand { color: inherit; text-decoration: none; display: inline-flex; align-items: center; gap: 12px; width: max-content; }
 .intel-brand__mark { width: 38px; height: 38px; display: grid; place-items: center; border: 1px solid rgba(115,242,255,.45); border-radius: 50%; box-shadow: 0 0 20px rgba(115,242,255,.16), inset 0 0 14px rgba(115,242,255,.1); }
 .intel-brand__mark img { width: 22px; height: 22px; object-fit: contain; filter: drop-shadow(0 0 8px rgba(115,242,255,.7)); }
-.intel-brand > span:last-child { display: flex; flex-direction: column; }
-.intel-brand strong { font-size: 17px; letter-spacing: .45em; font-weight: 500; }
+.intel-brand__wordmark { display: flex; flex-direction: column; }
+.intel-brand__wordmark > img { width: 112px; height: auto; object-fit: contain; filter: drop-shadow(0 0 7px rgba(115,242,255,.24)); }
 .intel-brand small { margin-top: 5px; color: #57819a; font: 500 6px/1 ui-monospace, "SFMono-Regular", monospace; letter-spacing: .47em; }
 .intel-search { height: 38px; display: flex; align-items: center; gap: 10px; padding: 0 12px; color: #66849a; border: 1px solid rgba(115,242,255,.16); border-radius: 10px; background: rgba(3,16,27,.72); box-shadow: inset 0 0 18px rgba(30,132,171,.04); font-size: 11px; }
 .intel-search svg { color: var(--intel-cyan); }
@@ -49,12 +49,12 @@
   font: 600 8px/1 ui-monospace, "SFMono-Regular", monospace;
   letter-spacing: .14em;
 }
-.intel-live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--intel-mint); box-shadow: 0 0 10px var(--intel-mint); }
+.intel-preview-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--intel-cyan); box-shadow: 0 0 8px rgba(115,242,255,.6); }
 .intel-presence time { color: #547084; font: 9px ui-monospace, "SFMono-Regular", monospace; }
 
 .intel-layout { min-height: calc(100vh - 142px); display: grid; grid-template-columns: 220px minmax(540px, 1fr) 250px; gap: 14px; padding: 10px 18px 6px; position: relative; z-index: 2; }
 .intel-rail { display: flex; min-width: 0; flex-direction: column; gap: 10px; }
-.intel-panel { position: relative; padding: 13px 12px; border: 1px solid rgba(72,189,229,.18); border-radius: 10px; background: linear-gradient(145deg, rgba(5,23,36,.82), rgba(2,13,23,.72)); box-shadow: inset 0 1px rgba(255,255,255,.018), 0 16px 50px rgba(0,0,0,.18); }
+.intel-panel { position: relative; padding: 13px 12px; border: 1px solid rgba(72,189,229,.18); border-radius: 22px; background: linear-gradient(145deg, rgba(5,23,36,.82), rgba(2,13,23,.72)); box-shadow: inset 0 1px rgba(255,255,255,.018), 0 16px 50px rgba(0,0,0,.18); }
 .intel-panel__title { margin-bottom: 12px; color: #7da5ba; font: 600 8px/1 ui-monospace, "SFMono-Regular", monospace; letter-spacing: .19em; }
 .intel-status-list { display: grid; gap: 5px; }
 .intel-status { min-width: 0; display: grid; grid-template-columns: 24px auto 1fr auto; align-items: center; gap: 7px; height: 27px; color: #aac4d2; font-size: 9px; }
@@ -83,7 +83,7 @@
 .intel-stage__eyebrow { top: 1%; } .intel-stage__motto { bottom: 2%; }
 .intel-graph { position: absolute; left: 50%; top: 50%; width: min(98%, 700px); aspect-ratio: 1; transform: translate(-50%,-50%); overflow: visible; }
 .intel-edge { stroke: rgba(76,205,241,.28); stroke-width: .12; }
-.intel-edge--1 { stroke: rgba(58,167,255,.22); } .intel-edge--2 { stroke: rgba(159,121,255,.18); } .intel-edge--3 { stroke: rgba(255,195,107,.16); } .intel-edge--4 { stroke: rgba(84,243,194,.16); }
+.intel-edge--1 { stroke: rgba(115,242,255,.22); } .intel-edge--2 { stroke: rgba(115,242,255,.18); } .intel-edge--3 { stroke: rgba(115,242,255,.16); } .intel-edge--4 { stroke: rgba(58,167,255,.14); }
 .intel-node { fill: currentColor; opacity: .9; }
 .intel-tone--cyan { color: var(--intel-cyan); } .intel-tone--blue { color: var(--intel-blue); } .intel-tone--violet { color: var(--intel-violet); } .intel-tone--amber { color: var(--intel-amber); } .intel-tone--mint { color: var(--intel-mint); } .intel-tone--pink { color: var(--intel-pink); }
 .intel-tone-bg--cyan { color: var(--intel-cyan); background: rgba(115,242,255,.1); } .intel-tone-bg--blue { color: var(--intel-blue); background: rgba(58,167,255,.1); } .intel-tone-bg--violet { color: var(--intel-violet); background: rgba(159,121,255,.1); } .intel-tone-bg--amber { color: var(--intel-amber); background: rgba(255,195,107,.1); } .intel-tone-bg--mint { color: var(--intel-mint); background: rgba(84,243,194,.1); } .intel-tone-bg--pink { color: var(--intel-pink); background: rgba(236,120,255,.1); }
