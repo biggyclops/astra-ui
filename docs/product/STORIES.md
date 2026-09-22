@@ -2,8 +2,8 @@
 
 | Field | Value |
 |---|---|
-| **Version** | 1.0.7 |
-| **Status** | Approved for Engineering — Sprint 0 Track A + CoS + Mission Control (parked) |
+| **Version** | 1.0.8 |
+| **Status** | Approved for Engineering — Sprint 0 Track A + parked OS/process stories |
 | **Owner** | Product |
 | **Last Reviewed** | 2026-09-18 |
 
@@ -14,7 +14,7 @@ These stories are **what/why + acceptance**. They are not architecture, visual r
 Acceptance criteria are the contract for whoever picks up the story. Product does not expand a story mid-flight.
 
 **Product lock:** [ASTRA-PD-001](./DECISIONS.md) — Track A = S1 + S2. Do not merge ship-as-is. Product does not approve merge.  
-**Handoff:** [ASTRA-PD-007](./DECISIONS.md) — ASTRA-S14 Mission Control approved and parked until Track A honesty.
+**Handoff:** [ASTRA-PD-008](./DECISIONS.md) — ASTRA-S20 Workflow state machine approved and parked until Track A honesty.
 
 | Order | ID | Priority | Vehicle | Product note |
 |---|---|---|---|---|
@@ -25,6 +25,7 @@ Acceptance criteria are the contract for whoever picks up the story. Product doe
 | OS-line | ASTRA-S12 | High | PR #9 | CoS recommendation engine (CLI). Do not displace S1/S2. |
 | — | ASTRA-S13 | Medium | parked | CoS dashboard. After Track A honesty + S12. Not the snapshot/orb. |
 | — | ASTRA-S14 | Medium | parked | Mission Control aggregator. After Track A honesty. Not a source of truth. |
+| — | ASTRA-S20 | Medium | parked | Workflow state machine. Never invokes roles. After Track A honesty. |
 | — | S5–S11 | parked / rejected | — | Do not staff. |
 
 ---
@@ -265,6 +266,66 @@ Provide a single timestamped roll-up of existing system status while preserving 
 
 ---
 
+### ASTRA-S20 — Workflow Orchestrator (state machine)
+
+**Story:** As the operator, I can run a governed workflow and see honest routing between Product, Chief of Staff, Programmer, QA, Engineering Manager, CTO, Documentation, and Jason, while Astra OS governance and honesty hold. Humans still approve Product, merge, and deployment.
+
+**Priority:** Medium — parked until Track A honesty is live (S1+S2).  
+**Review:** ASTRA-R16 🟢  
+**Decision:** [ASTRA-PD-008](./DECISIONS.md)  
+**Depends on:** ASTRA-S1; ASTRA-S2 live (no operable Autonomy stubs)
+
+**Summary**
+ASTRA-S20 is a governed **workflow state machine**. It records one-in-flight workflow state, history, and a timeline. It waits for **externally completed** role results. It never launches, invokes, or executes AI roles. Next role comes only from Astra OS, signed Product decisions, and Chief of Staff sequencing. If unclear → **Unknown** and stop. Jason remains merge and deploy gate. Does not unpark S3, S13, or S14. Does not displace Track A.
+
+**User value**
+Honest routing and timeline without chat-memory handoffs. Trust holds only if the engine routes state — it must not pretend Product, QA, CTO, or Jason already approved, and it must not spawn agents.
+
+**Scope in**
+- One workflow at a time
+- Durable workflow state, history, and timeline
+- Wait for externally completed structured role results (no role launch)
+- Determine next role only from Astra OS, signed Product decisions, and CoS sequencing
+- Stop on BLOCKED → previous implementation role
+- Stop on REQUIRES CHANGES → originating role
+- Advance on APPROVED / READY when next role is known
+- If next role cannot be determined honestly → stop and report Unknown
+- No PR open, merge, deploy, or GitHub mutation
+
+**Scope out / Non-goals**
+- AI coding
+- Agent orchestration / role invocation
+- Auto-merging / auto-deployment
+- Autonomous Product decisions, sequencing, architecture approval, or QA approval
+- Inventing backlog order
+- Opening PRs or mutating GitHub
+- Robot control
+- Unparking S3, S13, or S14
+- Displacing Track A
+- Staffing before Track A honesty
+
+**Acceptance criteria**
+1. One workflow executes at a time.
+2. Every step records timestamp, role, status, and summary.
+3. Engine never launches, invokes, or executes AI roles.
+4. Engine only records state and waits for externally completed role results.
+5. Routing follows Astra OS; roles cannot be skipped.
+6. Next role is taken only from Astra OS, signed Product decisions, and CoS sequencing.
+7. If next role is unclear → stop and report Unknown (never invent).
+8. BLOCKED returns to the previous implementation role.
+9. REQUIRES CHANGES returns to the originating role.
+10. APPROVED/READY advances only when the next role is honestly known.
+11. Workflow state survives restart; history and timeline are preserved.
+12. Never invents backlog order.
+13. Never bypasses Product, CoS, QA, EM, CTO, Documentation, or Jason.
+14. Never opens PRs, merges, deploys, or mutates GitHub.
+15. Jason remains merge gate and deployment gate.
+16. Remains parked until Track A honesty (S1+S2); does not unpark S3, S13, or S14.
+
+**Done when:** durable workflow state/history/timeline can record externally completed role results and route next role honestly without invoking agents or mutating GitHub. Product does not merge.
+
+---
+
 ## Next — only after Track A
 
 ### ASTRA-S4 — Park Phase 2 cinematic shell until Track A
@@ -322,6 +383,8 @@ Provide a single timestamped roll-up of existing system status while preserving 
 - A CoS dashboard that dispatches work, talks to GitHub, or drives the Autonomy orb
 - Mission Control as a single source of truth, control plane, or Autonomy replacement
 - Mission Control v1 jobs or GPUs without a later Product review
+- A workflow engine that launches, invokes, or executes AI roles
+- A workflow engine that opens PRs, merges, deploys, or invents backlog order
 
 ---
 
