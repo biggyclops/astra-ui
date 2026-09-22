@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -13,8 +13,15 @@ import Nodes from "@/pages/Nodes";
 import Jobs from "@/pages/Jobs";
 import Settings from "@/pages/Settings";
 import Autonomy from "@/pages/Autonomy";
+import Intel from "@/pages/Intel";
 
 function Router() {
+  const [location] = useLocation();
+
+  if (location === "/intel") {
+    return <Intel />;
+  }
+
   return (
     <div className="flex w-full h-screen bg-background text-foreground">
       <Sidebar />
