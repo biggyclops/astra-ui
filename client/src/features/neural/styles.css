@@ -1,0 +1,49 @@
+.neural-page {
+  --neural-cyan: #73f2ff;
+  position: relative;
+  isolation: isolate;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: radial-gradient(ellipse 58% 65% at 49% 51%, #102544 0%, #080e29 47%, #040815 78%);
+  color: hsl(var(--foreground));
+  font-family: -apple-system, BlinkMacSystemFont, ui-sans-serif, sans-serif;
+}
+.neural-stage { position: absolute; inset: 0; }
+.neural-stage canvas { touch-action: none; }
+.neural-loading { height: 100%; display: grid; place-items: center; color: var(--neural-cyan); letter-spacing: .14em; font-size: .8rem; }
+.neural-heading { position: absolute; top: clamp(28px, 5vh, 70px); left: clamp(24px, 4vw, 72px); pointer-events: none; }
+.neural-eyebrow, .neural-info-topline, .neural-controls { font-family: ui-monospace, SFMono-Regular, monospace; letter-spacing: .18em; font-size: 10px; color: var(--neural-cyan); }
+.neural-live-dot { display: inline-block; height: 6px; width: 6px; border-radius: 50%; background: var(--neural-cyan); margin-right: 10px; box-shadow: 0 0 12px var(--neural-cyan); }
+.neural-heading h1 { margin: 15px 0 4px; max-width: 360px; font-size: clamp(24px, 2.4vw, 36px); font-weight: 500; line-height: 1.13; letter-spacing: -.025em; }
+.neural-heading p { margin: 0; color: #91adbf; font-size: 13px; }
+.neural-info { position: absolute; top: 50%; right: clamp(20px, 3vw, 56px); transform: translateY(-50%); width: min(262px, 25vw); padding: 25px 22px 18px; border-radius: 20px; border: 1px solid rgba(115,242,255,.16); background: rgba(10, 22, 43, .65); box-shadow: 0 12px 45px rgba(0,0,0,.2), inset 0 1px rgba(255,255,255,.05); backdrop-filter: blur(20px); }
+.neural-info-topline { display: flex; justify-content: space-between; font-size: 9px; white-space: nowrap; }
+.neural-info-topline span { color: #7a93a6; letter-spacing: 0; }
+.neural-info h2 { margin: 24px 0 3px; font-size: 20px; font-weight: 500; }
+.neural-info-caption { margin: 0; font-size: 12px; color: #8ca6b7; }
+.neural-info-divider { height: 1px; background: rgba(115,242,255,.15); margin: 23px 0 12px; }
+.neural-info dl { margin: 0; }
+.neural-info-row { display: flex; justify-content: space-between; align-items: center; padding: 11px 0; font-size: 12px; }
+.neural-info-row dt { display: flex; align-items: center; gap: 10px; color: #d0e4eb; }
+.neural-info-row dd { margin: 0; color: #9eb6c5; }
+.neural-status-dot { width: 6px; height: 6px; border-radius: 50%; background: #637c92; }
+.neural-status-ready { background: #62dbb7; box-shadow: 0 0 9px #62dbb7; }
+.neural-status-idle { background: #76b5dc; }
+.neural-status-offline { background: #715d76; }
+.neural-placeholder { border-top: 1px solid rgba(115,242,255,.12); color: #839cad; font-size: 10px; line-height: 1.4; padding-top: 14px; margin: 9px 0 0; }
+.neural-controls { position: absolute; bottom: 26px; left: 50%; transform: translateX(-50%); color: #7896aa; font-size: 9px; white-space: nowrap; pointer-events: none; }
+.neural-controls span { margin: 0 9px; color: var(--neural-cyan); }
+@media (max-width: 840px) {
+  .neural-heading { top: 24px; left: 20px; }
+  .neural-info { top: auto; right: 16px; bottom: 52px; transform: none; width: min(240px, calc(100% - 32px)); padding: 15px; }
+  .neural-info h2 { margin-top: 12px; font-size: 17px; }
+  .neural-info-divider { margin: 12px 0 5px; }
+  .neural-info-row { padding: 5px 0; }
+  .neural-controls { left: 18px; transform: none; bottom: 16px; font-size: 8px; }
+}
+@media (max-width: 540px) {
+  .neural-info { right: 12px; bottom: 45px; width: min(215px, calc(100% - 24px)); }
+  .neural-heading h1 { max-width: 245px; }
+  .neural-controls { letter-spacing: .06em; }
+}

@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { MessageSquare, Image, Activity, Cpu, Settings, Disc, Network } from "lucide-react";
+import { MessageSquare, Image, Activity, Cpu, Settings, Disc, Network, BrainCircuit } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { NodeStatusBadge } from "./NodeStatusBadge";
@@ -10,6 +10,7 @@ const navItems = [
   { icon: Activity, label: "Jobs", href: "/jobs" },
   { icon: Cpu, label: "Nodes", href: "/nodes" },
   { icon: Network, label: "Intel", href: "/intel" },
+  { icon: BrainCircuit, label: "Neural Command Center", href: "/neural" },
   { icon: Settings, label: "Settings", href: "/settings" },
 ];
 
@@ -24,11 +25,11 @@ export function Sidebar() {
         </div>
       </div>
 
-      <nav className="flex-1 w-full flex flex-col items-center gap-4">
+      <nav className="flex-1 min-h-0 overflow-y-auto scrollbar-hide w-full flex flex-col items-center gap-3">
         {navItems.map((item) => {
           const isActive = location === item.href;
           return (
-            <Link key={item.href} href={item.href}>
+            <Link key={item.href} href={item.href} aria-label={item.label} title={item.label}>
               <div
                 className={cn(
                   "relative group flex items-center justify-center w-12 h-12 rounded-xl transition-all duration-300 cursor-pointer",
