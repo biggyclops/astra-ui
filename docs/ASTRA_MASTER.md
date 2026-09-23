@@ -3,7 +3,8 @@
 **Status:** Canonical index (2026-09-17)  
 **Owner:** Documentation Manager  
 **Purpose:** Single entry point for Astra product/system docs.  
-**Canon home:** `docs/` in `astra-ui` ([DOCUMENTATION_ARCHITECTURE.md](./DOCUMENTATION_ARCHITECTURE.md))
+**Canon home:** `docs/` in `astra-ui` ([DOCUMENTATION_ARCHITECTURE.md](./DOCUMENTATION_ARCHITECTURE.md))  
+**Canon tip:** GitHub `main` (not `docs/canon-v1`).
 
 ## What Astra is
 
