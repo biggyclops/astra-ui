@@ -480,18 +480,33 @@ function requireAstraSession(req: Request, res: Response, next: NextFunction) {
   next();
 }
 
-const loginAttempts = new Map<string, { count: number; lockedUntil: number }>();
+const loginAttempts = new Map<string, { count: number; windowStart: number; lockedUntil: number }>();
 const LOGIN_RATE_LIMIT_MAX = 5;
 const LOGIN_RATE_LIMIT_WINDOW_MS = 60 * 1000;
 const LOGIN_LOCKOUT_MS = 5 * 60 * 1000;
 
+const LOOPBACK_ADDRESSES = new Set(["127.0.0.1", "::1", "::ffff:127.0.0.1"]);
+
+function isLoopback(addr: string | undefined): boolean {
+  if (!addr) return false;
+  return LOOPBACK_ADDRESSES.has(addr);
+}
+
 function getClientIp(req: Request): string {
+  const socketAddr = req.socket.remoteAddress ?? "unknown";
+
+  if (!isLoopback(socketAddr)) {
+    return socketAddr;
+  }
+
   const xff = req.headers["x-forwarded-for"];
   if (xff) {
-    const first = Array.isArray(xff) ? xff[0] : xff.split(",")[0];
-    return first.trim();
+    const parts = Array.isArray(xff) ? xff.join(",").split(",") : xff.split(",");
+    const rightmost = parts[parts.length - 1]?.trim();
+    if (rightmost) return rightmost;
   }
-  return req.socket.remoteAddress ?? "unknown";
+
+  return socketAddr;
 }
 
 function checkRateLimit(ip: string): { allowed: boolean; retryAfterMs?: number } {
@@ -502,7 +517,7 @@ function checkRateLimit(ip: string): { allowed: boolean; retryAfterMs?: number }
     return { allowed: false, retryAfterMs: entry.lockedUntil - now };
   }
 
-  if (entry && entry.lockedUntil <= now) {
+  if (entry && entry.lockedUntil > 0 && entry.lockedUntil <= now) {
     loginAttempts.delete(ip);
   }
 
@@ -518,8 +533,8 @@ function recordLoginAttempt(ip: string, success: boolean) {
     return;
   }
 
-  if (!entry || now - (entry.lockedUntil - LOGIN_LOCKOUT_MS) > LOGIN_RATE_LIMIT_WINDOW_MS) {
-    loginAttempts.set(ip, { count: 1, lockedUntil: 0 });
+  if (!entry || (now - entry.windowStart) > LOGIN_RATE_LIMIT_WINDOW_MS) {
+    loginAttempts.set(ip, { count: 1, windowStart: now, lockedUntil: 0 });
     return;
   }
 
@@ -534,13 +549,15 @@ setInterval(() => {
   const now = Date.now();
   const entries = Array.from(loginAttempts.entries());
   for (const [ip, entry] of entries) {
-    if (entry.lockedUntil > 0 && entry.lockedUntil <= now) {
-      loginAttempts.delete(ip);
-    } else if (entry.lockedUntil === 0 && entry.count > 0) {
+    const lockExpired = entry.lockedUntil > 0 && entry.lockedUntil <= now;
+    const windowExpired = (now - entry.windowStart) > LOGIN_RATE_LIMIT_WINDOW_MS;
+    if (lockExpired || (entry.lockedUntil === 0 && windowExpired)) {
       loginAttempts.delete(ip);
     }
   }
 }, 60 * 1000).unref();
+
+export { getClientIp as _getClientIp, recordLoginAttempt as _recordLoginAttempt, checkRateLimit as _checkRateLimit, loginAttempts as _loginAttempts };
 
 // -------------------------
 // Routes

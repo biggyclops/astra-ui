@@ -19,9 +19,13 @@
  *   1 = one or more tests failed
  */
 
+import type { Request } from "express";
+import type { Socket } from "net";
+
 const BASE_URL = process.env.TEST_BASE_URL || "http://localhost:5000";
 const TEST_USER = process.env.ASTRA_AUTH_USER || "testuser";
 const TEST_PASS = "testpass";
+const RUN_UNIT_TESTS = process.env.RUN_UNIT_TESTS !== "0";
 
 interface TestResult {
   name: string;
@@ -252,6 +256,52 @@ async function runTests() {
     fail("POST /api/auth/logout clears cookie", "no valid cookie obtained");
   }
 
+  // Test 14: Rate limiting - 5 wrong-password logins then 6th attempt returns 429
+  // Use a unique "IP" via X-Forwarded-For (server sees loopback, so it trusts rightmost XFF)
+  {
+    const uniqueIp = `192.168.99.${Math.floor(Math.random() * 255)}`;
+    let lockedOut = false;
+    let retryAfterPresent = false;
+
+    for (let i = 1; i <= 5; i++) {
+      const { status } = await fetchJson("/api/auth/login", {
+        method: "POST",
+        headers: { "X-Forwarded-For": uniqueIp },
+        body: JSON.stringify({ username: TEST_USER, password: "wrongpassword" }),
+      });
+      if (status === 429) {
+        lockedOut = true;
+        break;
+      }
+    }
+
+    const { status: sixthStatus, data: sixthData } = await fetchJson("/api/auth/login", {
+      method: "POST",
+      headers: { "X-Forwarded-For": uniqueIp },
+      body: JSON.stringify({ username: TEST_USER, password: TEST_PASS }),
+    });
+
+    const sixthRes = await fetch(`${BASE_URL}/api/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Forwarded-For": uniqueIp },
+      body: JSON.stringify({ username: TEST_USER, password: TEST_PASS }),
+    });
+    retryAfterPresent = sixthRes.headers.has("retry-after");
+
+    if (sixthStatus === 429 && sixthData?.message?.includes("Too many login attempts")) {
+      pass("Rate limit: 6th attempt returns 429 after 5 failures", retryAfterPresent ? "Retry-After header present" : "no Retry-After");
+    } else {
+      fail("Rate limit: 6th attempt returns 429 after 5 failures", `got ${sixthStatus}: ${JSON.stringify(sixthData)}`);
+    }
+  }
+
+  // Test 15: XFF spoofing from non-loopback does not reset counter (unit test)
+  if (RUN_UNIT_TESTS) {
+    log("");
+    log("Running unit tests for rate limiter...");
+    await runUnitTests();
+  }
+
   // Summary
   log("");
   log("=".repeat(60));
@@ -269,6 +319,127 @@ async function runTests() {
   } else {
     log("All tests passed!");
     process.exit(0);
+  }
+}
+
+async function runUnitTests() {
+  const { _getClientIp, _recordLoginAttempt, _checkRateLimit, _loginAttempts } = await import("../server/routes");
+
+  function mockRequest(socketAddr: string, xff?: string): Request {
+    return {
+      socket: { remoteAddress: socketAddr } as Socket,
+      headers: xff ? { "x-forwarded-for": xff } : {},
+    } as unknown as Request;
+  }
+
+  // Unit test: getClientIp uses socket address for non-loopback
+  {
+    const req = mockRequest("203.0.113.50", "10.0.0.1, 192.168.1.1");
+    const ip = _getClientIp(req);
+    if (ip === "203.0.113.50") {
+      pass("getClientIp: non-loopback socket ignores XFF");
+    } else {
+      fail("getClientIp: non-loopback socket ignores XFF", `got ${ip}, expected 203.0.113.50`);
+    }
+  }
+
+  // Unit test: getClientIp uses rightmost XFF for loopback socket
+  {
+    const req = mockRequest("127.0.0.1", "spoofed.by.client, 203.0.113.99");
+    const ip = _getClientIp(req);
+    if (ip === "203.0.113.99") {
+      pass("getClientIp: loopback socket uses rightmost XFF");
+    } else {
+      fail("getClientIp: loopback socket uses rightmost XFF", `got ${ip}, expected 203.0.113.99`);
+    }
+  }
+
+  // Unit test: getClientIp handles ::1 (IPv6 loopback)
+  {
+    const req = mockRequest("::1", "10.0.0.5");
+    const ip = _getClientIp(req);
+    if (ip === "10.0.0.5") {
+      pass("getClientIp: ::1 loopback uses XFF");
+    } else {
+      fail("getClientIp: ::1 loopback uses XFF", `got ${ip}, expected 10.0.0.5`);
+    }
+  }
+
+  // Unit test: getClientIp handles ::ffff:127.0.0.1 (IPv4-mapped loopback)
+  {
+    const req = mockRequest("::ffff:127.0.0.1", "172.16.0.1");
+    const ip = _getClientIp(req);
+    if (ip === "172.16.0.1") {
+      pass("getClientIp: ::ffff:127.0.0.1 loopback uses XFF");
+    } else {
+      fail("getClientIp: ::ffff:127.0.0.1 loopback uses XFF", `got ${ip}, expected 172.16.0.1`);
+    }
+  }
+
+  // Unit test: XFF spoofing from non-loopback does NOT reset counter
+  {
+    _loginAttempts.clear();
+    const realIp = "198.51.100.42";
+
+    for (let i = 0; i < 5; i++) {
+      const spoofedXff = `10.${i}.${i}.${i}`;
+      const req = mockRequest(realIp, spoofedXff);
+      const ip = _getClientIp(req);
+      _recordLoginAttempt(ip, false);
+    }
+
+    const check = _checkRateLimit(realIp);
+    if (!check.allowed && check.retryAfterMs && check.retryAfterMs > 0) {
+      pass("XFF spoofing from non-loopback does not reset counter (locked after 5 failures)");
+    } else {
+      fail("XFF spoofing from non-loopback does not reset counter", `check.allowed=${check.allowed}`);
+    }
+    _loginAttempts.clear();
+  }
+
+  // Unit test: rate limiter locks out after 5 failures within window
+  {
+    _loginAttempts.clear();
+    const testIp = "192.0.2.100";
+
+    for (let i = 0; i < 4; i++) {
+      _recordLoginAttempt(testIp, false);
+      const check = _checkRateLimit(testIp);
+      if (!check.allowed) {
+        fail("Rate limiter: should not lock before 5 failures", `locked after ${i + 1} failures`);
+        break;
+      }
+    }
+
+    _recordLoginAttempt(testIp, false);
+    const finalCheck = _checkRateLimit(testIp);
+    if (!finalCheck.allowed && finalCheck.retryAfterMs && finalCheck.retryAfterMs > 0) {
+      pass("Rate limiter: locks out after exactly 5 failures");
+    } else {
+      fail("Rate limiter: locks out after exactly 5 failures", `allowed=${finalCheck.allowed}`);
+    }
+    _loginAttempts.clear();
+  }
+
+  // Unit test: successful login clears rate limit
+  {
+    _loginAttempts.clear();
+    const testIp = "192.0.2.101";
+
+    for (let i = 0; i < 3; i++) {
+      _recordLoginAttempt(testIp, false);
+    }
+
+    _recordLoginAttempt(testIp, true);
+    const check = _checkRateLimit(testIp);
+    const entry = _loginAttempts.get(testIp);
+
+    if (check.allowed && !entry) {
+      pass("Rate limiter: successful login clears counter");
+    } else {
+      fail("Rate limiter: successful login clears counter", `entry exists: ${!!entry}`);
+    }
+    _loginAttempts.clear();
   }
 }
 
