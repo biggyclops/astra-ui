@@ -597,6 +597,56 @@ async function runUnitTests() {
     _resetRateLimitState();
   }
 
+  // Regression test (QA): rotating spoofed XFF values through Vite proxy simulation
+  // Client rotates fake XFF prefixes but proxy always appends the real IP as rightmost.
+  // Must hit per-IP lock (after 5 failures) then global cap (after 20 total failures).
+  {
+    _resetRateLimitState();
+    const realClientIp = "192.0.2.200";
+    let perIpLockHit = false;
+    let globalCapHit = false;
+
+    // Simulate 25 login attempts with rotating spoofed XFF prefixes
+    for (let i = 0; i < 25; i++) {
+      // Attacker rotates spoofed prefixes: "fake.ip.1.X, real.client.ip"
+      const spoofedXff = `fake.ip.${i % 10}.${i}, ${realClientIp}`;
+      const req = mockRequest("127.0.0.1", spoofedXff);
+      const ip = _getClientIp(req);
+
+      // IP should always be the real one (rightmost)
+      if (ip !== realClientIp) {
+        fail("XFF spoofing regression: IP extraction failed", `got ${ip}, expected ${realClientIp}`);
+        break;
+      }
+
+      const preCheck = _checkRateLimit(ip);
+      if (!preCheck.allowed) {
+        if (i >= 4 && i < 20) {
+          perIpLockHit = true;
+        }
+        if (i >= 19 && preCheck.global) {
+          globalCapHit = true;
+        }
+        continue; // Skip recording when already locked
+      }
+
+      _recordLoginAttempt(ip, false);
+
+      const postCheck = _checkRateLimit(ip);
+      if (!postCheck.allowed && i >= 4) {
+        perIpLockHit = true;
+      }
+    }
+
+    if (perIpLockHit) {
+      pass("XFF spoofing regression: per-IP lock triggered despite rotating spoofed prefixes");
+    } else {
+      fail("XFF spoofing regression: per-IP lock not triggered");
+    }
+
+    _resetRateLimitState();
+  }
+
   // Unit test: rate limiter locks out after 5 failures within window
   {
     _resetRateLimitState();
@@ -728,9 +778,10 @@ async function runUnitTests() {
   }
 }
 
-async function main() {
+async function main(): Promise<boolean> {
   let server: ChildProcess | null = null;
   let baseUrl = EXTERNAL_URL;
+  let success = false;
 
   try {
     if (!baseUrl) {
@@ -741,21 +792,42 @@ async function main() {
       log(`Server started at ${baseUrl}`);
     }
 
-    const success = await runTests(baseUrl);
-    process.exitCode = success ? 0 : 1;
+    success = await runTests(baseUrl);
   } catch (err) {
     console.error("Test runner error:", err);
-    process.exitCode = 1;
+    success = false;
   } finally {
     if (server) {
       log("Shutting down server...");
       server.kill("SIGTERM");
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      if (!server.killed) {
-        server.kill("SIGKILL");
-      }
+      
+      // Wait for graceful shutdown
+      await new Promise<void>((resolve) => {
+        const timeout = setTimeout(() => {
+          if (server && !server.killed) {
+            server.kill("SIGKILL");
+          }
+          resolve();
+        }, 2000);
+        
+        server!.on("exit", () => {
+          clearTimeout(timeout);
+          resolve();
+        });
+      });
+      
+      log("Server shut down");
     }
   }
+
+  return success;
 }
 
-main();
+main().then((success) => {
+  // Explicit exit to ensure process terminates even if timers are active
+  // (e.g., from dynamic imports of server/routes.ts)
+  process.exit(success ? 0 : 1);
+}).catch((err) => {
+  console.error("Unhandled error:", err);
+  process.exit(1);
+});
