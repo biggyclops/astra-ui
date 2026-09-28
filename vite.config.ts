@@ -18,7 +18,10 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      "/api": "http://localhost:5000",
+      "/api": {
+        target: "http://localhost:5000",
+        xfwd: true,
+      },
     },
     fs: {
       strict: true,

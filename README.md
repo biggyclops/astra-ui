@@ -176,6 +176,40 @@ export DATABASE_URL="postgresql://user:password@host/database"
 npm run db:push
 ```
 
+### Configure Authentication
+
+Authentication is required for production deployments. Set these environment variables:
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `ASTRA_AUTH_SECRET` | Yes | HMAC-SHA256 key for signing session cookies |
+| `ASTRA_AUTH_USER` | Yes | Single allowed username |
+| `ASTRA_AUTH_PASSWORD_SHA256` | Yes | Password hash (scrypt recommended) |
+| `ASTRA_AUTH_COOKIE_SECURE` | No | Set to `1` to add Secure flag (requires HTTPS) |
+
+**Generate a scrypt password hash (recommended):**
+
+```bash
+node -e "const c=require('crypto');const s=c.randomBytes(32);const k=c.scryptSync('yourpassword',s,64,{N:16384,r:8,p:1});console.log('scrypt:'+s.toString('base64')+':'+k.toString('base64'))"
+```
+
+**Or SHA-256 (less secure, acceptable for development):**
+
+```bash
+echo -n 'yourpassword' | sha256sum | cut -d' ' -f1
+```
+
+**Systemd drop-in example** (`~/.config/systemd/user/astra-ui.service.d/auth.conf`):
+
+```ini
+[Service]
+Environment="ASTRA_AUTH_SECRET=your-random-secret-here"
+Environment="ASTRA_AUTH_USER=operator"
+Environment="ASTRA_AUTH_PASSWORD_SHA256=scrypt:base64salt:base64key"
+```
+
+If any auth variable is missing, the server runs in **fail-closed** mode: all logins are refused and gated routes return 401.
+
 ### Run
 
 ```bash

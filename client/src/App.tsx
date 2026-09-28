@@ -1,5 +1,5 @@
 import { Switch, Route, useLocation } from "wouter";
-import { type FormEvent, useEffect, useState } from "react";
+import { createContext, type FormEvent, useContext, useEffect, useState, useCallback } from "react";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -17,6 +17,12 @@ import Autonomy from "@/pages/Autonomy";
 import Intel from "@/pages/Intel";
 
 type AuthStatus = "loading" | "authenticated" | "unauthenticated";
+
+const AuthContext = createContext<{ logout: () => void }>({ logout: () => {} });
+
+export function useAuth() {
+  return useContext(AuthContext);
+}
 
 function AstraLoginScreen({ onAuthenticated }: { onAuthenticated: () => void }) {
   const [username, setUsername] = useState("");
@@ -442,17 +448,49 @@ function AstraLoginScreen({ onAuthenticated }: { onAuthenticated: () => void }) 
   );
 }
 
+function LogoutControl() {
+  const { logout } = useAuth();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  async function handleLogout() {
+    setIsLoggingOut(true);
+    try {
+      await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+    } finally {
+      logout();
+    }
+  }
+
+  return (
+    <button
+      onClick={handleLogout}
+      disabled={isLoggingOut}
+      className="fixed top-4 right-4 z-50 flex items-center gap-2 px-3 py-1.5 text-xs uppercase tracking-wider text-cyan-200/80 hover:text-cyan-100 bg-black/40 hover:bg-black/60 border border-cyan-500/30 hover:border-cyan-400/50 rounded-full backdrop-blur-sm transition-all"
+      title="Sign out"
+    >
+      <img src="/astra-core-logo.png" alt="" className="w-4 h-4 opacity-80" />
+      <span className="font-medium">Sign out</span>
+    </button>
+  );
+}
+
 function Router() {
   const [location] = useLocation();
 
   if (location === "/intel") {
-    return <Intel />;
+    return (
+      <>
+        <LogoutControl />
+        <Intel />
+      </>
+    );
   }
 
   return (
     <div className="flex w-full h-screen bg-background text-foreground">
       <Sidebar />
       <main className="flex-1 pl-20 relative">
+        <LogoutControl />
         <Switch>
           <Route path="/" component={Chat} />
           <Route path="/media" component={MediaWall} />
@@ -469,6 +507,11 @@ function Router() {
 
 function App() {
   const [authStatus, setAuthStatus] = useState<AuthStatus>("loading");
+
+  const logout = useCallback(() => {
+    queryClient.clear();
+    setAuthStatus("unauthenticated");
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -493,6 +536,26 @@ function App() {
     };
   }, []);
 
+  useEffect(() => {
+    if (authStatus !== "authenticated") return;
+
+    const originalFetch = window.fetch;
+    window.fetch = async (...args) => {
+      const response = await originalFetch(...args);
+      if (response.status === 401) {
+        const url = typeof args[0] === "string" ? args[0] : args[0] instanceof Request ? args[0].url : "";
+        if (url.startsWith("/api") && !url.includes("/api/auth/")) {
+          logout();
+        }
+      }
+      return response;
+    };
+
+    return () => {
+      window.fetch = originalFetch;
+    };
+  }, [authStatus, logout]);
+
   if (authStatus === "loading") {
     return (
       <div className="min-h-screen bg-black text-cyan-100 flex items-center justify-center">
@@ -512,12 +575,14 @@ function App() {
   }
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Router />
-        <Toaster />
-      </TooltipProvider>
-    </QueryClientProvider>
+    <AuthContext.Provider value={{ logout }}>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Router />
+          <Toaster />
+        </TooltipProvider>
+      </QueryClientProvider>
+    </AuthContext.Provider>
   );
 }
 

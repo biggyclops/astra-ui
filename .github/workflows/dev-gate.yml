@@ -27,6 +27,13 @@ jobs:
           chmod +x scripts/dev-gate.sh
           ./scripts/dev-gate.sh
 
+      - name: Run Auth Gate Tests
+        env:
+          ASTRA_AUTH_SECRET: ci-test-secret-not-real
+          ASTRA_AUTH_USER: ci-testuser
+          ASTRA_AUTH_PASSWORD_SHA256: "13d249f2cb4127b40cfa757866850278793f814ded3c587fe5889e889a7a9f6c"
+        run: npx tsx scripts/test-auth-gate.ts
+
       - name: Generate verification report
         if: always()
         run: |

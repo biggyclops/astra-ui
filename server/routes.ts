@@ -372,6 +372,33 @@ function isAuthConfigured(): boolean {
   return Boolean(getAuthSecret() && getAuthUser() && getAuthPasswordHash());
 }
 
+function isSecureCookieEnabled(): boolean {
+  const val = (process.env.ASTRA_AUTH_COOKIE_SECURE ?? "").trim().toLowerCase();
+  return val === "1" || val === "true";
+}
+
+// Revocation denylist: stores signature -> expiresAt for revoked tokens.
+// Cleared on process restart. Rotating ASTRA_AUTH_SECRET revokes all tokens.
+const revokedSignatures = new Map<string, number>();
+
+function revokeToken(signature: string, expiresAt: number) {
+  revokedSignatures.set(signature, expiresAt);
+}
+
+function isTokenRevoked(signature: string): boolean {
+  return revokedSignatures.has(signature);
+}
+
+setInterval(() => {
+  const now = Date.now();
+  const entries = Array.from(revokedSignatures.entries());
+  for (const [sig, expiresAt] of entries) {
+    if (expiresAt <= now) {
+      revokedSignatures.delete(sig);
+    }
+  }
+}, 60 * 1000).unref();
+
 function hashSha256(value: string): string {
   return crypto.createHash("sha256").update(value, "utf8").digest("hex");
 }
@@ -413,12 +440,20 @@ function verifyPassword(password: string): boolean {
 function parseCookies(req: Request): Record<string, string> {
   const header = req.headers.cookie;
   if (!header) return {};
-  return Object.fromEntries(
-    header.split(";").map((part) => {
-      const [name, ...valueParts] = part.trim().split("=");
-      return [decodeURIComponent(name), decodeURIComponent(valueParts.join("="))];
-    }).filter(([name]) => Boolean(name)),
-  );
+  const result: Record<string, string> = {};
+  for (const part of header.split(";")) {
+    const trimmed = part.trim();
+    if (!trimmed) continue;
+    const [rawName, ...valueParts] = trimmed.split("=");
+    try {
+      const name = decodeURIComponent(rawName);
+      const value = decodeURIComponent(valueParts.join("="));
+      if (name) result[name] = value;
+    } catch {
+      // Malformed cookie segment, skip it
+    }
+  }
+  return result;
 }
 
 function signSessionPayload(payload: string): string {
@@ -435,7 +470,7 @@ function createSessionCookie(username: string): string {
   return `${payload}.${signSessionPayload(payload)}`;
 }
 
-function readSession(req: Request): { username: string } | null {
+function readSession(req: Request): { username: string; signature: string; expiresAt: number } | null {
   const token = parseCookies(req)[ASTRA_AUTH_COOKIE];
   if (!token) return null;
 
@@ -448,6 +483,8 @@ function readSession(req: Request): { username: string } | null {
   const expectedSig = signSessionPayload(payload);
   if (!expectedSig || !safeEqual(signature, expectedSig)) return null;
 
+  if (isTokenRevoked(signature)) return null;
+
   try {
     const data = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as {
       username?: unknown;
@@ -456,21 +493,23 @@ function readSession(req: Request): { username: string } | null {
     if (data.username !== authUser || typeof data.expiresAt !== "number" || data.expiresAt <= Date.now()) {
       return null;
     }
-    return { username: authUser };
+    return { username: authUser, signature, expiresAt: data.expiresAt };
   } catch {
     return null;
   }
 }
 
 function setAuthCookie(res: Response, token: string) {
+  const secure = isSecureCookieEnabled() ? "; Secure" : "";
   res.setHeader(
     "Set-Cookie",
-    `${ASTRA_AUTH_COOKIE}=${encodeURIComponent(token)}; HttpOnly; SameSite=Lax; Path=/; Max-Age=${ASTRA_AUTH_MAX_AGE_SECONDS}`,
+    `${ASTRA_AUTH_COOKIE}=${encodeURIComponent(token)}; HttpOnly; SameSite=Lax; Path=/; Max-Age=${ASTRA_AUTH_MAX_AGE_SECONDS}${secure}`,
   );
 }
 
 function clearAuthCookie(res: Response) {
-  res.setHeader("Set-Cookie", `${ASTRA_AUTH_COOKIE}=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0`);
+  const secure = isSecureCookieEnabled() ? "; Secure" : "";
+  res.setHeader("Set-Cookie", `${ASTRA_AUTH_COOKIE}=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0${secure}`);
 }
 
 function requireAstraSession(req: Request, res: Response, next: NextFunction) {
@@ -480,10 +519,18 @@ function requireAstraSession(req: Request, res: Response, next: NextFunction) {
   next();
 }
 
+// Per-IP rate limiting
 const loginAttempts = new Map<string, { count: number; windowStart: number; lockedUntil: number }>();
 const LOGIN_RATE_LIMIT_MAX = 5;
 const LOGIN_RATE_LIMIT_WINDOW_MS = 60 * 1000;
 const LOGIN_LOCKOUT_MS = 5 * 60 * 1000;
+
+// Global rate limiting (backstop independent of IP)
+const GLOBAL_RATE_LIMIT_MAX = 20;
+const GLOBAL_RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
+const GLOBAL_LOCKOUT_MS = 15 * 60 * 1000;
+let globalFailures: number[] = [];
+let globalLockedUntil = 0;
 
 const LOOPBACK_ADDRESSES = new Set(["127.0.0.1", "::1", "::ffff:127.0.0.1"]);
 
@@ -509,7 +556,24 @@ function getClientIp(req: Request): string {
   return socketAddr;
 }
 
-function checkRateLimit(ip: string): { allowed: boolean; retryAfterMs?: number } {
+function checkGlobalRateLimit(): { allowed: boolean; retryAfterMs?: number } {
+  const now = Date.now();
+  if (globalLockedUntil > now) {
+    return { allowed: false, retryAfterMs: globalLockedUntil - now };
+  }
+  if (globalLockedUntil > 0 && globalLockedUntil <= now) {
+    globalLockedUntil = 0;
+    globalFailures = [];
+  }
+  return { allowed: true };
+}
+
+function checkRateLimit(ip: string): { allowed: boolean; retryAfterMs?: number; global?: boolean } {
+  const globalCheck = checkGlobalRateLimit();
+  if (!globalCheck.allowed) {
+    return { ...globalCheck, global: true };
+  }
+
   const now = Date.now();
   const entry = loginAttempts.get(ip);
 
@@ -526,13 +590,22 @@ function checkRateLimit(ip: string): { allowed: boolean; retryAfterMs?: number }
 
 function recordLoginAttempt(ip: string, success: boolean) {
   const now = Date.now();
-  const entry = loginAttempts.get(ip);
 
   if (success) {
     loginAttempts.delete(ip);
     return;
   }
 
+  // Record global failure
+  globalFailures = globalFailures.filter(t => (now - t) <= GLOBAL_RATE_LIMIT_WINDOW_MS);
+  globalFailures.push(now);
+  if (globalFailures.length >= GLOBAL_RATE_LIMIT_MAX && globalLockedUntil === 0) {
+    globalLockedUntil = now + GLOBAL_LOCKOUT_MS;
+    log("[auth] GLOBAL rate limit triggered: too many failed login attempts across all clients");
+  }
+
+  // Record per-IP failure
+  const entry = loginAttempts.get(ip);
   if (!entry || (now - entry.windowStart) > LOGIN_RATE_LIMIT_WINDOW_MS) {
     loginAttempts.set(ip, { count: 1, windowStart: now, lockedUntil: 0 });
     return;
@@ -541,8 +614,15 @@ function recordLoginAttempt(ip: string, success: boolean) {
   entry.count++;
   if (entry.count >= LOGIN_RATE_LIMIT_MAX) {
     entry.lockedUntil = now + LOGIN_LOCKOUT_MS;
+    log(`[auth] IP rate limit triggered for client`);
   }
   loginAttempts.set(ip, entry);
+}
+
+function resetRateLimitState() {
+  loginAttempts.clear();
+  globalFailures = [];
+  globalLockedUntil = 0;
 }
 
 setInterval(() => {
@@ -555,14 +635,33 @@ setInterval(() => {
       loginAttempts.delete(ip);
     }
   }
+  globalFailures = globalFailures.filter(t => (now - t) <= GLOBAL_RATE_LIMIT_WINDOW_MS);
+  if (globalLockedUntil > 0 && globalLockedUntil <= now) {
+    globalLockedUntil = 0;
+  }
 }, 60 * 1000).unref();
 
-export { getClientIp as _getClientIp, recordLoginAttempt as _recordLoginAttempt, checkRateLimit as _checkRateLimit, loginAttempts as _loginAttempts };
+export {
+  getClientIp as _getClientIp,
+  recordLoginAttempt as _recordLoginAttempt,
+  checkRateLimit as _checkRateLimit,
+  loginAttempts as _loginAttempts,
+  resetRateLimitState as _resetRateLimitState,
+  revokedSignatures as _revokedSignatures,
+  parseCookies as _parseCookies,
+};
 
 // -------------------------
 // Routes
 // -------------------------
 export async function registerRoutes(app: Express) {
+  // Log auth configuration status at startup (never log the values)
+  if (isAuthConfigured()) {
+    log("[auth] Authentication is configured");
+  } else {
+    log("[auth] WARNING: Authentication is NOT configured (fail-closed: all logins refused)");
+  }
+
   // Auth routes (public, must be registered before the session gate)
   app.get("/api/auth/session", (req: Request, res: Response) => {
     const session = readSession(req);
@@ -613,7 +712,14 @@ export async function registerRoutes(app: Express) {
     return res.json({ authenticated: true, user: { username: authUser } });
   });
 
-  app.post("/api/auth/logout", (_req: Request, res: Response) => {
+  app.post("/api/auth/logout", (req: Request, res: Response) => {
+    // Revoke the presented token so it cannot be reused even if stolen.
+    // The denylist is in-memory and resets on restart.
+    // Rotating ASTRA_AUTH_SECRET invalidates all tokens (the kill switch).
+    const session = readSession(req);
+    if (session) {
+      revokeToken(session.signature, session.expiresAt);
+    }
     clearAuthCookie(res);
     res.json({ authenticated: false });
   });
