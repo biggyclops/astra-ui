@@ -341,35 +341,100 @@ function bumpJob(id: number, patch: Partial<Job>) {
 // See NOTES.md in the original auth slice for background.
 //
 // Environment variables:
-//   ASTRA_AUTH_SECRET     - HMAC-SHA256 key for signing session cookies (required)
-//   ASTRA_AUTH_USER       - Single allowed username (required)
-//   ASTRA_AUTH_PASSWORD_SHA256 - Password hash, either:
-//       - Raw hex SHA-256 digest of the password, OR
-//       - scrypt:<base64(salt)>:<base64(derivedKey)> for scrypt (N=16384,r=8,p=1,keylen=64)
-//     Generate SHA-256: echo -n 'yourpassword' | sha256sum | cut -d' ' -f1
-//     Generate scrypt: node -e "const c=require('crypto');const s=c.randomBytes(32);const k=c.scryptSync('yourpassword',s,64,{N:16384,r:8,p:1});console.log('scrypt:'+s.toString('base64')+':'+k.toString('base64'))"
+//   ASTRA_AUTH_SECRET       - HMAC-SHA256 key for signing session cookies (required, min 32 chars)
+//                             Generate: openssl rand -hex 32
+//   ASTRA_AUTH_USER         - Single allowed username (required)
+//   ASTRA_AUTH_PASSWORD_HASH - Password hash in scrypt format (preferred):
+//                              scrypt:<base64(salt)>:<base64(derivedKey)> (N=16384,r=8,p=1,keylen=64)
+//                              Generate: node -e "const c=require('crypto');const s=c.randomBytes(32);const k=c.scryptSync('yourpassword',s,64,{N:16384,r:8,p:1});console.log('scrypt:'+s.toString('base64')+':'+k.toString('base64'))"
+//   ASTRA_AUTH_PASSWORD_SHA256 - DEPRECATED (removal: 2026-11-30). Use ASTRA_AUTH_PASSWORD_HASH instead.
+//                                Plain SHA-256 hex format is also deprecated.
 //
-// Fail-closed: If any of these env vars are missing or empty, all logins are refused
-// and every gated /api route returns 401.
+// Fail-closed: If secret is missing or <32 chars, user is missing, or password hash is missing,
+// all logins are refused and every gated /api route returns 401.
 // -------------------------
 
 const ASTRA_AUTH_COOKIE = "astra_session";
 const ASTRA_AUTH_MAX_AGE_SECONDS = 60 * 60 * 24 * 7; // 7 days
+const ASTRA_AUTH_SECRET_MIN_LENGTH = 32;
+
+let authConfigReason: string | null = null;
+let passwordDeprecationLogged = false;
 
 function getAuthSecret(): string {
   return (process.env.ASTRA_AUTH_SECRET ?? "").trim();
+}
+
+function isAuthSecretValid(): boolean {
+  const secret = getAuthSecret();
+  return secret.length >= ASTRA_AUTH_SECRET_MIN_LENGTH;
 }
 
 function getAuthUser(): string {
   return (process.env.ASTRA_AUTH_USER ?? "").trim();
 }
 
-function getAuthPasswordHash(): string {
-  return (process.env.ASTRA_AUTH_PASSWORD_SHA256 ?? "").trim();
+function getAuthPasswordHash(): { hash: string; deprecated: boolean; reason?: string } {
+  // Prefer ASTRA_AUTH_PASSWORD_HASH (new name)
+  const newHash = (process.env.ASTRA_AUTH_PASSWORD_HASH ?? "").trim();
+  if (newHash) {
+    // Check format: scrypt is preferred, plain SHA-256 hex is deprecated
+    if (newHash.startsWith("scrypt:")) {
+      return { hash: newHash, deprecated: false };
+    }
+    // Plain SHA-256 format (deprecated, removal: 2026-11-30)
+    return { hash: newHash, deprecated: true, reason: "plain SHA-256 format is deprecated; use scrypt (removal: 2026-11-30)" };
+  }
+
+  // Fallback to ASTRA_AUTH_PASSWORD_SHA256 (deprecated name, removal: 2026-11-30)
+  const oldHash = (process.env.ASTRA_AUTH_PASSWORD_SHA256 ?? "").trim();
+  if (oldHash) {
+    if (oldHash.startsWith("scrypt:")) {
+      return { hash: oldHash, deprecated: true, reason: "ASTRA_AUTH_PASSWORD_SHA256 is deprecated; use ASTRA_AUTH_PASSWORD_HASH (removal: 2026-11-30)" };
+    }
+    return { hash: oldHash, deprecated: true, reason: "ASTRA_AUTH_PASSWORD_SHA256 with plain SHA-256 is deprecated; use ASTRA_AUTH_PASSWORD_HASH with scrypt (removal: 2026-11-30)" };
+  }
+
+  return { hash: "", deprecated: false };
+}
+
+function getAuthPasswordHashValue(): string {
+  return getAuthPasswordHash().hash;
 }
 
 function isAuthConfigured(): boolean {
-  return Boolean(getAuthSecret() && getAuthUser() && getAuthPasswordHash());
+  const secret = getAuthSecret();
+  const user = getAuthUser();
+  const { hash } = getAuthPasswordHash();
+
+  if (!secret) {
+    authConfigReason = "ASTRA_AUTH_SECRET is not set";
+    return false;
+  }
+  if (secret.length < ASTRA_AUTH_SECRET_MIN_LENGTH) {
+    authConfigReason = `ASTRA_AUTH_SECRET must be at least ${ASTRA_AUTH_SECRET_MIN_LENGTH} characters (current: ${secret.length})`;
+    return false;
+  }
+  if (!user) {
+    authConfigReason = "ASTRA_AUTH_USER is not set";
+    return false;
+  }
+  if (!hash) {
+    authConfigReason = "ASTRA_AUTH_PASSWORD_HASH (or ASTRA_AUTH_PASSWORD_SHA256) is not set";
+    return false;
+  }
+
+  authConfigReason = null;
+  return true;
+}
+
+function logPasswordDeprecationOnce() {
+  if (passwordDeprecationLogged) return;
+  const { deprecated, reason } = getAuthPasswordHash();
+  if (deprecated && reason) {
+    log(`[auth] DEPRECATION WARNING: ${reason}`);
+    passwordDeprecationLogged = true;
+  }
 }
 
 function isSecureCookieEnabled(): boolean {
@@ -414,7 +479,7 @@ function safeEqual(left: string, right: string): boolean {
 }
 
 function verifyPassword(password: string): boolean {
-  const stored = getAuthPasswordHash();
+  const stored = getAuthPasswordHashValue();
   if (!stored) return false;
 
   if (stored.startsWith("scrypt:")) {
@@ -471,7 +536,19 @@ function createSessionCookie(username: string): string {
 }
 
 function readSession(req: Request): { username: string; signature: string; expiresAt: number } | null {
-  const token = parseCookies(req)[ASTRA_AUTH_COOKIE];
+  // Fail-closed: check full auth config (secret length, user, hash) before validating any session.
+  // This ensures that if config becomes invalid (e.g., secret shortened), existing cookies are rejected.
+  if (!isAuthConfigured()) {
+    return null;
+  }
+
+  let token: string | undefined;
+  try {
+    token = parseCookies(req)[ASTRA_AUTH_COOKIE];
+  } catch {
+    // Malformed cookie header — treat as unauthenticated, never throw
+    return null;
+  }
   if (!token) return null;
 
   const authUser = getAuthUser();
@@ -495,6 +572,7 @@ function readSession(req: Request): { username: string; signature: string; expir
     }
     return { username: authUser, signature, expiresAt: data.expiresAt };
   } catch {
+    // Malformed payload — treat as unauthenticated, never throw
     return null;
   }
 }
@@ -649,6 +727,9 @@ export {
   resetRateLimitState as _resetRateLimitState,
   revokedSignatures as _revokedSignatures,
   parseCookies as _parseCookies,
+  isAuthConfigured as _isAuthConfigured,
+  isAuthSecretValid as _isAuthSecretValid,
+  ASTRA_AUTH_SECRET_MIN_LENGTH as _ASTRA_AUTH_SECRET_MIN_LENGTH,
 };
 
 // -------------------------
@@ -658,9 +739,54 @@ export async function registerRoutes(app: Express) {
   // Log auth configuration status at startup (never log the values)
   if (isAuthConfigured()) {
     log("[auth] Authentication is configured");
+    logPasswordDeprecationOnce();
   } else {
-    log("[auth] WARNING: Authentication is NOT configured (fail-closed: all logins refused)");
+    log(`[auth] WARNING: Authentication is NOT configured (fail-closed: all logins refused). Reason: ${authConfigReason || "unknown"}`);
   }
+
+  // Cross-origin protection middleware for /api routes.
+  // Rejects:
+  //   1. Form-encoded bodies on /api (application/x-www-form-urlencoded)
+  //   2. State-changing requests (not GET/HEAD/OPTIONS) without Content-Type: application/json
+  //      (except multipart/form-data for existing upload routes)
+  //   3. Requests with an Origin header whose host doesn't match the request Host
+  app.use("/api", (req: Request, res: Response, next: NextFunction) => {
+    const method = req.method.toUpperCase();
+    const contentType = (req.headers["content-type"] || "").toLowerCase();
+
+    // Block form-encoded bodies entirely on /api
+    if (contentType.includes("application/x-www-form-urlencoded")) {
+      return res.status(415).json({ error: "Form-encoded bodies are not accepted on /api" });
+    }
+
+    // For state-changing methods, require application/json (allow multipart for uploads)
+    if (method !== "GET" && method !== "HEAD" && method !== "OPTIONS") {
+      const hasBody = req.headers["content-length"] !== "0" && req.headers["content-length"] !== undefined;
+      if (hasBody && !contentType.includes("application/json") && !contentType.includes("multipart/form-data")) {
+        return res.status(415).json({ error: "Content-Type must be application/json" });
+      }
+    }
+
+    // Origin header check: if present, host must match
+    const origin = req.headers["origin"];
+    if (origin) {
+      try {
+        const originUrl = new URL(origin);
+        const hostHeader = req.headers["host"] || "";
+        const hostWithoutPort = hostHeader.split(":")[0];
+        const originHost = originUrl.hostname;
+
+        if (originHost !== hostWithoutPort && originHost !== hostHeader) {
+          return res.status(403).json({ error: "Cross-origin request rejected" });
+        }
+      } catch {
+        // Malformed Origin header — reject
+        return res.status(403).json({ error: "Invalid Origin header" });
+      }
+    }
+
+    next();
+  });
 
   // Auth routes (public, must be registered before the session gate)
   app.get("/api/auth/session", (req: Request, res: Response) => {

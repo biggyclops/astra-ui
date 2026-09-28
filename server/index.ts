@@ -47,7 +47,11 @@ app.use((req, res, next) => {
     if (path.startsWith("/api")) {
       let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
       if (capturedJsonResponse) {
-        const sensitivePath = path === "/api/messages" || path.startsWith("/api/auth/");
+        // Normalize path for redaction: lowercase and strip trailing slashes
+        const normalizedPath = path.toLowerCase().replace(/\/+$/, "");
+        const sensitivePath =
+          normalizedPath.startsWith("/api/messages") ||
+          normalizedPath.startsWith("/api/auth/");
         logLine += sensitivePath ? " :: [response redacted]" : ` :: ${JSON.stringify(capturedJsonResponse)}`;
       }
 

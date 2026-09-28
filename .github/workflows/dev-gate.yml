@@ -29,7 +29,8 @@ jobs:
 
       - name: Run Auth Gate Tests
         env:
-          ASTRA_AUTH_SECRET: ci-test-secret-not-real
+          # Secret must be at least 32 characters (generate with: openssl rand -hex 32)
+          ASTRA_AUTH_SECRET: ci-test-secret-not-real-minimum-32-chars
           ASTRA_AUTH_USER: ci-testuser
           ASTRA_AUTH_PASSWORD_SHA256: "13d249f2cb4127b40cfa757866850278793f814ded3c587fe5889e889a7a9f6c"
         run: npx tsx scripts/test-auth-gate.ts

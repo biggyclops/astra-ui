@@ -25,7 +25,8 @@ import { createServer } from "net";
 
 const TEST_USER = "testuser";
 const TEST_PASS = "testpass";
-const TEST_SECRET = "test-secret-do-not-use-in-prod";
+// Secret must be at least 32 characters
+const TEST_SECRET = "test-secret-do-not-use-in-prod-minimum-32-chars";
 const TEST_PASS_HASH = "13d249f2cb4127b40cfa757866850278793f814ded3c587fe5889e889a7a9f6c";
 
 const RUN_UNIT_TESTS = process.env.RUN_UNIT_TESTS !== "0";
@@ -363,7 +364,82 @@ async function runTests(baseUrl: string) {
     }
   }
 
-  // Test 15: Unit tests for rate limiter and getClientIp
+  // Test 15: Form-encoded POST is rejected (415)
+  {
+    // Get a fresh valid cookie first
+    const loginRes = await fetchJson(baseUrl, "/api/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ username: TEST_USER, password: TEST_PASS }),
+    });
+    const cookie = extractSessionCookie(loginRes.cookies);
+
+    const url = `${baseUrl}/api/messages`;
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        ...(cookie ? { Cookie: `astra_session=${cookie}` } : {}),
+      },
+      body: "role=user&content=test",
+    });
+    if (res.status === 415) {
+      pass("Form-encoded POST /api/messages is rejected with 415");
+    } else {
+      fail("Form-encoded POST /api/messages is rejected with 415", `got ${res.status}`);
+    }
+  }
+
+  // Test 16: Cross-origin Origin header is rejected (403)
+  {
+    const loginRes = await fetchJson(baseUrl, "/api/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ username: TEST_USER, password: TEST_PASS }),
+    });
+    const cookie = extractSessionCookie(loginRes.cookies);
+
+    const { status, data } = await fetchJson(baseUrl, "/api/auth/session", {
+      headers: {
+        Origin: "https://evil.example.com",
+        ...(cookie ? { Cookie: `astra_session=${cookie}` } : {}),
+      },
+    });
+    if (status === 403 && data?.error?.includes("Cross-origin")) {
+      pass("Cross-origin Origin header is rejected with 403");
+    } else {
+      fail("Cross-origin Origin header is rejected with 403", `got ${status}: ${JSON.stringify(data)}`);
+    }
+  }
+
+  // Test 17: Same-origin or missing Origin is allowed
+  {
+    const loginRes = await fetchJson(baseUrl, "/api/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ username: TEST_USER, password: TEST_PASS }),
+    });
+    const cookie = extractSessionCookie(loginRes.cookies);
+
+    // Test with no Origin header (should be allowed)
+    const { status: noOriginStatus } = await fetchJson(baseUrl, "/api/auth/session", {
+      headers: cookie ? { Cookie: `astra_session=${cookie}` } : {},
+    });
+
+    // Test with same-origin (extract host from baseUrl)
+    const baseUrlObj = new URL(baseUrl);
+    const { status: sameOriginStatus } = await fetchJson(baseUrl, "/api/auth/session", {
+      headers: {
+        Origin: baseUrlObj.origin,
+        ...(cookie ? { Cookie: `astra_session=${cookie}` } : {}),
+      },
+    });
+
+    if (noOriginStatus === 200 && sameOriginStatus === 200) {
+      pass("Same-origin and missing Origin are allowed");
+    } else {
+      fail("Same-origin and missing Origin are allowed", `noOrigin=${noOriginStatus}, sameOrigin=${sameOriginStatus}`);
+    }
+  }
+
+  // Test 18: Unit tests for rate limiter and getClientIp
   if (RUN_UNIT_TESTS) {
     log("");
     log("Running unit tests for rate limiter...");
@@ -446,7 +522,7 @@ async function runTests(baseUrl: string) {
 }
 
 async function runUnitTests() {
-  const { _getClientIp, _recordLoginAttempt, _checkRateLimit, _loginAttempts, _resetRateLimitState, _parseCookies } =
+  const { _getClientIp, _recordLoginAttempt, _checkRateLimit, _loginAttempts, _resetRateLimitState, _parseCookies, _isAuthConfigured, _ASTRA_AUTH_SECRET_MIN_LENGTH } =
     await import("../server/routes");
 
   function mockRequest(socketAddr: string, xff?: string): Request {
@@ -574,6 +650,80 @@ async function runUnitTests() {
       pass("parseCookies: skips malformed cookie values");
     } else {
       fail("parseCookies: skips malformed cookie values", JSON.stringify(cookies));
+    }
+  }
+
+  // Unit test: log redaction normalization
+  {
+    // Test helper for path normalization (same logic as in server/index.ts)
+    function shouldRedact(path: string): boolean {
+      const normalizedPath = path.toLowerCase().replace(/\/+$/, "");
+      return normalizedPath.startsWith("/api/messages") || normalizedPath.startsWith("/api/auth/");
+    }
+
+    const testCases = [
+      { path: "/api/messages", expected: true },
+      { path: "/api/messages/", expected: true },
+      { path: "/api/Messages", expected: true },
+      { path: "/api/MESSAGES/", expected: true },
+      { path: "/api/auth/login", expected: true },
+      { path: "/api/Auth/Session", expected: true },
+      { path: "/api/status", expected: false },
+      { path: "/api/jobs", expected: false },
+    ];
+
+    let allPassed = true;
+    const failures: string[] = [];
+    for (const { path, expected } of testCases) {
+      if (shouldRedact(path) !== expected) {
+        allPassed = false;
+        failures.push(`${path} expected ${expected}`);
+      }
+    }
+
+    if (allPassed) {
+      pass("Log redaction: normalization handles case and trailing slashes");
+    } else {
+      fail("Log redaction: normalization handles case and trailing slashes", failures.join(", "));
+    }
+  }
+
+  // Unit test: isAuthConfigured checks secret length
+  {
+    const { _isAuthConfigured, _ASTRA_AUTH_SECRET_MIN_LENGTH } = await import("../server/routes");
+    
+    // Save original env values
+    const origSecret = process.env.ASTRA_AUTH_SECRET;
+    const origUser = process.env.ASTRA_AUTH_USER;
+    const origHash = process.env.ASTRA_AUTH_PASSWORD_SHA256;
+
+    try {
+      // Test with short secret
+      process.env.ASTRA_AUTH_SECRET = "short";
+      process.env.ASTRA_AUTH_USER = "testuser";
+      process.env.ASTRA_AUTH_PASSWORD_SHA256 = "somehash";
+      
+      // Force re-evaluation by calling the function
+      const isConfiguredShort = _isAuthConfigured();
+
+      // Test with valid-length secret
+      process.env.ASTRA_AUTH_SECRET = "a".repeat(_ASTRA_AUTH_SECRET_MIN_LENGTH);
+      const isConfiguredValid = _isAuthConfigured();
+
+      if (!isConfiguredShort && isConfiguredValid) {
+        pass(`isAuthConfigured: rejects secrets shorter than ${_ASTRA_AUTH_SECRET_MIN_LENGTH} chars`);
+      } else {
+        fail(`isAuthConfigured: rejects secrets shorter than ${_ASTRA_AUTH_SECRET_MIN_LENGTH} chars`, 
+          `short=${isConfiguredShort}, valid=${isConfiguredValid}`);
+      }
+    } finally {
+      // Restore original env values
+      if (origSecret !== undefined) process.env.ASTRA_AUTH_SECRET = origSecret;
+      else delete process.env.ASTRA_AUTH_SECRET;
+      if (origUser !== undefined) process.env.ASTRA_AUTH_USER = origUser;
+      else delete process.env.ASTRA_AUTH_USER;
+      if (origHash !== undefined) process.env.ASTRA_AUTH_PASSWORD_SHA256 = origHash;
+      else delete process.env.ASTRA_AUTH_PASSWORD_SHA256;
     }
   }
 }
