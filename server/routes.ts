@@ -1,5 +1,5 @@
 // server/routes.ts
-import type { Express, Request, Response } from "express";
+import type { Express, NextFunction, Request, Response } from "express";
 import { execFile, execSync } from "node:child_process";
 import { promisify } from "node:util";
 import { Readable } from "node:stream";
@@ -337,9 +337,275 @@ function bumpJob(id: number, patch: Partial<Job>) {
 }
 
 // -------------------------
+// Auth gate (hardened port from Mini-Beast dirty tree)
+// See NOTES.md in the original auth slice for background.
+//
+// Environment variables:
+//   ASTRA_AUTH_SECRET     - HMAC-SHA256 key for signing session cookies (required)
+//   ASTRA_AUTH_USER       - Single allowed username (required)
+//   ASTRA_AUTH_PASSWORD_SHA256 - Password hash, either:
+//       - Raw hex SHA-256 digest of the password, OR
+//       - scrypt:<base64(salt)>:<base64(derivedKey)> for scrypt (N=16384,r=8,p=1,keylen=64)
+//     Generate SHA-256: echo -n 'yourpassword' | sha256sum | cut -d' ' -f1
+//     Generate scrypt: node -e "const c=require('crypto');const s=c.randomBytes(32);const k=c.scryptSync('yourpassword',s,64,{N:16384,r:8,p:1});console.log('scrypt:'+s.toString('base64')+':'+k.toString('base64'))"
+//
+// Fail-closed: If any of these env vars are missing or empty, all logins are refused
+// and every gated /api route returns 401.
+// -------------------------
+
+const ASTRA_AUTH_COOKIE = "astra_session";
+const ASTRA_AUTH_MAX_AGE_SECONDS = 60 * 60 * 24 * 7; // 7 days
+
+function getAuthSecret(): string {
+  return (process.env.ASTRA_AUTH_SECRET ?? "").trim();
+}
+
+function getAuthUser(): string {
+  return (process.env.ASTRA_AUTH_USER ?? "").trim();
+}
+
+function getAuthPasswordHash(): string {
+  return (process.env.ASTRA_AUTH_PASSWORD_SHA256 ?? "").trim();
+}
+
+function isAuthConfigured(): boolean {
+  return Boolean(getAuthSecret() && getAuthUser() && getAuthPasswordHash());
+}
+
+function hashSha256(value: string): string {
+  return crypto.createHash("sha256").update(value, "utf8").digest("hex");
+}
+
+function safeEqual(left: string, right: string): boolean {
+  const leftBuffer = Buffer.from(left);
+  const rightBuffer = Buffer.from(right);
+  if (leftBuffer.length !== rightBuffer.length) {
+    crypto.timingSafeEqual(Buffer.alloc(32), Buffer.alloc(32));
+    return false;
+  }
+  return crypto.timingSafeEqual(leftBuffer, rightBuffer);
+}
+
+function verifyPassword(password: string): boolean {
+  const stored = getAuthPasswordHash();
+  if (!stored) return false;
+
+  if (stored.startsWith("scrypt:")) {
+    const parts = stored.split(":");
+    if (parts.length !== 3) return false;
+    const salt = Buffer.from(parts[1], "base64");
+    const expectedKey = Buffer.from(parts[2], "base64");
+    if (salt.length === 0 || expectedKey.length === 0) return false;
+
+    try {
+      const derivedKey = crypto.scryptSync(password, salt, expectedKey.length, { N: 16384, r: 8, p: 1 });
+      if (derivedKey.length !== expectedKey.length) return false;
+      return crypto.timingSafeEqual(derivedKey, expectedKey);
+    } catch {
+      return false;
+    }
+  }
+
+  const hash = hashSha256(password);
+  return safeEqual(hash.toLowerCase(), stored.toLowerCase());
+}
+
+function parseCookies(req: Request): Record<string, string> {
+  const header = req.headers.cookie;
+  if (!header) return {};
+  return Object.fromEntries(
+    header.split(";").map((part) => {
+      const [name, ...valueParts] = part.trim().split("=");
+      return [decodeURIComponent(name), decodeURIComponent(valueParts.join("="))];
+    }).filter(([name]) => Boolean(name)),
+  );
+}
+
+function signSessionPayload(payload: string): string {
+  const secret = getAuthSecret();
+  if (!secret) return "";
+  return crypto.createHmac("sha256", secret).update(payload).digest("base64url");
+}
+
+function createSessionCookie(username: string): string {
+  const payload = Buffer.from(JSON.stringify({
+    username,
+    expiresAt: Date.now() + ASTRA_AUTH_MAX_AGE_SECONDS * 1000,
+  })).toString("base64url");
+  return `${payload}.${signSessionPayload(payload)}`;
+}
+
+function readSession(req: Request): { username: string } | null {
+  const token = parseCookies(req)[ASTRA_AUTH_COOKIE];
+  if (!token) return null;
+
+  const authUser = getAuthUser();
+  if (!authUser) return null;
+
+  const [payload, signature] = token.split(".", 2);
+  if (!payload || !signature) return null;
+
+  const expectedSig = signSessionPayload(payload);
+  if (!expectedSig || !safeEqual(signature, expectedSig)) return null;
+
+  try {
+    const data = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as {
+      username?: unknown;
+      expiresAt?: unknown;
+    };
+    if (data.username !== authUser || typeof data.expiresAt !== "number" || data.expiresAt <= Date.now()) {
+      return null;
+    }
+    return { username: authUser };
+  } catch {
+    return null;
+  }
+}
+
+function setAuthCookie(res: Response, token: string) {
+  res.setHeader(
+    "Set-Cookie",
+    `${ASTRA_AUTH_COOKIE}=${encodeURIComponent(token)}; HttpOnly; SameSite=Lax; Path=/; Max-Age=${ASTRA_AUTH_MAX_AGE_SECONDS}`,
+  );
+}
+
+function clearAuthCookie(res: Response) {
+  res.setHeader("Set-Cookie", `${ASTRA_AUTH_COOKIE}=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0`);
+}
+
+function requireAstraSession(req: Request, res: Response, next: NextFunction) {
+  if (!readSession(req)) {
+    return res.status(401).json({ authenticated: false, message: "Authentication required" });
+  }
+  next();
+}
+
+const loginAttempts = new Map<string, { count: number; lockedUntil: number }>();
+const LOGIN_RATE_LIMIT_MAX = 5;
+const LOGIN_RATE_LIMIT_WINDOW_MS = 60 * 1000;
+const LOGIN_LOCKOUT_MS = 5 * 60 * 1000;
+
+function getClientIp(req: Request): string {
+  const xff = req.headers["x-forwarded-for"];
+  if (xff) {
+    const first = Array.isArray(xff) ? xff[0] : xff.split(",")[0];
+    return first.trim();
+  }
+  return req.socket.remoteAddress ?? "unknown";
+}
+
+function checkRateLimit(ip: string): { allowed: boolean; retryAfterMs?: number } {
+  const now = Date.now();
+  const entry = loginAttempts.get(ip);
+
+  if (entry && entry.lockedUntil > now) {
+    return { allowed: false, retryAfterMs: entry.lockedUntil - now };
+  }
+
+  if (entry && entry.lockedUntil <= now) {
+    loginAttempts.delete(ip);
+  }
+
+  return { allowed: true };
+}
+
+function recordLoginAttempt(ip: string, success: boolean) {
+  const now = Date.now();
+  const entry = loginAttempts.get(ip);
+
+  if (success) {
+    loginAttempts.delete(ip);
+    return;
+  }
+
+  if (!entry || now - (entry.lockedUntil - LOGIN_LOCKOUT_MS) > LOGIN_RATE_LIMIT_WINDOW_MS) {
+    loginAttempts.set(ip, { count: 1, lockedUntil: 0 });
+    return;
+  }
+
+  entry.count++;
+  if (entry.count >= LOGIN_RATE_LIMIT_MAX) {
+    entry.lockedUntil = now + LOGIN_LOCKOUT_MS;
+  }
+  loginAttempts.set(ip, entry);
+}
+
+setInterval(() => {
+  const now = Date.now();
+  const entries = Array.from(loginAttempts.entries());
+  for (const [ip, entry] of entries) {
+    if (entry.lockedUntil > 0 && entry.lockedUntil <= now) {
+      loginAttempts.delete(ip);
+    } else if (entry.lockedUntil === 0 && entry.count > 0) {
+      loginAttempts.delete(ip);
+    }
+  }
+}, 60 * 1000).unref();
+
+// -------------------------
 // Routes
 // -------------------------
 export async function registerRoutes(app: Express) {
+  // Auth routes (public, must be registered before the session gate)
+  app.get("/api/auth/session", (req: Request, res: Response) => {
+    const session = readSession(req);
+    res.json({
+      authenticated: Boolean(session),
+      user: session ? { username: session.username } : null,
+    });
+  });
+
+  app.post("/api/auth/login", (req: Request, res: Response) => {
+    const ip = getClientIp(req);
+    const rateCheck = checkRateLimit(ip);
+    if (!rateCheck.allowed) {
+      clearAuthCookie(res);
+      const retryAfterSec = Math.ceil((rateCheck.retryAfterMs ?? LOGIN_LOCKOUT_MS) / 1000);
+      res.setHeader("Retry-After", String(retryAfterSec));
+      return res.status(429).json({
+        authenticated: false,
+        message: `Too many login attempts. Try again in ${retryAfterSec} seconds.`,
+      });
+    }
+
+    if (!isAuthConfigured()) {
+      recordLoginAttempt(ip, false);
+      clearAuthCookie(res);
+      return res.status(503).json({
+        authenticated: false,
+        message: "Authentication is not configured on this server",
+      });
+    }
+
+    const body = (req.body ?? {}) as { username?: unknown; password?: unknown };
+    const username = typeof body.username === "string" ? body.username.trim() : "";
+    const password = typeof body.password === "string" ? body.password : "";
+
+    const authUser = getAuthUser();
+    const validUsername = safeEqual(username, authUser);
+    const validPassword = verifyPassword(password);
+
+    if (!validUsername || !validPassword) {
+      recordLoginAttempt(ip, false);
+      clearAuthCookie(res);
+      return res.status(401).json({ authenticated: false, message: "Invalid username or password" });
+    }
+
+    recordLoginAttempt(ip, true);
+    setAuthCookie(res, createSessionCookie(authUser));
+    return res.json({ authenticated: true, user: { username: authUser } });
+  });
+
+  app.post("/api/auth/logout", (_req: Request, res: Response) => {
+    clearAuthCookie(res);
+    res.json({ authenticated: false });
+  });
+
+  // Session gate: everything under /api registered after this line requires a valid astra_session cookie.
+  // This covers /api/status, /api/autonomy/snapshot, /api/nodes, /api/messages, /api/jobs*,
+  // /api/media/*, /api/actions, /api/actions/:id{,/approve,/reject,/cancel,/audit}.
+  app.use("/api", requireAstraSession);
+
   async function refreshStatus(): Promise<{ nodes: any[]; checkedAt: string }> {
     const checkedAt = nowIso();
     const localMetrics = await getLocalMetrics();

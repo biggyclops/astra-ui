@@ -6,6 +6,13 @@ import { log } from "./logger";
 import { runHermesStartupSanityCheck } from "./hermes-startup";
 
 const app = express();
+
+// Health endpoint - plain text for monitoring; registered before middleware.
+// This MUST stay public (no auth). Use / for the full UI.
+app.get("/healthz", (_req, res) => {
+  res.status(200).type("text/plain").send("astra-ui ok");
+});
+
 const httpServer = createServer(app);
 
 declare module "http" {
@@ -40,7 +47,8 @@ app.use((req, res, next) => {
     if (path.startsWith("/api")) {
       let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
       if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
+        const sensitivePath = path === "/api/messages" || path.startsWith("/api/auth/");
+        logLine += sensitivePath ? " :: [response redacted]" : ` :: ${JSON.stringify(capturedJsonResponse)}`;
       }
 
       log(logLine);
@@ -93,8 +101,17 @@ app.use((req, res, next) => {
     },
     () => {
       log(`serving on port ${port}`);
+      // The status cache warm now returns 401 because /api/status is gated.
+      // This is expected; the first authenticated request will warm the cache.
+      // We still attempt it to log the outcome for diagnostics.
       fetch(`http://localhost:${port}/api/status`)
-        .then(() => log("initial node status check complete"))
+        .then((r) => {
+          if (r.status === 401) {
+            log("initial status warm skipped (auth required, expected)");
+          } else {
+            log("initial node status check complete");
+          }
+        })
         .catch((e) => log(`initial status check failed: ${e.message}`));
     },
   );
