@@ -439,14 +439,90 @@ async function runTests(baseUrl: string) {
     }
   }
 
-  // Test 18: Unit tests for rate limiter and getClientIp
+  // Test 18: Same hostname with different port gets 403
+  {
+    const loginRes = await fetchJson(baseUrl, "/api/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ username: TEST_USER, password: TEST_PASS }),
+    });
+    const cookie = extractSessionCookie(loginRes.cookies);
+
+    // Parse the base URL to get the host, then construct an Origin with a different port
+    const baseUrlObj = new URL(baseUrl);
+    const wrongPortOrigin = `${baseUrlObj.protocol}//${baseUrlObj.hostname}:9999`;
+
+    const { status, data } = await fetchJson(baseUrl, "/api/auth/session", {
+      headers: {
+        Origin: wrongPortOrigin,
+        ...(cookie ? { Cookie: `astra_session=${cookie}` } : {}),
+      },
+    });
+
+    if (status === 403 && data?.error?.includes("Cross-origin")) {
+      pass("Origin with different port is rejected with 403");
+    } else {
+      fail("Origin with different port is rejected with 403", `got ${status}: ${JSON.stringify(data)}`);
+    }
+  }
+
+  // Test 19: Origin 'null' gets 403
+  {
+    const loginRes = await fetchJson(baseUrl, "/api/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ username: TEST_USER, password: TEST_PASS }),
+    });
+    const cookie = extractSessionCookie(loginRes.cookies);
+
+    const { status, data } = await fetchJson(baseUrl, "/api/auth/session", {
+      headers: {
+        Origin: "null",
+        ...(cookie ? { Cookie: `astra_session=${cookie}` } : {}),
+      },
+    });
+
+    if (status === 403 && data?.error?.includes("Cross-origin")) {
+      pass("Origin 'null' is rejected with 403");
+    } else {
+      fail("Origin 'null' is rejected with 403", `got ${status}: ${JSON.stringify(data)}`);
+    }
+  }
+
+  // Test 20: Multipart POST to /api/messages is rejected (no upload routes on main)
+  {
+    const loginRes = await fetchJson(baseUrl, "/api/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ username: TEST_USER, password: TEST_PASS }),
+    });
+    const cookie = extractSessionCookie(loginRes.cookies);
+
+    const url = `${baseUrl}/api/messages`;
+    const boundary = "----TestBoundary123";
+    const body = `--${boundary}\r\nContent-Disposition: form-data; name="role"\r\n\r\nuser\r\n--${boundary}\r\nContent-Disposition: form-data; name="content"\r\n\r\ntest\r\n--${boundary}--\r\n`;
+
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": `multipart/form-data; boundary=${boundary}`,
+        ...(cookie ? { Cookie: `astra_session=${cookie}` } : {}),
+      },
+      body,
+    });
+
+    if (res.status === 415) {
+      pass("Multipart POST to /api/messages is rejected with 415");
+    } else {
+      fail("Multipart POST to /api/messages is rejected with 415", `got ${res.status}`);
+    }
+  }
+
+  // Test 21: Unit tests for rate limiter and getClientIp
   if (RUN_UNIT_TESTS) {
     log("");
     log("Running unit tests for rate limiter...");
     await runUnitTests();
   }
 
-  // Test 16: Rate limit - 5 wrong-password logins trigger lockout
+  // Test 22: Rate limit - 5 wrong-password logins trigger lockout
   {
     try {
       const { _resetRateLimitState } = await import("../server/routes");
@@ -859,6 +935,62 @@ async function runUnitTests() {
       else delete process.env.ASTRA_AUTH_USER;
       if (origHash !== undefined) process.env.ASTRA_AUTH_PASSWORD_SHA256 = origHash;
       else delete process.env.ASTRA_AUTH_PASSWORD_SHA256;
+    }
+  }
+
+  // Unit test: Origin check handles IPv6 addresses correctly
+  // Tests the URL parsing logic used in the Origin check middleware
+  {
+    function checkOriginMatch(origin: string, hostHeader: string): boolean {
+      if (origin === "null") return false;
+      try {
+        const originUrl = new URL(origin);
+        const originHost = originUrl.host; // includes port, e.g., "[::1]:5000"
+        let normalizedHost = hostHeader;
+        const scheme = originUrl.protocol;
+        if (scheme === "http:" && hostHeader.endsWith(":80")) {
+          normalizedHost = hostHeader.slice(0, -3);
+        } else if (scheme === "https:" && hostHeader.endsWith(":443")) {
+          normalizedHost = hostHeader.slice(0, -4);
+        }
+        return originHost === normalizedHost;
+      } catch {
+        return false;
+      }
+    }
+
+    const testCases = [
+      // IPv6 with same port - should match
+      { origin: "http://[::1]:5000", host: "[::1]:5000", expected: true, desc: "IPv6 same host:port" },
+      // IPv6 with different port - should NOT match
+      { origin: "http://[::1]:5000", host: "[::1]:3000", expected: false, desc: "IPv6 different port" },
+      // IPv6 different address - should NOT match
+      { origin: "http://[::1]:5000", host: "[::2]:5000", expected: false, desc: "IPv6 different address" },
+      // IPv4 same port - should match
+      { origin: "http://127.0.0.1:5000", host: "127.0.0.1:5000", expected: true, desc: "IPv4 same host:port" },
+      // IPv4 different port - should NOT match
+      { origin: "http://127.0.0.1:9999", host: "127.0.0.1:5000", expected: false, desc: "IPv4 different port" },
+      // Default port normalization - http://localhost:80 vs localhost
+      { origin: "http://localhost:80", host: "localhost", expected: true, desc: "HTTP default port normalized" },
+      { origin: "http://localhost", host: "localhost:80", expected: true, desc: "HTTP default port in host" },
+      // Origin 'null' - should NOT match
+      { origin: "null", host: "localhost:5000", expected: false, desc: "Origin 'null' rejected" },
+    ];
+
+    let allPassed = true;
+    const failures: string[] = [];
+    for (const tc of testCases) {
+      const result = checkOriginMatch(tc.origin, tc.host);
+      if (result !== tc.expected) {
+        allPassed = false;
+        failures.push(`${tc.desc}: origin=${tc.origin}, host=${tc.host}, expected=${tc.expected}, got=${result}`);
+      }
+    }
+
+    if (allPassed) {
+      pass("Origin check: IPv6 and port handling (8 cases)");
+    } else {
+      fail("Origin check: IPv6 and port handling", failures.join("; "));
     }
   }
 }

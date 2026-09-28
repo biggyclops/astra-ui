@@ -748,8 +748,7 @@ export async function registerRoutes(app: Express) {
   // Rejects:
   //   1. Form-encoded bodies on /api (application/x-www-form-urlencoded)
   //   2. State-changing requests (not GET/HEAD/OPTIONS) without Content-Type: application/json
-  //      (except multipart/form-data for existing upload routes)
-  //   3. Requests with an Origin header whose host doesn't match the request Host
+  //   3. Requests with an Origin header whose host (hostname:port) doesn't match the request Host
   app.use("/api", (req: Request, res: Response, next: NextFunction) => {
     const method = req.method.toUpperCase();
     const contentType = (req.headers["content-type"] || "").toLowerCase();
@@ -759,24 +758,48 @@ export async function registerRoutes(app: Express) {
       return res.status(415).json({ error: "Form-encoded bodies are not accepted on /api" });
     }
 
-    // For state-changing methods, require application/json (allow multipart for uploads)
+    // For state-changing methods, require application/json (no multipart - no upload routes on main)
     if (method !== "GET" && method !== "HEAD" && method !== "OPTIONS") {
       const hasBody = req.headers["content-length"] !== "0" && req.headers["content-length"] !== undefined;
-      if (hasBody && !contentType.includes("application/json") && !contentType.includes("multipart/form-data")) {
+      if (hasBody && !contentType.includes("application/json")) {
         return res.status(415).json({ error: "Content-Type must be application/json" });
       }
     }
 
-    // Origin header check: if present, host must match
+    // Origin header check: if present, host (hostname:port) must match request Host.
+    // Reject 'null' origin (sent by sandboxed iframes, data: URLs, etc.) and unparseable values.
     const origin = req.headers["origin"];
     if (origin) {
+      // Reject literal 'null' origin
+      if (origin === "null") {
+        return res.status(403).json({ error: "Cross-origin request rejected" });
+      }
+
       try {
         const originUrl = new URL(origin);
-        const hostHeader = req.headers["host"] || "";
-        const hostWithoutPort = hostHeader.split(":")[0];
-        const originHost = originUrl.hostname;
+        // originUrl.host includes port (e.g., "127.0.0.1:5000", "[::1]:5000")
+        // Default ports (80 for http, 443 for https) are normalized away by URL parser
+        const originHost = originUrl.host;
 
-        if (originHost !== hostWithoutPort && originHost !== hostHeader) {
+        // Normalize the request Host header for comparison
+        // Host header may or may not include port; if missing, assume default port for scheme
+        const hostHeader = req.headers["host"] || "";
+
+        // For comparison, we need to handle:
+        // - IPv6: [::1]:5000 vs [::1]:5000
+        // - IPv4: 127.0.0.1:5000 vs 127.0.0.1:5000
+        // - Default port normalization: localhost:80 with http origin should match localhost
+        // The Origin's host already has default ports normalized, so we compare directly.
+        // If hostHeader has an explicit default port, we should normalize it too.
+        let normalizedHost = hostHeader;
+        const scheme = originUrl.protocol; // "http:" or "https:"
+        if (scheme === "http:" && hostHeader.endsWith(":80")) {
+          normalizedHost = hostHeader.slice(0, -3);
+        } else if (scheme === "https:" && hostHeader.endsWith(":443")) {
+          normalizedHost = hostHeader.slice(0, -4);
+        }
+
+        if (originHost !== normalizedHost) {
           return res.status(403).json({ error: "Cross-origin request rejected" });
         }
       } catch {
