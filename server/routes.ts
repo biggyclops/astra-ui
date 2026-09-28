@@ -1,5 +1,5 @@
 // server/routes.ts
-import type { Express, Request, Response } from "express";
+import type { Express, NextFunction, Request, Response } from "express";
 import { execFile, execSync } from "node:child_process";
 import { promisify } from "node:util";
 import { Readable } from "node:stream";
@@ -337,9 +337,547 @@ function bumpJob(id: number, patch: Partial<Job>) {
 }
 
 // -------------------------
+// Auth gate (hardened port from Mini-Beast dirty tree)
+// See NOTES.md in the original auth slice for background.
+//
+// Environment variables:
+//   ASTRA_AUTH_SECRET       - HMAC-SHA256 key for signing session cookies (required, min 32 chars)
+//                             Generate: openssl rand -hex 32
+//   ASTRA_AUTH_USER         - Single allowed username (required)
+//   ASTRA_AUTH_PASSWORD_HASH - Password hash in scrypt format (preferred):
+//                              scrypt:<base64(salt)>:<base64(derivedKey)> (N=16384,r=8,p=1,keylen=64)
+//                              Generate: node -e "const c=require('crypto');const s=c.randomBytes(32);const k=c.scryptSync('yourpassword',s,64,{N:16384,r:8,p:1});console.log('scrypt:'+s.toString('base64')+':'+k.toString('base64'))"
+//   ASTRA_AUTH_PASSWORD_SHA256 - DEPRECATED (removal: 2026-11-30). Use ASTRA_AUTH_PASSWORD_HASH instead.
+//                                Plain SHA-256 hex format is also deprecated.
+//
+// Fail-closed: If secret is missing or <32 chars, user is missing, or password hash is missing,
+// all logins are refused and every gated /api route returns 401.
+// -------------------------
+
+const ASTRA_AUTH_COOKIE = "astra_session";
+const ASTRA_AUTH_MAX_AGE_SECONDS = 60 * 60 * 24 * 7; // 7 days
+const ASTRA_AUTH_SECRET_MIN_LENGTH = 32;
+
+let authConfigReason: string | null = null;
+let passwordDeprecationLogged = false;
+
+function getAuthSecret(): string {
+  return (process.env.ASTRA_AUTH_SECRET ?? "").trim();
+}
+
+function isAuthSecretValid(): boolean {
+  const secret = getAuthSecret();
+  return secret.length >= ASTRA_AUTH_SECRET_MIN_LENGTH;
+}
+
+function getAuthUser(): string {
+  return (process.env.ASTRA_AUTH_USER ?? "").trim();
+}
+
+function getAuthPasswordHash(): { hash: string; deprecated: boolean; reason?: string } {
+  // Prefer ASTRA_AUTH_PASSWORD_HASH (new name)
+  const newHash = (process.env.ASTRA_AUTH_PASSWORD_HASH ?? "").trim();
+  if (newHash) {
+    // Check format: scrypt is preferred, plain SHA-256 hex is deprecated
+    if (newHash.startsWith("scrypt:")) {
+      return { hash: newHash, deprecated: false };
+    }
+    // Plain SHA-256 format (deprecated, removal: 2026-11-30)
+    return { hash: newHash, deprecated: true, reason: "plain SHA-256 format is deprecated; use scrypt (removal: 2026-11-30)" };
+  }
+
+  // Fallback to ASTRA_AUTH_PASSWORD_SHA256 (deprecated name, removal: 2026-11-30)
+  const oldHash = (process.env.ASTRA_AUTH_PASSWORD_SHA256 ?? "").trim();
+  if (oldHash) {
+    if (oldHash.startsWith("scrypt:")) {
+      return { hash: oldHash, deprecated: true, reason: "ASTRA_AUTH_PASSWORD_SHA256 is deprecated; use ASTRA_AUTH_PASSWORD_HASH (removal: 2026-11-30)" };
+    }
+    return { hash: oldHash, deprecated: true, reason: "ASTRA_AUTH_PASSWORD_SHA256 with plain SHA-256 is deprecated; use ASTRA_AUTH_PASSWORD_HASH with scrypt (removal: 2026-11-30)" };
+  }
+
+  return { hash: "", deprecated: false };
+}
+
+function getAuthPasswordHashValue(): string {
+  return getAuthPasswordHash().hash;
+}
+
+function isAuthConfigured(): boolean {
+  const secret = getAuthSecret();
+  const user = getAuthUser();
+  const { hash } = getAuthPasswordHash();
+
+  if (!secret) {
+    authConfigReason = "ASTRA_AUTH_SECRET is not set";
+    return false;
+  }
+  if (secret.length < ASTRA_AUTH_SECRET_MIN_LENGTH) {
+    authConfigReason = `ASTRA_AUTH_SECRET must be at least ${ASTRA_AUTH_SECRET_MIN_LENGTH} characters (current: ${secret.length})`;
+    return false;
+  }
+  if (!user) {
+    authConfigReason = "ASTRA_AUTH_USER is not set";
+    return false;
+  }
+  if (!hash) {
+    authConfigReason = "ASTRA_AUTH_PASSWORD_HASH (or ASTRA_AUTH_PASSWORD_SHA256) is not set";
+    return false;
+  }
+
+  authConfigReason = null;
+  return true;
+}
+
+function logPasswordDeprecationOnce() {
+  if (passwordDeprecationLogged) return;
+  const { deprecated, reason } = getAuthPasswordHash();
+  if (deprecated && reason) {
+    log(`[auth] DEPRECATION WARNING: ${reason}`);
+    passwordDeprecationLogged = true;
+  }
+}
+
+function isSecureCookieEnabled(): boolean {
+  const val = (process.env.ASTRA_AUTH_COOKIE_SECURE ?? "").trim().toLowerCase();
+  return val === "1" || val === "true";
+}
+
+// Revocation denylist: stores signature -> expiresAt for revoked tokens.
+// Cleared on process restart. Rotating ASTRA_AUTH_SECRET revokes all tokens.
+const revokedSignatures = new Map<string, number>();
+
+function revokeToken(signature: string, expiresAt: number) {
+  revokedSignatures.set(signature, expiresAt);
+}
+
+function isTokenRevoked(signature: string): boolean {
+  return revokedSignatures.has(signature);
+}
+
+setInterval(() => {
+  const now = Date.now();
+  const entries = Array.from(revokedSignatures.entries());
+  for (const [sig, expiresAt] of entries) {
+    if (expiresAt <= now) {
+      revokedSignatures.delete(sig);
+    }
+  }
+}, 60 * 1000).unref();
+
+function hashSha256(value: string): string {
+  return crypto.createHash("sha256").update(value, "utf8").digest("hex");
+}
+
+function safeEqual(left: string, right: string): boolean {
+  const leftBuffer = Buffer.from(left);
+  const rightBuffer = Buffer.from(right);
+  if (leftBuffer.length !== rightBuffer.length) {
+    crypto.timingSafeEqual(Buffer.alloc(32), Buffer.alloc(32));
+    return false;
+  }
+  return crypto.timingSafeEqual(leftBuffer, rightBuffer);
+}
+
+function verifyPassword(password: string): boolean {
+  const stored = getAuthPasswordHashValue();
+  if (!stored) return false;
+
+  if (stored.startsWith("scrypt:")) {
+    const parts = stored.split(":");
+    if (parts.length !== 3) return false;
+    const salt = Buffer.from(parts[1], "base64");
+    const expectedKey = Buffer.from(parts[2], "base64");
+    if (salt.length === 0 || expectedKey.length === 0) return false;
+
+    try {
+      const derivedKey = crypto.scryptSync(password, salt, expectedKey.length, { N: 16384, r: 8, p: 1 });
+      if (derivedKey.length !== expectedKey.length) return false;
+      return crypto.timingSafeEqual(derivedKey, expectedKey);
+    } catch {
+      return false;
+    }
+  }
+
+  const hash = hashSha256(password);
+  return safeEqual(hash.toLowerCase(), stored.toLowerCase());
+}
+
+function parseCookies(req: Request): Record<string, string> {
+  const header = req.headers.cookie;
+  if (!header) return {};
+  const result: Record<string, string> = {};
+  for (const part of header.split(";")) {
+    const trimmed = part.trim();
+    if (!trimmed) continue;
+    const [rawName, ...valueParts] = trimmed.split("=");
+    try {
+      const name = decodeURIComponent(rawName);
+      const value = decodeURIComponent(valueParts.join("="));
+      if (name) result[name] = value;
+    } catch {
+      // Malformed cookie segment, skip it
+    }
+  }
+  return result;
+}
+
+function signSessionPayload(payload: string): string {
+  const secret = getAuthSecret();
+  if (!secret) return "";
+  return crypto.createHmac("sha256", secret).update(payload).digest("base64url");
+}
+
+function createSessionCookie(username: string): string {
+  const payload = Buffer.from(JSON.stringify({
+    username,
+    expiresAt: Date.now() + ASTRA_AUTH_MAX_AGE_SECONDS * 1000,
+  })).toString("base64url");
+  return `${payload}.${signSessionPayload(payload)}`;
+}
+
+function readSession(req: Request): { username: string; signature: string; expiresAt: number } | null {
+  // Fail-closed: check full auth config (secret length, user, hash) before validating any session.
+  // This ensures that if config becomes invalid (e.g., secret shortened), existing cookies are rejected.
+  if (!isAuthConfigured()) {
+    return null;
+  }
+
+  let token: string | undefined;
+  try {
+    token = parseCookies(req)[ASTRA_AUTH_COOKIE];
+  } catch {
+    // Malformed cookie header — treat as unauthenticated, never throw
+    return null;
+  }
+  if (!token) return null;
+
+  const authUser = getAuthUser();
+  if (!authUser) return null;
+
+  const [payload, signature] = token.split(".", 2);
+  if (!payload || !signature) return null;
+
+  const expectedSig = signSessionPayload(payload);
+  if (!expectedSig || !safeEqual(signature, expectedSig)) return null;
+
+  if (isTokenRevoked(signature)) return null;
+
+  try {
+    const data = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as {
+      username?: unknown;
+      expiresAt?: unknown;
+    };
+    if (data.username !== authUser || typeof data.expiresAt !== "number" || data.expiresAt <= Date.now()) {
+      return null;
+    }
+    return { username: authUser, signature, expiresAt: data.expiresAt };
+  } catch {
+    // Malformed payload — treat as unauthenticated, never throw
+    return null;
+  }
+}
+
+function setAuthCookie(res: Response, token: string) {
+  const secure = isSecureCookieEnabled() ? "; Secure" : "";
+  res.setHeader(
+    "Set-Cookie",
+    `${ASTRA_AUTH_COOKIE}=${encodeURIComponent(token)}; HttpOnly; SameSite=Lax; Path=/; Max-Age=${ASTRA_AUTH_MAX_AGE_SECONDS}${secure}`,
+  );
+}
+
+function clearAuthCookie(res: Response) {
+  const secure = isSecureCookieEnabled() ? "; Secure" : "";
+  res.setHeader("Set-Cookie", `${ASTRA_AUTH_COOKIE}=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0${secure}`);
+}
+
+function requireAstraSession(req: Request, res: Response, next: NextFunction) {
+  if (!readSession(req)) {
+    return res.status(401).json({ authenticated: false, message: "Authentication required" });
+  }
+  next();
+}
+
+// Per-IP rate limiting
+const loginAttempts = new Map<string, { count: number; windowStart: number; lockedUntil: number }>();
+const LOGIN_RATE_LIMIT_MAX = 5;
+const LOGIN_RATE_LIMIT_WINDOW_MS = 60 * 1000;
+const LOGIN_LOCKOUT_MS = 5 * 60 * 1000;
+
+// Global rate limiting (backstop independent of IP)
+const GLOBAL_RATE_LIMIT_MAX = 20;
+const GLOBAL_RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
+const GLOBAL_LOCKOUT_MS = 15 * 60 * 1000;
+let globalFailures: number[] = [];
+let globalLockedUntil = 0;
+
+const LOOPBACK_ADDRESSES = new Set(["127.0.0.1", "::1", "::ffff:127.0.0.1"]);
+
+function isLoopback(addr: string | undefined): boolean {
+  if (!addr) return false;
+  return LOOPBACK_ADDRESSES.has(addr);
+}
+
+function getClientIp(req: Request): string {
+  const socketAddr = req.socket.remoteAddress ?? "unknown";
+
+  if (!isLoopback(socketAddr)) {
+    return socketAddr;
+  }
+
+  const xff = req.headers["x-forwarded-for"];
+  if (xff) {
+    const parts = Array.isArray(xff) ? xff.join(",").split(",") : xff.split(",");
+    const rightmost = parts[parts.length - 1]?.trim();
+    if (rightmost) return rightmost;
+  }
+
+  return socketAddr;
+}
+
+function checkGlobalRateLimit(): { allowed: boolean; retryAfterMs?: number } {
+  const now = Date.now();
+  if (globalLockedUntil > now) {
+    return { allowed: false, retryAfterMs: globalLockedUntil - now };
+  }
+  if (globalLockedUntil > 0 && globalLockedUntil <= now) {
+    globalLockedUntil = 0;
+    globalFailures = [];
+  }
+  return { allowed: true };
+}
+
+function checkRateLimit(ip: string): { allowed: boolean; retryAfterMs?: number; global?: boolean } {
+  const globalCheck = checkGlobalRateLimit();
+  if (!globalCheck.allowed) {
+    return { ...globalCheck, global: true };
+  }
+
+  const now = Date.now();
+  const entry = loginAttempts.get(ip);
+
+  if (entry && entry.lockedUntil > now) {
+    return { allowed: false, retryAfterMs: entry.lockedUntil - now };
+  }
+
+  if (entry && entry.lockedUntil > 0 && entry.lockedUntil <= now) {
+    loginAttempts.delete(ip);
+  }
+
+  return { allowed: true };
+}
+
+function recordLoginAttempt(ip: string, success: boolean) {
+  const now = Date.now();
+
+  if (success) {
+    loginAttempts.delete(ip);
+    return;
+  }
+
+  // Record global failure
+  globalFailures = globalFailures.filter(t => (now - t) <= GLOBAL_RATE_LIMIT_WINDOW_MS);
+  globalFailures.push(now);
+  if (globalFailures.length >= GLOBAL_RATE_LIMIT_MAX && globalLockedUntil === 0) {
+    globalLockedUntil = now + GLOBAL_LOCKOUT_MS;
+    log("[auth] GLOBAL rate limit triggered: too many failed login attempts across all clients");
+  }
+
+  // Record per-IP failure
+  const entry = loginAttempts.get(ip);
+  if (!entry || (now - entry.windowStart) > LOGIN_RATE_LIMIT_WINDOW_MS) {
+    loginAttempts.set(ip, { count: 1, windowStart: now, lockedUntil: 0 });
+    return;
+  }
+
+  entry.count++;
+  if (entry.count >= LOGIN_RATE_LIMIT_MAX) {
+    entry.lockedUntil = now + LOGIN_LOCKOUT_MS;
+    log(`[auth] IP rate limit triggered for client`);
+  }
+  loginAttempts.set(ip, entry);
+}
+
+function resetRateLimitState() {
+  loginAttempts.clear();
+  globalFailures = [];
+  globalLockedUntil = 0;
+}
+
+setInterval(() => {
+  const now = Date.now();
+  const entries = Array.from(loginAttempts.entries());
+  for (const [ip, entry] of entries) {
+    const lockExpired = entry.lockedUntil > 0 && entry.lockedUntil <= now;
+    const windowExpired = (now - entry.windowStart) > LOGIN_RATE_LIMIT_WINDOW_MS;
+    if (lockExpired || (entry.lockedUntil === 0 && windowExpired)) {
+      loginAttempts.delete(ip);
+    }
+  }
+  globalFailures = globalFailures.filter(t => (now - t) <= GLOBAL_RATE_LIMIT_WINDOW_MS);
+  if (globalLockedUntil > 0 && globalLockedUntil <= now) {
+    globalLockedUntil = 0;
+  }
+}, 60 * 1000).unref();
+
+export {
+  getClientIp as _getClientIp,
+  recordLoginAttempt as _recordLoginAttempt,
+  checkRateLimit as _checkRateLimit,
+  loginAttempts as _loginAttempts,
+  resetRateLimitState as _resetRateLimitState,
+  revokedSignatures as _revokedSignatures,
+  parseCookies as _parseCookies,
+  isAuthConfigured as _isAuthConfigured,
+  isAuthSecretValid as _isAuthSecretValid,
+  ASTRA_AUTH_SECRET_MIN_LENGTH as _ASTRA_AUTH_SECRET_MIN_LENGTH,
+};
+
+// -------------------------
 // Routes
 // -------------------------
 export async function registerRoutes(app: Express) {
+  // Log auth configuration status at startup (never log the values)
+  if (isAuthConfigured()) {
+    log("[auth] Authentication is configured");
+    logPasswordDeprecationOnce();
+  } else {
+    log(`[auth] WARNING: Authentication is NOT configured (fail-closed: all logins refused). Reason: ${authConfigReason || "unknown"}`);
+  }
+
+  // Cross-origin protection middleware for /api routes.
+  // Rejects:
+  //   1. Form-encoded bodies on /api (application/x-www-form-urlencoded)
+  //   2. State-changing requests (not GET/HEAD/OPTIONS) without Content-Type: application/json
+  //   3. Requests with an Origin header whose host (hostname:port) doesn't match the request Host
+  app.use("/api", (req: Request, res: Response, next: NextFunction) => {
+    const method = req.method.toUpperCase();
+    const contentType = (req.headers["content-type"] || "").toLowerCase();
+
+    // Block form-encoded bodies entirely on /api
+    if (contentType.includes("application/x-www-form-urlencoded")) {
+      return res.status(415).json({ error: "Form-encoded bodies are not accepted on /api" });
+    }
+
+    // For state-changing methods, require application/json (no multipart - no upload routes on main)
+    if (method !== "GET" && method !== "HEAD" && method !== "OPTIONS") {
+      const hasBody = req.headers["content-length"] !== "0" && req.headers["content-length"] !== undefined;
+      if (hasBody && !contentType.includes("application/json")) {
+        return res.status(415).json({ error: "Content-Type must be application/json" });
+      }
+    }
+
+    // Origin header check: if present, host (hostname:port) must match request Host.
+    // Reject 'null' origin (sent by sandboxed iframes, data: URLs, etc.) and unparseable values.
+    const origin = req.headers["origin"];
+    if (origin) {
+      // Reject literal 'null' origin
+      if (origin === "null") {
+        return res.status(403).json({ error: "Cross-origin request rejected" });
+      }
+
+      try {
+        const originUrl = new URL(origin);
+        // originUrl.host includes port (e.g., "127.0.0.1:5000", "[::1]:5000")
+        // Default ports (80 for http, 443 for https) are normalized away by URL parser
+        const originHost = originUrl.host;
+
+        // Normalize the request Host header for comparison
+        // Host header may or may not include port; if missing, assume default port for scheme
+        const hostHeader = req.headers["host"] || "";
+
+        // For comparison, we need to handle:
+        // - IPv6: [::1]:5000 vs [::1]:5000
+        // - IPv4: 127.0.0.1:5000 vs 127.0.0.1:5000
+        // - Default port normalization: localhost:80 with http origin should match localhost
+        // The Origin's host already has default ports normalized, so we compare directly.
+        // If hostHeader has an explicit default port, we should normalize it too.
+        let normalizedHost = hostHeader;
+        const scheme = originUrl.protocol; // "http:" or "https:"
+        if (scheme === "http:" && hostHeader.endsWith(":80")) {
+          normalizedHost = hostHeader.slice(0, -3);
+        } else if (scheme === "https:" && hostHeader.endsWith(":443")) {
+          normalizedHost = hostHeader.slice(0, -4);
+        }
+
+        if (originHost !== normalizedHost) {
+          return res.status(403).json({ error: "Cross-origin request rejected" });
+        }
+      } catch {
+        // Malformed Origin header — reject
+        return res.status(403).json({ error: "Invalid Origin header" });
+      }
+    }
+
+    next();
+  });
+
+  // Auth routes (public, must be registered before the session gate)
+  app.get("/api/auth/session", (req: Request, res: Response) => {
+    const session = readSession(req);
+    res.json({
+      authenticated: Boolean(session),
+      user: session ? { username: session.username } : null,
+    });
+  });
+
+  app.post("/api/auth/login", (req: Request, res: Response) => {
+    const ip = getClientIp(req);
+    const rateCheck = checkRateLimit(ip);
+    if (!rateCheck.allowed) {
+      clearAuthCookie(res);
+      const retryAfterSec = Math.ceil((rateCheck.retryAfterMs ?? LOGIN_LOCKOUT_MS) / 1000);
+      res.setHeader("Retry-After", String(retryAfterSec));
+      return res.status(429).json({
+        authenticated: false,
+        message: `Too many login attempts. Try again in ${retryAfterSec} seconds.`,
+      });
+    }
+
+    if (!isAuthConfigured()) {
+      recordLoginAttempt(ip, false);
+      clearAuthCookie(res);
+      return res.status(503).json({
+        authenticated: false,
+        message: "Authentication is not configured on this server",
+      });
+    }
+
+    const body = (req.body ?? {}) as { username?: unknown; password?: unknown };
+    const username = typeof body.username === "string" ? body.username.trim() : "";
+    const password = typeof body.password === "string" ? body.password : "";
+
+    const authUser = getAuthUser();
+    const validUsername = safeEqual(username, authUser);
+    const validPassword = verifyPassword(password);
+
+    if (!validUsername || !validPassword) {
+      recordLoginAttempt(ip, false);
+      clearAuthCookie(res);
+      return res.status(401).json({ authenticated: false, message: "Invalid username or password" });
+    }
+
+    recordLoginAttempt(ip, true);
+    setAuthCookie(res, createSessionCookie(authUser));
+    return res.json({ authenticated: true, user: { username: authUser } });
+  });
+
+  app.post("/api/auth/logout", (req: Request, res: Response) => {
+    // Revoke the presented token so it cannot be reused even if stolen.
+    // The denylist is in-memory and resets on restart.
+    // Rotating ASTRA_AUTH_SECRET invalidates all tokens (the kill switch).
+    const session = readSession(req);
+    if (session) {
+      revokeToken(session.signature, session.expiresAt);
+    }
+    clearAuthCookie(res);
+    res.json({ authenticated: false });
+  });
+
+  // Session gate: everything under /api registered after this line requires a valid astra_session cookie.
+  // This covers /api/status, /api/autonomy/snapshot, /api/nodes, /api/messages, /api/jobs*,
+  // /api/media/*, /api/actions, /api/actions/:id{,/approve,/reject,/cancel,/audit}.
+  app.use("/api", requireAstraSession);
+
   async function refreshStatus(): Promise<{ nodes: any[]; checkedAt: string }> {
     const checkedAt = nowIso();
     const localMetrics = await getLocalMetrics();

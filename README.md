@@ -176,6 +176,43 @@ export DATABASE_URL="postgresql://user:password@host/database"
 npm run db:push
 ```
 
+### Configure Authentication
+
+Authentication is required for production deployments. Set these environment variables:
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `ASTRA_AUTH_SECRET` | Yes | HMAC-SHA256 key for signing session cookies (min 32 chars) |
+| `ASTRA_AUTH_USER` | Yes | Single allowed username |
+| `ASTRA_AUTH_PASSWORD_HASH` | Yes | Password hash in scrypt format (preferred) |
+| `ASTRA_AUTH_PASSWORD_SHA256` | Deprecated | Use `ASTRA_AUTH_PASSWORD_HASH` instead (removal: 2026-11-30) |
+| `ASTRA_AUTH_COOKIE_SECURE` | No | Set to `1` to add Secure flag (requires HTTPS) |
+
+**Generate a secure secret (minimum 32 characters):**
+
+```bash
+openssl rand -hex 32
+```
+
+**Generate a scrypt password hash (required format):**
+
+```bash
+node -e "const c=require('crypto');const s=c.randomBytes(32);const k=c.scryptSync('yourpassword',s,64,{N:16384,r:8,p:1});console.log('scrypt:'+s.toString('base64')+':'+k.toString('base64'))"
+```
+
+**Systemd drop-in example** (`~/.config/systemd/user/astra-ui.service.d/auth.conf`):
+
+```ini
+[Service]
+Environment="ASTRA_AUTH_SECRET=your-random-secret-at-least-32-characters"
+Environment="ASTRA_AUTH_USER=operator"
+Environment="ASTRA_AUTH_PASSWORD_HASH=scrypt:base64salt:base64key"
+```
+
+If the secret is missing or shorter than 32 characters, user is missing, or password hash is missing, the server runs in **fail-closed** mode: all logins are refused and gated routes return 401.
+
+> **Note:** Plain SHA-256 password format and `ASTRA_AUTH_PASSWORD_SHA256` variable name are deprecated and will be removed on 2026-11-30. Migrate to `ASTRA_AUTH_PASSWORD_HASH` with scrypt format.
+
 ### Run
 
 ```bash
