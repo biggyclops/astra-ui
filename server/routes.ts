@@ -8,6 +8,7 @@ import pathModule from "node:path";
 import crypto from "node:crypto";
 import { log } from "./logger";
 import { registerAutonomyRoutes } from "./autonomy";
+import { registerTvRoutes, chatWithTvTools, tvConfig, TvClient } from "./tv";
 import {
   createAction,
   getAction,
@@ -877,6 +878,9 @@ export async function registerRoutes(app: Express) {
   // This covers /api/status, /api/autonomy/snapshot, /api/nodes, /api/messages, /api/jobs*,
   // /api/media/*, /api/actions, /api/actions/:id{,/approve,/reject,/cancel,/audit}.
   app.use("/api", requireAstraSession);
+
+  // IPTV Land TV control: /api/tv/search, /api/tv/tune, /api/tv/search-on-tv (session-gated; recorder token stays server-side).
+  registerTvRoutes(app);
 
   async function refreshStatus(): Promise<{ nodes: any[]; checkedAt: string }> {
     const checkedAt = nowIso();
@@ -1820,23 +1824,20 @@ export async function registerRoutes(app: Express) {
               "Mini-Beast runs Docker containers (Portainer, Open WebUI, Uptime Kuma, Pi-hole, Syncthing, etc.), Ollama for LLM inference, and the Astra UI app. " +
               "Hermes provides file storage via Samba and File Browser. " +
               "Be concise and helpful. Use plain text, no markdown." +
+              (tvConfig() ? " You can control the living-room TV: use find_channel to look up channels or games, then tune with the chosen channelId when the user asks to put something on." : "") +
               statusContext,
           },
           ...history,
         ],
       };
 
-      fetch(`${OLLAMA_URL}/api/chat`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      })
-        .then(r => r.json())
-        .then(data => {
+      const tvCfg = tvConfig();
+      chatWithTvTools(OLLAMA_URL, payload, tvCfg ? new TvClient(tvCfg) : null)
+        .then(content => {
           const reply: Message = {
             id: nextId(),
             role: "assistant",
-            content: data.message?.content || "Sorry, I couldn't generate a response.",
+            content,
             type: "text",
             metadata: null,
             createdAt: nowIso(),
