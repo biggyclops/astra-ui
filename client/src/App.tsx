@@ -16,6 +16,8 @@ import Settings from "@/pages/Settings";
 import Autonomy from "@/pages/Autonomy";
 import Intel from "@/pages/Intel";
 import Tv from "@/pages/Tv";
+import Files from "@/pages/Files";
+import Downloads from "@/pages/Downloads";
 
 type AuthStatus = "loading" | "authenticated" | "unauthenticated";
 
@@ -497,6 +499,8 @@ function Router() {
           <Route path="/media" component={MediaWall} />
           <Route path="/nodes" component={Nodes} />
           <Route path="/tv" component={Tv} />
+          <Route path="/files" component={Files} />
+          <Route path="/downloads" component={Downloads} />
           <Route path="/jobs" component={Jobs} />
           <Route path="/settings" component={Settings} />
           <Route path="/autonomy" component={Autonomy} />

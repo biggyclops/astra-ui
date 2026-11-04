@@ -9,6 +9,8 @@ import crypto from "node:crypto";
 import { log } from "./logger";
 import { registerAutonomyRoutes } from "./autonomy";
 import { registerTvRoutes, chatWithTvTools, tvConfig, TvClient } from "./tv";
+import { registerFilesRoutes, isMultipartAllowed } from "./files";
+import { registerDownloadsRoutes } from "./downloads";
 import {
   createAction,
   getAction,
@@ -81,6 +83,9 @@ const NODE_TARGETS: NodeTarget[] = [
       { name: "Portainer", url: "http://localhost:9000/api/status" },
       { name: "Open WebUI", url: "http://localhost:3003/" },
       { name: "Uptime Kuma", url: "http://localhost:3001/" },
+      { name: "Sonarr", url: "http://localhost:8989/" },
+      { name: "Radarr", url: "http://localhost:7878/" },
+      { name: "Transmission", url: "http://localhost:9091/" },
     ],
   },
   { name: "Kratos", type: "Workstation", ts: "kratos-z440", ip: "100.78.38.80", sshUser: "comeau" },
@@ -759,10 +764,13 @@ export async function registerRoutes(app: Express) {
       return res.status(415).json({ error: "Form-encoded bodies are not accepted on /api" });
     }
 
-    // For state-changing methods, require application/json (no multipart - no upload routes on main)
+    // For state-changing methods, require application/json. Scoped exception: multipart/form-data
+    // only on POST /api/files/upload and /api/files/upload-media (Origin check below still applies,
+    // and the session gate runs before the upload handler).
     if (method !== "GET" && method !== "HEAD" && method !== "OPTIONS") {
       const hasBody = req.headers["content-length"] !== "0" && req.headers["content-length"] !== undefined;
-      if (hasBody && !contentType.includes("application/json")) {
+      const multipartOk = contentType.startsWith("multipart/form-data") && isMultipartAllowed(method, req.originalUrl);
+      if (hasBody && !multipartOk && !contentType.includes("application/json")) {
         return res.status(415).json({ error: "Content-Type must be application/json" });
       }
     }
@@ -881,6 +889,8 @@ export async function registerRoutes(app: Express) {
 
   // IPTV Land TV control: /api/tv/search, /api/tv/tune, /api/tv/search-on-tv (session-gated; recorder token stays server-side).
   registerTvRoutes(app);
+  registerFilesRoutes(app);
+  registerDownloadsRoutes(app);
 
   async function refreshStatus(): Promise<{ nodes: any[]; checkedAt: string }> {
     const checkedAt = nowIso();
