@@ -15,6 +15,7 @@ import Jobs from "@/pages/Jobs";
 import Settings from "@/pages/Settings";
 import Autonomy from "@/pages/Autonomy";
 import Intel from "@/pages/Intel";
+import Tv from "@/pages/Tv";
 
 type AuthStatus = "loading" | "authenticated" | "unauthenticated";
 
@@ -495,6 +496,7 @@ function Router() {
           <Route path="/" component={Chat} />
           <Route path="/media" component={MediaWall} />
           <Route path="/nodes" component={Nodes} />
+          <Route path="/tv" component={Tv} />
           <Route path="/jobs" component={Jobs} />
           <Route path="/settings" component={Settings} />
           <Route path="/autonomy" component={Autonomy} />
