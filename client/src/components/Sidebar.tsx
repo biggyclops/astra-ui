@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { MessageSquare, Image, Activity, Cpu, Settings, Disc, Network, Tv } from "lucide-react";
+import { MessageSquare, Image, Activity, Cpu, Settings, Disc, Network, Tv, FolderOpen, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { NodeStatusBadge } from "./NodeStatusBadge";
@@ -8,6 +8,8 @@ const navItems = [
   { icon: MessageSquare, label: "Chat", href: "/" },
   { icon: Image, label: "Media", href: "/media" },
   { icon: Tv, label: "TV", href: "/tv" },
+  { icon: FolderOpen, label: "Files", href: "/files" },
+  { icon: Download, label: "Downloads", href: "/downloads" },
   { icon: Activity, label: "Jobs", href: "/jobs" },
   { icon: Cpu, label: "Nodes", href: "/nodes" },
   { icon: Network, label: "Intel", href: "/intel" },
