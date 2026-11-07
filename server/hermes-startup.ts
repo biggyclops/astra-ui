@@ -29,8 +29,11 @@ export function runHermesStartupSanityCheck(): void {
       if (process.env.NODE_ENV === "development") {
         throw new Error(`HERMES_LOCAL_PATH directory not found. Mount HermesStorage or unset HERMES_LOCAL_PATH.`);
       }
-    } else {
+    } else if (process.env.NODE_ENV === "development") {
       throw e;
+    } else {
+      bigWarn(`HERMES_LOCAL_PATH=${HERMES_LOCAL_PATH} is temporarily unavailable (${e.code || "unknown"}). Starting Astra in degraded mode.`);
+      return;
     }
   }
 
@@ -49,8 +52,11 @@ export function runHermesStartupSanityCheck(): void {
       if (process.env.NODE_ENV === "development") {
         throw new Error(`Expected ${HERMES_EXPECTED_ROOT}/ not found. Wrong share or mount path?`);
       }
-    } else {
+    } else if (process.env.NODE_ENV === "development") {
       throw e;
+    } else {
+      bigWarn(`Hermes expected root is temporarily unavailable (${e.code || "unknown"}). Starting Astra in degraded mode.`);
+      return;
     }
   }
 

@@ -1,6 +1,7 @@
 import { build as esbuild } from "esbuild";
 import { build as viteBuild } from "vite";
-import { rm, readFile } from "fs/promises";
+import { rm, readFile, writeFile } from "fs/promises";
+import { execFileSync } from "node:child_process";
 
 // server deps to bundle to reduce openat(2) syscalls
 // which helps cold start times
@@ -59,6 +60,9 @@ async function buildAll() {
     external: externals,
     logLevel: "info",
   });
+
+  const commit = process.env.SOURCE_VERSION || execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim();
+  await writeFile("dist/build-info.json", `${JSON.stringify({ commit, builtAt: new Date().toISOString() }, null, 2)}\n`, "utf8");
 }
 
 buildAll().catch((err) => {

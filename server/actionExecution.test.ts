@@ -56,11 +56,11 @@ test("cancellation before execution", () => {
   expect(c.action!.state).toBe("cancelled");
 });
 
-test("audit event ordering", () => {
+test("audit event ordering", async () => {
   registerRefreshHandler(async () => ({ nodes: [], checkedAt: "t" }));
   const { action } = createAction("force_refresh_node_status", "req1");
   approveAction(action!.actionId, "app1");
-  executeAction(action!.actionId, "app1");
+  await executeAction(action!.actionId, "app1");
   const events = getAuditEvents(action!.actionId);
   const states = events.map(e => e.to);
   expect(states).toContain("awaiting_approval");
@@ -80,4 +80,13 @@ test("repeated safe execution", async () => {
   approveAction(a2!.actionId, "app2");
   const r2 = await executeAction(a2!.actionId, "app2");
   expect(r2.action!.state).toBe("succeeded");
+});
+
+test("ssh uptime requires approval and an allowlisted target", async () => {
+  const { action } = createAction("ssh_uptime", "req1", { node: "not-a-node" });
+  expect((await executeAction(action!.actionId, "op1")).error).toMatch(/Invalid transition/);
+  approveAction(action!.actionId, "op1");
+  const result = await executeAction(action!.actionId, "op1");
+  expect(result.action!.state).toBe("failed");
+  expect(result.error).toMatch(/Unsupported SSH uptime target/);
 });

@@ -1,6 +1,15 @@
 // server/actionExecution.ts
 // AUTO-003A Minimal Action Execution Foundation
-// In-memory only. All actions lost on restart. No real side effects.
+// Actions remain in memory, while every state transition is also appended to a
+// durable JSONL audit log for post-restart/operator review.
+
+import { execFile } from "node:child_process";
+import { appendFileSync, mkdirSync } from "node:fs";
+import { dirname } from "node:path";
+import { promisify } from "node:util";
+
+const execFileAsync = promisify(execFile);
+const AUDIT_PATH = process.env.ASTRA_ACTION_AUDIT_PATH || "data/action-audit.jsonl";
 
 export type ActionState =
   | "proposed"
@@ -15,7 +24,8 @@ export type ActionState =
 
 export type ActionType =
   | "validate_execution_framework"
-  | "force_refresh_node_status";
+  | "force_refresh_node_status"
+  | "ssh_uptime";
 
 export type AuditEvent = {
   timestamp: string;
@@ -46,7 +56,15 @@ const store = new Map<string, Action>();
 const SUPPORTED_TYPES: ActionType[] = [
   "validate_execution_framework",
   "force_refresh_node_status",
+  "ssh_uptime",
 ];
+
+const SSH_UPTIME_TARGETS: Record<string, { host: string; user: string }> = {
+  Kratos: { host: "100.78.38.80", user: "comeau" },
+  Hades: { host: "100.98.196.16", user: "comeau" },
+  Hermes: { host: "100.120.145.15", user: "comeau" },
+  Phobos: { host: "100.74.155.53", user: "comeau" },
+};
 
 function nowIso(): string {
   return new Date().toISOString();
@@ -71,6 +89,12 @@ function recordTransition(
   action.auditEvents.push(event);
   action.state = to;
   action.updatedAt = event.timestamp;
+  try {
+    mkdirSync(dirname(AUDIT_PATH), { recursive: true });
+    appendFileSync(AUDIT_PATH, `${JSON.stringify({ actionId: action.actionId, actionType: action.actionType, correlationId: action.correlationId, ...event })}\n`, { encoding: "utf8", mode: 0o600 });
+  } catch (error) {
+    console.error("[actions] unable to persist audit event", error);
+  }
 }
 
 export function createAction(
@@ -194,6 +218,33 @@ export async function executeAction(actionId: string, actor: string): Promise<{ 
     } catch (e: any) {
       recordTransition(action, "failed", actor, e?.message || "Refresh failed");
       action.error = e?.message || "Refresh failed";
+      return { action, error: action.error };
+    }
+  }
+
+  if (action.actionType === "ssh_uptime") {
+    const node = typeof action.parameters.node === "string" ? action.parameters.node : "";
+    const target = SSH_UPTIME_TARGETS[node];
+    if (!target) {
+      recordTransition(action, "failed", actor, "Target is not in the SSH uptime allowlist");
+      action.error = "Unsupported SSH uptime target";
+      return { action, error: action.error };
+    }
+    try {
+      const { stdout } = await execFileAsync("ssh", [
+        "-o", "BatchMode=yes",
+        "-o", "ConnectTimeout=4",
+        "-o", "StrictHostKeyChecking=accept-new",
+        "-o", "ControlPath=none",
+        `${target.user}@${target.host}`,
+        "uptime",
+      ], { timeout: 7000 });
+      action.result = { node, uptime: stdout.trim(), checkedAt: nowIso() };
+      recordTransition(action, "succeeded", actor, `Read-only uptime completed for ${node}`);
+      return { action };
+    } catch (error: any) {
+      action.error = (error?.stderr?.toString?.() || error?.message || "SSH uptime failed").slice(0, 300);
+      recordTransition(action, "failed", actor, `SSH uptime failed for ${node}`);
       return { action, error: action.error };
     }
   }

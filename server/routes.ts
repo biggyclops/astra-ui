@@ -18,6 +18,7 @@ import {
   rejectAction,
   cancelAction,
   getAuditEvents,
+  executeAction,
 } from "./actionExecution";
 
 const execFileAsync = promisify(execFile);
@@ -89,7 +90,7 @@ const NODE_TARGETS: NodeTarget[] = [
     ],
   },
   { name: "Kratos", type: "Workstation", ts: "kratos-z440", ip: "100.78.38.80", sshUser: "comeau" },
-  { name: "Hades", type: "Workstation", ts: "hades-z370-windows11", ip: "100.94.2.5", sshUser: "hades" },
+  { name: "Hades", type: "Workstation", ts: "hades", ip: "100.98.196.16", sshUser: "comeau" },
   {
     name: "Hermes", type: "NAS", ts: "hermes", ip: "100.120.145.15", sshUser: "comeau",
     services: [{ name: "File Browser", url: "http://100.120.145.15:8080/" }],
@@ -1911,6 +1912,23 @@ export async function registerRoutes(app: Express) {
     const result = cancelAction(id, actor);
     if (result.error) return res.status(400).json({ error: result.error });
     res.json(result.action);
+  });
+
+  app.post("/api/actions/:id/execute", async (req: Request, res: Response) => {
+    const id = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const { actor } = req.body || {};
+    if (!actor) return res.status(400).json({ error: "actor required" });
+    const result = await executeAction(id, actor);
+    if (result.error) return res.status(400).json({ error: result.error, action: result.action });
+    res.json(result.action);
+  });
+
+  app.get("/api/build-info", (_req: Request, res: Response) => {
+    try {
+      res.json(JSON.parse(fs.readFileSync(pathModule.join(process.cwd(), "dist/build-info.json"), "utf8")));
+    } catch {
+      res.status(503).json({ error: "Build metadata unavailable" });
+    }
   });
 
   app.get("/api/actions/:id/audit", (req: Request, res: Response) => {
