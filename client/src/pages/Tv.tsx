@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { motion } from "framer-motion";
-import { Search, Tv as TvIcon, Play, MonitorPlay, Loader2 } from "lucide-react";
+import { Search, Tv as TvIcon, Play, MonitorPlay, Loader2, X } from "lucide-react";
 
 /** IPTV Land TV control. Calls the Astra backend (/api/tv/*, astra_session); the recorder token never reaches the browser. */
 interface Prog { title: string; start: number; stop: number }
@@ -22,6 +22,7 @@ export default function Tv() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [tuning, setTuning] = useState<string | null>(null);
+  const [playing, setPlaying] = useState<Result | null>(null);
 
   useEffect(() => { if (!notice) return; const t = window.setTimeout(() => setNotice(""), 4000); return () => window.clearTimeout(t); }, [notice]);
 
@@ -52,6 +53,13 @@ export default function Tv() {
 
       <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_320px] gap-6">
         <section className="rounded-[22px] border border-white/10 bg-white/[0.04] backdrop-blur-xl p-6">
+          {playing && <div className="mb-6 overflow-hidden rounded-[22px] border border-cyan-400/30 bg-black" data-testid="panel-tv-player">
+            <div className="flex items-center justify-between gap-3 px-4 py-3 bg-white/[0.05]">
+              <div className="min-w-0"><div className="text-sm font-semibold text-white truncate">{playing.name}</div><div className="text-xs text-zinc-400 truncate">{playing.now?.title || "Live TV"}</div></div>
+              <button type="button" onClick={() => setPlaying(null)} aria-label="Close player" className="rounded-full p-2 text-zinc-300 hover:bg-white/10"><X className="w-4 h-4" /></button>
+            </div>
+            <video key={playing.channelId} src={`/api/tv/stream/${encodeURIComponent(playing.channelId)}`} controls autoPlay playsInline className="block w-full aspect-video bg-black" data-testid="video-tv-player" />
+          </div>}
           <form onSubmit={search} className="flex items-center gap-3 mb-6">
             <div className="flex-1 flex items-center gap-3 rounded-2xl border border-white/10 bg-black/30 px-4 py-3 focus-within:border-cyan-400/60">
               <Search className="w-4 h-4 text-cyan-300" />
@@ -89,7 +97,11 @@ export default function Tv() {
                     {r.match === "upcoming" && r.programme ? ` · Match ${clock(r.programme.start)}: ${r.programme.title}` : ""}
                   </div>
                 </div>
-                <button onClick={() => tune(r)} disabled={tuning === r.channelId} data-testid={`button-tv-tune-${r.channelId}`}
+                <button type="button" onClick={() => setPlaying(r)} data-testid={`button-tv-watch-${r.channelId}`}
+                  className="rounded-full px-4 py-2 bg-white/5 border border-white/10 text-zinc-200 text-sm font-semibold hover:border-cyan-400/40 transition-colors flex items-center gap-2">
+                  <MonitorPlay className="w-4 h-4" /> Watch
+                </button>
+                <button type="button" onClick={() => tune(r)} disabled={tuning === r.channelId} data-testid={`button-tv-tune-${r.channelId}`}
                   className="rounded-full px-4 py-2 bg-cyan-400/20 border border-cyan-400/40 text-cyan-300 text-sm font-semibold hover:bg-cyan-400/30 disabled:opacity-50 transition-colors flex items-center gap-2">
                   {tuning === r.channelId ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />} Tune
                 </button>

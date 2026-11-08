@@ -3,11 +3,13 @@
  * The recorder token lives only here (env IPTV_RECORDER_TOKEN); browsers and AstraPhone call /api/tv/* behind astra_session.
  */
 import type { Express, Request, Response } from "express";
+import { Readable } from "node:stream";
 
 export interface TvProgramme { title: string; start: number; stop: number }
 export interface TvResult { channelId: string; name: string; group: string; num?: number; match: "channel" | "now" | "upcoming"; programme: TvProgramme | null; now: TvProgramme | null; next: TvProgramme | null }
 export interface TvConfig { url: string; token: string }
-type Fetch = (url: string, init?: any) => Promise<{ ok: boolean; status: number; json(): Promise<any> }>;
+type FetchResponse = { ok: boolean; status: number; headers?: { get(name: string): string | null }; body?: any; json(): Promise<any> };
+type Fetch = (url: string, init?: any) => Promise<FetchResponse>;
 
 export class TvError extends Error { constructor(message: string, public status = 502) { super(message); } }
 
@@ -44,6 +46,20 @@ export class TvClient {
   async searchOnTv(query: string) {
     const q = String(query || "").trim().slice(0, 200); if (!q) throw new TvError("query required", 400);
     return this.call("/remote", { action: "search", query: q });
+  }
+  async openLiveStream(channelId: string, signal?: AbortSignal): Promise<FetchResponse> {
+    const id = String(channelId || "").trim(); if (!id) throw new TvError("channelId required", 400);
+    let r: FetchResponse;
+    try {
+      r = await this.f(`${this.cfg.url}/live/${encodeURIComponent(id)}/mp4`, { method: "GET", signal,
+        headers: { "X-Recorder-Token": this.cfg.token } });
+    } catch { throw new TvError("Can't reach the IPTV Land recorder", 502); }
+    if (!r.ok) {
+      const j = await r.json().catch(() => ({}));
+      if (r.status === 401) throw new TvError("Recorder rejected Astra's token", 502);
+      throw new TvError(j.error || `Recorder error ${r.status}`, r.status === 400 || r.status === 404 || r.status === 503 ? r.status : 502);
+    }
+    return r;
   }
 }
 
@@ -98,4 +114,14 @@ export function registerTvRoutes(app: Express, getClient: () => TvClient | null 
     try { const r = await c.tune(req.body?.channelId); res.json({ ok: true, channelId: r.channelId, name: r.name }); } catch (e) { fail(res, e); } });
   app.post("/api/tv/search-on-tv", async (req: Request, res: Response) => { const c = need(res); if (!c) return;
     try { const r = await c.searchOnTv(req.body?.query); res.json({ ok: true, query: r.query }); } catch (e) { fail(res, e); } });
+  app.get("/api/tv/stream/:channelId", async (req: Request, res: Response) => { const c = need(res); if (!c) return;
+    const ctl = new AbortController(); req.on("aborted", () => ctl.abort());
+    try {
+      const upstream = await c.openLiveStream(String(req.params.channelId || ""), ctl.signal);
+      res.status(200); res.setHeader("Content-Type", upstream.headers?.get("content-type") || "video/mp4");
+      res.setHeader("Cache-Control", "no-store"); res.setHeader("X-Content-Type-Options", "nosniff");
+      if (!upstream.body) return res.end();
+      const stream = Readable.fromWeb(upstream.body as any); res.on("close", () => stream.destroy()); stream.on("error", () => res.destroy()); stream.pipe(res);
+    } catch (e) { if (!res.headersSent) fail(res, e); else res.destroy(); }
+  });
 }
