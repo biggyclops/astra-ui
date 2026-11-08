@@ -14,6 +14,7 @@ function fakeRecorder() {
     if (token !== TOKEN) return j(401, { error: "unauthorized" });
     if (req.url!.startsWith("/guide/search")) return j(200, { results: [{ channelId: "101", name: "NBC Sports Boston", group: "US Sports", num: 12, match: "now", programme: { title: "NBA: Celtics at Knicks", start: 0, stop: 1 },
       now: { title: "NBA: Celtics at Knicks", start: 0, stop: 1 }, next: { title: "Celtics Postgame", start: 1, stop: 2 } }] });
+    if (req.url === "/live/101/mp4") { res.writeHead(200, { "Content-Type": "video/mp4" }); return res.end("LIVE-MP4"); }
     if (req.url === "/remote") { const b = JSON.parse(d); if (b.action === "tune" && b.channelId !== "101") return j(404, { error: "unknown channelId" }); return j(201, { seq: 1, ...b, name: b.channelId === "101" ? "NBC Sports Boston" : undefined }); }
     j(404, { error: "not found" }); }); });
   return new Promise<{ url: string; seen: typeof seen; close: () => void }>(ok => srv.listen(0, "127.0.0.1", () => ok({ url: `http://127.0.0.1:${(srv.address() as any).port}`, seen, close: () => srv.close() })));
@@ -66,6 +67,9 @@ test("REST: /api/tv/* behind the session gate; token not in responses", async ()
     const tr = await fetch(b + "/api/tv/tune", { method: "POST", headers: C, body: JSON.stringify({ channelId: "101" }) }); assert.deepEqual(await tr.json(), { ok: true, channelId: "101", name: "NBC Sports Boston" });
     assert.equal((await fetch(b + "/api/tv/tune", { method: "POST", headers: C, body: JSON.stringify({ channelId: "999" }) })).status, 404);
     assert.deepEqual(await (await fetch(b + "/api/tv/search-on-tv", { method: "POST", headers: C, body: JSON.stringify({ query: "celtics" }) })).json(), { ok: true, query: "celtics" });
+    assert.equal((await fetch(b + "/api/tv/stream/101")).status, 401);
+    const stream = await fetch(b + "/api/tv/stream/101", { headers: C }); assert.equal(stream.status, 200); assert.equal(stream.headers.get("content-type"), "video/mp4"); assert.equal(await stream.text(), "LIVE-MP4");
+    assert.equal(r.seen.at(-1)?.token, TOKEN); assert.equal(r.seen.at(-1)?.path, "/live/101/mp4");
     assert.equal((await fetch(b + "/api/tv/search?q=", { headers: C })).status, 400);
   } finally { s.close(); r.close(); }
   const app2 = express(); registerTvRoutes(app2, () => null); const s2 = app2.listen(0);
