@@ -39,6 +39,10 @@ export class TvClient {
     const j = await this.call(`/guide/search?q=${encodeURIComponent(q)}&limit=${Math.min(20, Math.max(1, limit | 0))}`);
     return Array.isArray(j.results) ? j.results : [];
   }
+  async listChannels(): Promise<TvResult[]> {
+    const j = await this.call("/guide/channels");
+    return Array.isArray(j.channels) ? j.channels : [];
+  }
   async tune(channelId: string) {
     const id = String(channelId || "").trim(); if (!id) throw new TvError("channelId required", 400);
     return this.call("/remote", { action: "tune", channelId: id });
@@ -110,6 +114,8 @@ export function registerTvRoutes(app: Express, getClient: () => TvClient | null 
   const need = (res: Response) => { const c = getClient(); if (!c) res.status(503).json({ error: "TV control is not configured (IPTV_RECORDER_URL / IPTV_RECORDER_TOKEN)" }); return c; };
   app.get("/api/tv/search", async (req: Request, res: Response) => { const c = need(res); if (!c) return;
     try { res.json({ results: await c.findChannel(String(req.query.q || ""), Number(req.query.limit) || 12) }); } catch (e) { fail(res, e); } });
+  app.get("/api/tv/channels", async (_req: Request, res: Response) => { const c = need(res); if (!c) return;
+    try { res.json({ channels: await c.listChannels() }); } catch (e) { fail(res, e); } });
   app.post("/api/tv/tune", async (req: Request, res: Response) => { const c = need(res); if (!c) return;
     try { const r = await c.tune(req.body?.channelId); res.json({ ok: true, channelId: r.channelId, name: r.name }); } catch (e) { fail(res, e); } });
   app.post("/api/tv/search-on-tv", async (req: Request, res: Response) => { const c = need(res); if (!c) return;

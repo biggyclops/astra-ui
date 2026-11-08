@@ -14,6 +14,7 @@ function fakeRecorder() {
     if (token !== TOKEN) return j(401, { error: "unauthorized" });
     if (req.url!.startsWith("/guide/search")) return j(200, { results: [{ channelId: "101", name: "NBC Sports Boston", group: "US Sports", num: 12, match: "now", programme: { title: "NBA: Celtics at Knicks", start: 0, stop: 1 },
       now: { title: "NBA: Celtics at Knicks", start: 0, stop: 1 }, next: { title: "Celtics Postgame", start: 1, stop: 2 } }] });
+    if (req.url === "/guide/channels") return j(200, { channels: [{ channelId: "101", name: "NBC Sports Boston", group: "US Sports", num: 12, match: "channel", programme: null, now: null, next: null }] });
     if (req.url === "/live/101/mp4") { res.writeHead(200, { "Content-Type": "video/mp4" }); return res.end("LIVE-MP4"); }
     if (req.url === "/remote") { const b = JSON.parse(d); if (b.action === "tune" && b.channelId !== "101") return j(404, { error: "unknown channelId" }); return j(201, { seq: 1, ...b, name: b.channelId === "101" ? "NBC Sports Boston" : undefined }); }
     j(404, { error: "not found" }); }); });
@@ -64,6 +65,7 @@ test("REST: /api/tv/* behind the session gate; token not in responses", async ()
   try {
     assert.equal((await fetch(b + "/api/tv/search?q=celtics")).status, 401);
     const sr = await fetch(b + "/api/tv/search?q=celtics", { headers: C }); const txt = await sr.text(); assert.equal(sr.status, 200); assert.ok(!txt.includes(TOKEN)); assert.equal(JSON.parse(txt).results[0].next.title, "Celtics Postgame");
+    const br = await fetch(b + "/api/tv/channels", { headers: C }); assert.equal(br.status, 200); assert.equal((await br.json()).channels[0].name, "NBC Sports Boston");
     const tr = await fetch(b + "/api/tv/tune", { method: "POST", headers: C, body: JSON.stringify({ channelId: "101" }) }); assert.deepEqual(await tr.json(), { ok: true, channelId: "101", name: "NBC Sports Boston" });
     assert.equal((await fetch(b + "/api/tv/tune", { method: "POST", headers: C, body: JSON.stringify({ channelId: "999" }) })).status, 404);
     assert.deepEqual(await (await fetch(b + "/api/tv/search-on-tv", { method: "POST", headers: C, body: JSON.stringify({ query: "celtics" }) })).json(), { ok: true, query: "celtics" });

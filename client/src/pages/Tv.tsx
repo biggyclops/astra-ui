@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { motion } from "framer-motion";
 import { Search, Tv as TvIcon, Play, MonitorPlay, Loader2, X } from "lucide-react";
 
@@ -23,13 +23,24 @@ export default function Tv() {
   const [notice, setNotice] = useState("");
   const [tuning, setTuning] = useState<string | null>(null);
   const [playing, setPlaying] = useState<Result | null>(null);
+  const [browsing, setBrowsing] = useState(false);
+  const [group, setGroup] = useState("All groups");
+
+  const groups = useMemo(() => ["All groups", ...Array.from(new Set((results || []).map((r) => r.group).filter(Boolean))).sort()], [results]);
+  const visibleResults = useMemo(() => group === "All groups" ? results || [] : (results || []).filter((r) => r.group === group), [group, results]);
 
   useEffect(() => { if (!notice) return; const t = window.setTimeout(() => setNotice(""), 4000); return () => window.clearTimeout(t); }, [notice]);
 
   async function search(e?: FormEvent) {
     e?.preventDefault(); const query = q.trim(); if (!query) return;
     setBusy(true); setError("");
-    try { setResults((await api<{ results: Result[] }>(`/api/tv/search?q=${encodeURIComponent(query)}`)).results); }
+    try { setResults((await api<{ results: Result[] }>(`/api/tv/search?q=${encodeURIComponent(query)}`)).results); setBrowsing(false); setGroup("All groups"); }
+    catch (err) { setError((err as Error).message); setResults(null); }
+    finally { setBusy(false); }
+  }
+  async function browse() {
+    setBusy(true); setError("");
+    try { setResults((await api<{ channels: Result[] }>("/api/tv/channels")).channels); setBrowsing(true); setGroup("All groups"); }
     catch (err) { setError((err as Error).message); setResults(null); }
     finally { setBusy(false); }
   }
@@ -70,18 +81,30 @@ export default function Tv() {
               className="rounded-full px-5 py-3 bg-cyan-400/20 border border-cyan-400/40 text-cyan-300 text-sm font-semibold hover:bg-cyan-400/30 disabled:opacity-40 transition-colors flex items-center gap-2">
               {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />} Search
             </button>
+            <button type="button" data-testid="button-tv-browse" onClick={browse} disabled={busy}
+              className="rounded-full px-5 py-3 bg-white/5 border border-white/10 text-zinc-200 text-sm hover:border-cyan-400/40 disabled:opacity-40 transition-colors flex items-center gap-2">
+              <TvIcon className="w-4 h-4" /> Browse Channels
+            </button>
             <button type="button" data-testid="button-tv-search-on-tv" onClick={searchOnTv} disabled={!q.trim()}
               className="rounded-full px-5 py-3 bg-white/5 border border-white/10 text-zinc-200 text-sm hover:border-cyan-400/40 disabled:opacity-40 transition-colors flex items-center gap-2">
               <MonitorPlay className="w-4 h-4" /> Search on TV
             </button>
           </form>
 
+          {browsing && results && <div className="mb-5 flex items-center justify-between gap-4" data-testid="tv-browse-toolbar">
+            <p className="text-sm text-zinc-400"><span className="text-white font-semibold">{visibleResults.length}</span> of {results.length} channels</p>
+            <select value={group} onChange={(e) => setGroup(e.target.value)} aria-label="Filter channels by group" data-testid="select-tv-group"
+              className="rounded-full border border-white/10 bg-black/40 px-4 py-2 text-sm text-zinc-200 outline-none focus:border-cyan-400/60">
+              {groups.map((name) => <option key={name} value={name}>{name}</option>)}
+            </select>
+          </div>}
+
           {error && <div className="mb-4 rounded-2xl border border-pink-400/30 bg-pink-500/10 px-4 py-3 text-sm text-pink-200" data-testid="text-tv-error">{error}</div>}
           {results && results.length === 0 && <div className="text-muted-foreground py-10 text-center">No channels match “{q.trim()}”.</div>}
           {!results && !error && <div className="text-muted-foreground py-10 text-center">Search by channel name or by what's on.</div>}
 
           <ul className="space-y-3">
-            {(results || []).map((r, i) => (
+            {visibleResults.map((r, i) => (
               <motion.li key={r.channelId} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
                 className="flex items-center gap-4 rounded-[22px] border border-white/5 bg-card/60 p-4 hover:border-cyan-400/40 transition-colors" data-testid={`row-tv-${r.channelId}`}>
                 <div className="p-3 rounded-xl bg-cyan-400/15 text-cyan-300"><TvIcon className="w-5 h-5" /></div>
